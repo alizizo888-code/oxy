@@ -4,12 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>أكسجين للصيانة والتبريد</title>
 <meta name="description" content="واجهة مؤسسة أكسجين لصيانة وغسيل وتركيب المكيفات في مكة المكرمة.">
-</head>
-<body style="font-family:system-ui,sans-serif;background:#eff6ff;color:#0f172a;padding:24px;line-height:1.9">
-<main style="max-width:700px;margin:8vh auto;background:white;border:1px solid #bae6fd;border-radius:20px;padding:28px;box-shadow:0 12px 32px #0f172a12">
-<h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة الصيانة…</p>
-<p>هذه معاينة للملف المرفوع. استضف المستودع عبر GitHub Pages أو ثبّت إضافة ووردبريس لعرض الواجهة.</p>
-</main>
+<style>body{margin:0;background:#eaf6ff;color:#0f172a;font-family:Tahoma,Arial,sans-serif}.notice{max-width:760px;margin:10vh auto;background:#fff;border:1px solid #bae6fd;border-radius:24px;padding:26px;box-shadow:0 12px 36px #0f172a10;line-height:1.9}h1{color:#0369a1}small{color:#64748b}</style>
+</head><body><main class="notice"><h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة أكسجين…</p><noscript>يحتاج عرض الواجهة إلى JavaScript.</noscript></main>
 <script>
-(async()=>{const s=document.getElementById("status");try{const r=await fetch("oxygen-ac-automation/assets/oxygen-maintenance-home.html.gz.b64");if(!r.ok)throw new Error("تعذر قراءة ملف الواجهة");const b64=(await r.text()).trim();const raw=atob(b64);const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));if(!("DecompressionStream" in window))throw new Error("المتصفح لا يدعم فك ضغط المصدر؛ استخدم إضافة ووردبريس");const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));const html=await new Response(stream).text();document.open();document.write(html);document.close()}catch(e){s.textContent=e.message+". يمكنك تنزيل حزمة الإضافة وتثبيتها في ووردبريس."}})();
+(async()=>{const s=document.getElementById('status');try{const names=['01','02','03','04','05','06'];const rs=await Promise.all(names.map(n=>fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt')));if(rs.some(r=>!r.ok))throw new Error('ملفات الواجهة غير مكتملة في المستودع');const b64=(await Promise.all(rs.map(r=>r.text()))).join('').trim();const raw=atob(b64);const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك ضغط المصدر');const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));const html=await new Response(stream).text();document.open();document.write(html);document.close()}catch(e){s.textContent=e.message+'. حمّل حزمة إضافة ووردبريس من ملفات المشروع.'}})();
 </script></body></html>
