@@ -5,7 +5,27 @@
 <title>أكسجين للصيانة والتبريد</title>
 <meta name="description" content="واجهة مؤسسة أكسجين لصيانة وغسيل وتركيب المكيفات في مكة المكرمة.">
 <style>body{margin:0;background:#eaf6ff;color:#0f172a;font-family:Tahoma,Arial,sans-serif}.notice{max-width:760px;margin:10vh auto;background:#fff;border:1px solid #bae6fd;border-radius:24px;padding:26px;box-shadow:0 12px 36px #0f172a10;line-height:1.9}h1{color:#0369a1}small{color:#64748b}</style>
-</head><body><main class="notice"><h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة أكسجين…</p><noscript>يحتاج عرض الواجهة إلى JavaScript.</noscript></main>
+</head>
+<body><main class="notice"><h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة أكسجين…</p><noscript>يحتاج عرض الواجهة إلى JavaScript.</noscript></main>
 <script>
-(async()=>{const s=document.getElementById('status');try{const names=['01','02','03','04','05','06'];const rs=await Promise.all(names.map(n=>fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt')));if(rs.some(r=>!r.ok))throw new Error('ملفات الواجهة غير مكتملة في المستودع');const b64=(await Promise.all(rs.map(r=>r.text()))).join('').trim();const raw=atob(b64);const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك ضغط المصدر');const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));const html=await new Response(stream).text();document.open();document.write(html);document.close()}catch(e){s.textContent=e.message+'. حمّل حزمة إضافة ووردبريس من ملفات المشروع.'}})();
+(async () => {
+  const status = document.getElementById('status');
+  try {
+    const names = ['01','02','03','04','05','06'];
+    const responses = await Promise.all(names.map(n => fetch('oxygen-ac-automation/assets/page-part-' + n + '.txt')));
+    if (responses.some(r => !r.ok)) throw new Error('ملفات الواجهة غير مكتملة في المستودع');
+    const encoded = (await Promise.all(responses.map(r => r.text()))).join('').trim();
+    const raw = atob(encoded);
+    const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+    if (!('DecompressionStream' in window)) throw new Error('المتصفح لا يدعم فك ضغط المصدر');
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    let html = await new Response(stream).text();
+    // The old editor stored changes only in localStorage; do not expose a browser-side passphrase as an admin control.
+    html = html.replace(/^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$/m, '// Frontend settings are local to this browser; use the authenticated WordPress publisher dashboard.');
+    html = html.replace(/function openAdminGate\(\) \{[\s\S]*?\n        \}/, 'function openAdminGate() {\n            showToast("إعدادات الناشر الدائمة متاحة من لوحة ووردبريس؛ إعدادات الواجهة هنا محلية لهذا المتصفح فقط.");\n        }');
+    document.open(); document.write(html); document.close();
+  } catch (error) {
+    status.textContent = error.message + '. حمّل حزمة إضافة ووردبريس من ملفات المشروع في المحادثة.';
+  }
+})();
 </script></body></html>
