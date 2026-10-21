@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أكسجين للصيانة والتبريد</title>
+<meta name="description" content="واجهة مؤسسة أكسجين لصيانة وغسيل وتركيب المكيفات في مكة المكرمة.">
+</head>
+<body style="font-family:system-ui,sans-serif;background:#eff6ff;color:#0f172a;padding:24px;line-height:1.9">
+<main style="max-width:700px;margin:8vh auto;background:white;border:1px solid #bae6fd;border-radius:20px;padding:28px;box-shadow:0 12px 32px #0f172a12">
+<h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة الصيانة…</p>
+<p>هذه معاينة للملف المرفوع. استضف المستودع عبر GitHub Pages أو ثبّت إضافة ووردبريس لعرض الواجهة.</p>
+</main>
+<script>
+(async()=>{const s=document.getElementById("status");try{const r=await fetch("oxygen-ac-automation/assets/oxygen-maintenance-home.html.gz.b64");if(!r.ok)throw new Error("تعذر قراءة ملف الواجهة");const b64=(await r.text()).trim();const raw=atob(b64);const bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));if(!("DecompressionStream" in window))throw new Error("المتصفح لا يدعم فك ضغط المصدر؛ استخدم إضافة ووردبريس");const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));const html=await new Response(stream).text();document.open();document.write(html);document.close()}catch(e){s.textContent=e.message+". يمكنك تنزيل حزمة الإضافة وتثبيتها في ووردبريس."}})();
+</script></body></html>
