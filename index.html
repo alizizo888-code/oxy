@@ -24,6 +24,7 @@
     html = html.replace(/^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$/m, '// Frontend settings are local to this browser; use the authenticated WordPress publisher dashboard.');
     html = html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m, '        function openAdminGate() {\n            showToast("إعدادات الناشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين.");\n        }');
     html = html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/, '');
+    html = html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u, '');
     html = html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/, 'banks: []');
     html = html.replace(/SA\d{18,24}/g, '');
     html = html.replace(/علي طلعت محمد زيدان/g, '');
