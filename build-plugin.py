@@ -15,6 +15,10 @@ page_text = gzip.decompress(base64.b64decode(page_b64_source)).decode("utf-8")
 # Never ship the original browser-only admin pass. This old UI stores its
 # controls in localStorage and is not a server-side administration surface.
 page_text = re.sub(r"^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$", "// Frontend settings are local to this browser; use the authenticated WordPress publisher dashboard.", page_text, flags=re.M)
+page_text = re.sub(r"function openAdminGate\\(\\) \\{[\\s\\S]*?\\n\\s*\\}", 'function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }', page_text, count=1)
+page_text = re.sub(r"banks:\\s*\\[[\\s\\S]*?\\n\\s*\\]", "banks: []", page_text, count=1)
+page_text = re.sub(r"SA\\d{18,24}", "", page_text)
+page_text = page_text.replace("علي طلعت محمد زيدان", "")
 old_gate = '''        function openAdminGate() {
             const pass = prompt("أدخل الرمز السري لقفل الإعدادات:");
             if (pass === ADMIN_PASS) {
@@ -31,13 +35,6 @@ page_b64 = base64.b64encode(gzip.compress(page_bytes, compresslevel=9, mtime=0))
 (asset_dir / "oxygen-maintenance-home.html").write_bytes(page_bytes)
 (asset_dir / "oxygen-maintenance-home.html.gz.b64").write_text(page_b64, encoding="ascii")
 
-# Restore the WordPress plugin from four compressed PHP chunks.
-php_parts = sorted(root.glob("source-php.gz.b64.part*"))
-if len(php_parts) != 4:
-    raise SystemExit(f"Expected 4 PHP source parts, found {len(php_parts)}")
-php_b64 = "".join(part.read_text(encoding="ascii").strip() for part in php_parts)
-php_source = gzip.decompress(base64.b64decode(php_b64))
-out = root / "oxygen-ac-automation.php"
-out.write_bytes(php_source)
-print(f"Reconstructed sanitized page: {len(page_bytes)} bytes")
-print(f"Reconstructed plugin: {out} ({len(php_source)} bytes)")
+# The current WordPress plugin source is tracked directly at oxygen-ac-automation.php.
+# Do not overwrite it with the legacy compressed source archive.
+print("Sanitized frontend rebuilt; WordPress plugin source left untouched.")
