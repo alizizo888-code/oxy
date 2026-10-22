@@ -15,7 +15,7 @@ page_text = gzip.decompress(base64.b64decode(page_b64_source)).decode("utf-8")
 # Never ship the original browser-only admin pass. This old UI stores its
 # controls in localStorage and is not a server-side administration surface.
 page_text = re.sub(r"^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$", "// Frontend settings are local to this browser; use the authenticated WordPress publisher dashboard.", page_text, flags=re.M)
-page_text = re.sub(r"function openAdminGate\(\) \{[\s\S]*?\n\s*\}", 'function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }', page_text, count=1)
+page_text = re.sub(r"^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}", '        function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }', page_text, count=1, flags=re.M)
 page_text = re.sub(r"banks:\s*\[[\s\S]*?\n\s*\]", "banks: []", page_text, count=1)
 page_text = re.sub(r"SA\\d{18,24}", "", page_text)
 page_text = page_text.replace("علي طلعت محمد زيدان", "")
