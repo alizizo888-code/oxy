@@ -453,7 +453,6 @@ def publish_queued(count: int, fallback_count: int) -> None:
     CATALOG_PATH.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (ARTICLES_DIR / "index.html").write_text(render_listing(catalog), encoding="utf-8")
     update_sitemap(catalog)
-    validate_site(catalog)
 
     archive_dir.mkdir(parents=True, exist_ok=True)
     for queue_file in consumed:
@@ -462,6 +461,7 @@ def publish_queued(count: int, fallback_count: int) -> None:
             raise FileExistsError(f"Article queue archive path already exists: {archived.name}")
         shutil.move(str(queue_file), str(archived))
 
+    validate_site(catalog)
     print(f"Published {len(new_items)} queued article(s):")
     for item in new_items:
         print(f"- {item['title']} ({SITE_URL}/articles/{item['slug']}/)")
