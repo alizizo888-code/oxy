@@ -1,0 +1,63 @@
+name: Publish OXYGEN static SEO articles
+
+on:
+  schedule:
+    - cron: "19 1 * * *"
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "عدد المقالات الجديدة في هذه الدفعة (ابدأ بـ 3)"
+        required: true
+        default: "3"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          - "5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oxygen-static-article-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ vars.OXYGEN_STATIC_PUBLISHER_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate current published pages before generating new content
+        run: python scripts/publish_static_articles.py --validate-only
+
+      - name: Generate original Arabic articles with validation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ARTICLE_COUNT: ${{ inputs.count || '3' }}
+        run: python scripts/publish_static_articles.py --count "$ARTICLE_COUNT"
+
+      - name: Commit the new articles, listing and sitemap
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add articles sitemap.xml
+          if git diff --cached --quiet; then
+            echo "No article changes to publish."
+            exit 0
+          fi
+          git commit -m "content: publish daily OXYGEN maintenance articles"
+          git push origin HEAD:main
