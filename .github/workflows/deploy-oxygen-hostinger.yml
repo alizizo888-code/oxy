@@ -2,6 +2,12 @@ name: Deploy Oxygen plugin to Hostinger
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'build-plugin.py'
+      - 'oxygen-ac-automation/**'
+      - 'oxygen-wp-theme/**'
 
 permissions:
   contents: read
@@ -34,6 +40,9 @@ jobs:
             echo "::error::FTP_SERVER_DIR must end with /wp-content/plugins/oxygen-ac-automation/ to prevent uploading to the wrong directory."
             exit 1
           }
+
+      - name: Rebuild homepage assets from canonical HTML
+        run: python3 build-plugin.py
 
       - name: Sync plugin files to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
