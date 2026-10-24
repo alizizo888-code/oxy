@@ -7,7 +7,7 @@
 <style>
 html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif}
 body{background:#eaf6ff;color:#0f172a}
-#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff,#e4f4ff 55%,#fff7ed);opacity:1;animation:oxygenSplashOut .32s ease-in .18s forwards;pointer-events:none}
+#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff,#e4f4ff 55%,#fff7ed);opacity:1;pointer-events:none}
 #oxygen-launch-splash .brand{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#203d67;animation:oxygenBrandIn .22s ease-out both}
 #oxygen-launch-splash .mark{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#0b5d89,#138bc0);box-shadow:0 12px 30px #0c5d8933;border:3px solid white}
 #oxygen-launch-splash .arabic{font-size:clamp(32px,7vw,46px);font-weight:900}
@@ -15,7 +15,7 @@ body{background:#eaf6ff;color:#0f172a}
 #oxygen-launch-splash .tagline{font-size:15px;font-weight:700;color:#345579}
 @keyframes oxygenBrandIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes oxygenSplashOut{to{opacity:0;visibility:hidden}}
-@media(prefers-reduced-motion:reduce){#oxygen-launch-splash{animation:none;opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){#oxygen-launch-splash{opacity:1;visibility:visible}}
 /* The legacy loading message is never shown, including while the source is fetched. */
 .notice,#status{display:none!important}
 #oxygen-dark-toggle,#oxygen-edit-toggle{position:fixed;left:10px;z-index:2147483000;width:48px;height:48px;border:2px solid #ffffff55;border-radius:50%;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;cursor:pointer;font:700 21px Tahoma,Arial,sans-serif}
@@ -53,7 +53,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     html=html.replace(/<video\b(?![^>]*\bmuted)[^>]*>/gi,m=>m.replace(/>$/,' muted autoplay loop playsinline>'));
     html=html.replace(/<video\b(?![^>]*\bautoplay)[^>]*>/gi,m=>m.replace(/>$/,' autoplay muted loop playsinline>'));
     html=html.replace(/<img\b(?![^>]*oxygen-motion-media)[^>]*>/gi,m=>m.replace(/>$/,' class="oxygen-motion-media">'));
-    html=html.replace(/(تتبع\s*طلبي)([\\s\\S]{0,180}?)(?:⚡|ϟ|&#9889;|&#x26A1;)/i,'$1$2<a id="oxygen-edit-toggle" href="/oxygen-admin/" aria-label="التعديلات" title="التعديلات" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#0b82c6;color:#fff;text-decoration:none;font-size:17px;margin-inline:5px">🔒</a>');
+    html=html.replace(/(تتبع\s*طلبي)([\s\S]{0,180}?)(?:⚡|ϟ|&#9889;|&#x26A1;)/i,'$1$2<a id="oxygen-edit-toggle" href="/oxygen-admin/" aria-label="التعديلات" title="التعديلات" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#0b82c6;color:#fff;text-decoration:none;font-size:17px;margin-inline:5px">🔒</a>');
     const extra='<style id="oxygen-runtime-style">body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,form,details,summary,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important}body.oxygen-dark-mode a{color:#7dd3fc}</style>';
     html=html.replace('</head>',extra+'</head>');
     html=html.replace('</body>','<script>(function(){function addDark(){var candidates=Array.from(document.querySelectorAll("body *"));var quick=candidates.find(function(e){return e.children.length===0&&e.textContent.trim()==="سريع"});var rail=quick&&quick.parentElement;for(var i=0;rail&&i<4;i++,rail=rail.parentElement){if(getComputedStyle(rail).position==="fixed"||rail.querySelector("a[href*=\"wa.me\"],a[href*=\"whatsapp\"],a[href^=\"tel:\"]"))break}if(!rail)rail=document.body;var b=document.getElementById("oxygen-dark-toggle");if(!b){b=document.createElement("button");b.id="oxygen-dark-toggle";b.type="button";b.setAttribute("aria-label","الوضع الداكن");b.title="الوضع الداكن";b.textContent="☾";b.style.cssText="width:42px;height:42px;border:2px solid #ffffff55;border-radius:50%;background:#172033;color:#fff;box-shadow:0 4px 14px #0003;display:flex;align-items:center;justify-content:center;font:700 21px Tahoma,Arial,sans-serif;cursor:pointer;margin:5px;";rail.appendChild(b);b.addEventListener("click",function(){var on=document.body.classList.toggle("oxygen-dark-mode");b.textContent=on?"☀":"☾";b.title=on?"الوضع الفاتح":"الوضع الداكن";b.setAttribute("aria-pressed",on?"true":"false")})}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",addDark,{once:true});else addDark()})();<' + '/script></body>');
