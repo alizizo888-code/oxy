@@ -1,20 +1,24 @@
 name: Publish OXYGEN static SEO articles
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/article-queue/pending/**'
+      - 'scripts/publish_static_articles.py'
+      - '.github/workflows/generate-static-seo-articles.yml'
   schedule:
     - cron: "19 1 * * *"
   workflow_dispatch:
     inputs:
       count:
-        description: "عدد المقالات الجديدة في هذه الدفعة (ابدأ بـ 3)"
+        description: "عدد المقالات في هذا التشغيل"
         required: true
-        default: "3"
+        default: "1"
         type: choice
         options:
           - "1"
-          - "2"
           - "3"
-          - "4"
           - "5"
 
 permissions:
@@ -26,9 +30,8 @@ concurrency:
 
 jobs:
   publish:
-    if: ${{ vars.OXYGEN_STATIC_PUBLISHER_ENABLED == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout main
         uses: actions/checkout@v7.0.1
@@ -38,26 +41,74 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate current published pages before generating new content
+      - name: Validate current published pages and queued drafts
         run: python scripts/publish_static_articles.py --validate-only
 
-      - name: Generate original Arabic articles with validation
+      - name: Publish reviewed queue first or generate fresh articles
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
-          ARTICLE_COUNT: ${{ inputs.count || '3' }}
-        run: python scripts/publish_static_articles.py --count "$ARTICLE_COUNT"
+          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: \${{ vars.OPENAI_MODEL }}
+          ARTICLE_COUNT: \${{ inputs.count || '1' }}
+        run: python scripts/publish_static_articles.py --publish-queued "$ARTICLE_COUNT" --count "$ARTICLE_COUNT"
 
-      - name: Commit the new articles, listing and sitemap
+      - name: Commit the new articles, catalog, queue history and sitemap
+        id: commit_articles
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add articles sitemap.xml
+          git add -A articles sitemap.xml .github/article-queue
           if git diff --cached --quiet; then
-            echo "No article changes to publish."
+            echo "No article changes to publish in this run."
+            echo "published=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "content: publish daily OXYGEN maintenance articles"
+          git commit -m "content: publish OXYGEN maintenance article batch"
           git push origin HEAD:main
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify published article and sitemap are reachable on oxygen11.com
+        if: steps.commit_articles.outputs.published == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/newest-article-url.txt
+          import json
+          from pathlib import Path
+          items = json.loads(Path("articles/catalog.json").read_text(encoding="utf-8"))
+          items.sort(key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)
+          if not items:
+              raise SystemExit("Article catalog is empty.")
+          print("https://oxygen11.com/articles/" + items[0]["slug"] + "/")
+          PY
+
+          article_url="$(cat /tmp/newest-article-url.txt)"
+          article_ok=0
+          for attempt in 1 2 3 4 5 6; do
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 25 -o "$body" -w '%{http_code}' "$article_url" || true)"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$(wc -c < "$body" | tr -d ' ')" -gt 1500 ]] && grep -qi '<title>' "$body"; then
+              echo "Published article is reachable: $article_url"
+              article_ok=1
+              rm -f "$body"
+              break
+            fi
+            echo "Waiting for static hosting sync (attempt $attempt, HTTP $status)."
+            rm -f "$body"
+            sleep 10
+          done
+          if [[ "$article_ok" -ne 1 ]]; then
+            echo "::error::The article was committed to GitHub but was not verified on the public website. Check Hostinger Git deployment/sync."
+            exit 1
+          fi
+
+          sitemap="$(mktemp)"
+          status="$(curl -sS -L --max-time 25 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
+          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
+            echo "::error::The sitemap was not verified on the public website (HTTP $status)."
+            rm -f "$sitemap"
+            exit 1
+          fi
+          echo "Sitemap is reachable."
+          rm -f "$sitemap"
