@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'oxygen-ac-automation/**'
+      - 'index.html'
       - '.github/workflows/oxygen-wp-cron.yml'
   schedule:
     - cron: "*/15 * * * *"
@@ -22,6 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: Check that the live homepage asset is deployed
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://oxygen11.com/oxygen-ac-automation/assets/oxygen-maintenance-home.html'
+          body="$(mktemp)"
+          status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
+          bytes="$(wc -c < "$body" | tr -d ' ')"
+          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || [[ "$bytes" -lt 50000 ]] || ! grep -qi '<html' "$body"; then
+            echo "::error::The live homepage asset is missing or incomplete: HTTP $status, $bytes bytes at $url"
+            head -c 250 "$body" || true
+            rm -f "$body"
+            exit 1
+          fi
+          echo "Live homepage asset is reachable: HTTP $status, $bytes bytes."
+          rm -f "$body"
+
       - name: Discover and trigger the WordPress cron endpoint
         shell: bash
         run: |
