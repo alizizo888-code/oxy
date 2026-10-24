@@ -137,6 +137,43 @@ jobs:
           check_route "/wp-json/" "REST API"
           check_route "/wp-admin/admin.php?page=oxygen-ac-automation" "Oxygen publisher"
           check_route "/oxygen-admin/" "legacy admin portal"
+      - name: Probe WordPress installation locations on both domains
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe() {
+            local base="$1"
+            local path="$2"
+            local body status ctype verdict
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 15 -H 'Cache-Control: no-cache' -o "$body" -w '%{http_code}' "${base}${path}" || true)"
+            ctype="$(file -b --mime-type "$body" 2>/dev/null || echo unknown)"
+            verdict="not-WordPress"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && head -c 2 "$body" | grep -Eq '\\{|\\[' && grep -q 'namespaces' "$body"; then
+              verdict="WordPress-REST-JSON"
+            elif grep -qiE 'name="log"|id="loginform"|wp-login.php|WordPress' "$body" && [[ "$status" =~ ^2[0-9][0-9]$ || "$status" =~ ^3[0-9][0-9]$ ]]; then
+              verdict="possible-WordPress-HTML"
+            elif grep -qi 'أكسجين للصيانة والتبريد' "$body"; then
+              verdict="static-Oxygen-page"
+            fi
+            printf '%s %-36s HTTP=%s type=%s result=%s bytes=%s\\n' "$base" "$path" "$status" "$ctype" "$verdict" "$(wc -c < "$body" | tr -d ' ')"
+            rm -f "$body"
+          }
+          paths=(
+            "/wp-json/"
+            "/?rest_route=/"
+            "/wp-login.php"
+            "/wp-admin/"
+            "/wordpress/wp-json/"
+            "/wordpress/wp-login.php"
+            "/wp/wp-json/"
+            "/wp/wp-login.php"
+            "/blog/wp-json/"
+          )
+          for base in "https://oxygen11.com" "https://googl.oxygen11.com"; do
+            for path in "${paths[@]}"; do probe "$base" "$path"; done
+          done
       - name: Discover and trigger the WordPress cron endpoint
         if: ${{ vars.OXYGEN_WP_CRON_ENABLED == 'true' }}
         shell: bash
