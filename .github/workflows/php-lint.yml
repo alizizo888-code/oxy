@@ -17,3 +17,16 @@ jobs:
       - name: Check PHP syntax
         run: |
           find oxygen-ac-automation -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check homepage integration guardrails
+        shell: bash
+        run: |
+          set -euo pipefail
+          homepage="oxygen-ac-automation/assets/oxygen-maintenance-home.html"
+          test -s "$homepage"
+          grep -q '/oxygen-admin/' "$homepage"
+          grep -q 'page-part-' "$homepage"
+          if grep -Eq 'const[[:space:]]+ADMIN_PASS[[:space:]]*=' "$homepage"; then
+            echo "::error::A hard-coded admin password was found in the homepage HTML."
+            exit 1
+          fi
