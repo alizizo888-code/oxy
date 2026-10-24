@@ -40,14 +40,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate current published pages and queued drafts
+      - name: Validate current published pages and sitemap
         run: python scripts/publish_static_articles.py --validate-only
 
       - name: Publish reviewed queue first or generate fresh articles
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
-          ARTICLE_COUNT: ${{ inputs.count || '1' }}
+          ARTICLE_COUNT: ${{ github.event.inputs.count || '1' }}
         run: python scripts/publish_static_articles.py --publish-queued "$ARTICLE_COUNT" --count "$ARTICLE_COUNT"
 
       - name: Commit the new articles, catalog, queue history and sitemap
@@ -63,93 +63,9 @@ jobs:
             echo "published=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          page_path="$(git diff --cached --name-only --diff-filter=A | grep -E '^articles/[^/]+/index\.html
-      - name: Verify published article and sitemap are reachable on oxygen11.com
-        if: steps.commit_articles.outputs.published == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          article_url="${{ steps.commit_articles.outputs.article_url }}"
-          if [[ -z "$article_url" ]]; then
-            echo "::error::No article URL was passed from the publishing step."
-            exit 1
-          fi
-          article_ok=0
-          for attempt in 1 2 3 4 5 6; do
-            body="$(mktemp)"
-            status="$(curl -sS -L --max-time 25 -o "$body" -w '%{http_code}' "$article_url" || true)"
-            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$(wc -c < "$body" | tr -d ' ')" -gt 1500 ]] && grep -qi '<title>' "$body"; then
-              echo "Published article is reachable: $article_url"
-              article_ok=1
-              rm -f "$body"
-              break
-            fi
-            echo "Waiting for static hosting sync (attempt $attempt, HTTP $status)."
-            rm -f "$body"
-            sleep 10
-          done
-          if [[ "$article_ok" -ne 1 ]]; then
-            echo "::error::The article was committed to GitHub but was not verified on the public website. Check Hostinger Git deployment/sync."
-            exit 1
-          fi
-
-          sitemap="$(mktemp)"
-          status="$(curl -sS -L --max-time 25 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
-            echo "::error::The sitemap was not verified on the public website (HTTP $status)."
-            rm -f "$sitemap"
-            exit 1
-          fi
-          echo "Sitemap is reachable."
-          rm -f "$sitemap"
- | head -n 1 || true)"
+          page_path="$(git diff --cached --name-only --diff-filter=A | grep -E '^articles/[^/]+/index[.]html$' | head -n 1 || true)"
           if [[ -z "$page_path" ]]; then
-            page_path="$(git diff --cached --name-only | grep -E '^articles/[^/]+/index\.html
-      - name: Verify published article and sitemap are reachable on oxygen11.com
-        if: steps.commit_articles.outputs.published == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY' > /tmp/newest-article-url.txt
-          import json
-          from pathlib import Path
-          items = json.loads(Path("articles/catalog.json").read_text(encoding="utf-8"))
-          items.sort(key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)
-          if not items:
-              raise SystemExit("Article catalog is empty.")
-          print("https://oxygen11.com/articles/" + items[0]["slug"] + "/")
-          PY
-
-          article_url="$(cat /tmp/newest-article-url.txt)"
-          article_ok=0
-          for attempt in 1 2 3 4 5 6; do
-            body="$(mktemp)"
-            status="$(curl -sS -L --max-time 25 -o "$body" -w '%{http_code}' "$article_url" || true)"
-            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$(wc -c < "$body" | tr -d ' ')" -gt 1500 ]] && grep -qi '<title>' "$body"; then
-              echo "Published article is reachable: $article_url"
-              article_ok=1
-              rm -f "$body"
-              break
-            fi
-            echo "Waiting for static hosting sync (attempt $attempt, HTTP $status)."
-            rm -f "$body"
-            sleep 10
-          done
-          if [[ "$article_ok" -ne 1 ]]; then
-            echo "::error::The article was committed to GitHub but was not verified on the public website. Check Hostinger Git deployment/sync."
-            exit 1
-          fi
-
-          sitemap="$(mktemp)"
-          status="$(curl -sS -L --max-time 25 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
-            echo "::error::The sitemap was not verified on the public website (HTTP $status)."
-            rm -f "$sitemap"
-            exit 1
-          fi
-          echo "Sitemap is reachable."
-          rm -f "$sitemap"
- | head -n 1 || true)"
+            page_path="$(git diff --cached --name-only | grep -E '^articles/[^/]+/index[.]html$' | head -n 1 || true)"
           fi
           if [[ -z "$page_path" ]]; then
             echo "::error::Could not determine the article page created by this run."
@@ -166,17 +82,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY' > /tmp/newest-article-url.txt
-          import json
-          from pathlib import Path
-          items = json.loads(Path("articles/catalog.json").read_text(encoding="utf-8"))
-          items.sort(key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)
-          if not items:
-              raise SystemExit("Article catalog is empty.")
-          print("https://oxygen11.com/articles/" + items[0]["slug"] + "/")
-          PY
-
-          article_url="$(cat /tmp/newest-article-url.txt)"
+          article_url="${{ steps.commit_articles.outputs.article_url }}"
+          if [[ -z "$article_url" ]]; then
+            echo "::error::No article URL was passed from the publishing step."
+            exit 1
+          fi
           article_ok=0
           for attempt in 1 2 3 4 5 6; do
             body="$(mktemp)"
