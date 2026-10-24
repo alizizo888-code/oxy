@@ -4,7 +4,20 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>أكسجين للصيانة والتبريد</title>
 <meta name="description" content="واجهة مؤسسة أكسجين لصيانة وغسيل وتركيب المكيفات في مكة المكرمة.">
-<style>body{margin:0;background:#eaf6ff;color:#0f172a;font-family:Tahoma,Arial,sans-serif}.notice{max-width:760px;margin:10vh auto;background:#fff;border:1px solid #bae6fd;border-radius:24px;padding:26px;box-shadow:0 12px 36px #0f172a10;line-height:1.9}h1{color:#0369a1}small{color:#64748b}</style>
+<style>body{margin:0;background:#eaf6ff;color:#0f172a;font-family:Tahoma,Arial,sans-serif}.notice{max-width:760px;margin:10vh auto;background:#fff;border:1px solid #bae6fd;border-radius:24px;padding:26px;box-shadow:0 12px 36px #0f172a10;line-height:1.9}h1{color:#0369a1}small{color:#64748b}
+/* Lightweight app-style brand splash: never delays the page load. */
+#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff 0%,#e4f4ff 55%,#fff7ed 100%);font-family:Tahoma,Arial,sans-serif;opacity:1;animation:oxygenSplashIn .18s ease-out both;pointer-events:none}
+#oxygen-launch-splash .brand{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#203d67;transform:translateY(0);animation:oxygenBrandIn .24s cubic-bezier(.2,.8,.2,1) both}
+#oxygen-launch-splash .mark{width:76px;height:76px;display:grid;place-items:center;border-radius:24px;background:linear-gradient(145deg,#0b5d89,#138bc0);color:#fff;box-shadow:0 12px 30px #0c5d8933;border:3px solid #fff}
+#oxygen-launch-splash .arabic{font-size:clamp(32px,7vw,48px);font-weight:900;letter-spacing:.2px}
+#oxygen-launch-splash .english{font-size:clamp(25px,5vw,35px);font-weight:900;letter-spacing:2px;direction:ltr}
+#oxygen-launch-splash .tagline{font-size:15px;font-weight:700;color:#345579}
+#oxygen-launch-splash.leaving{animation:oxygenSplashOut .28s ease-in forwards}
+@keyframes oxygenSplashIn{from{opacity:0}to{opacity:1}}
+@keyframes oxygenBrandIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes oxygenSplashOut{to{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){#oxygen-launch-splash,#oxygen-launch-splash .brand{animation:none}#oxygen-launch-splash.leaving{opacity:0;visibility:hidden;transition:opacity .12s}}
+</style>
 </head>
 <body><main class="notice"><h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة أكسجين…</p><noscript>يحتاج عرض الواجهة إلى JavaScript.</noscript></main>
 <script>
@@ -29,6 +42,9 @@
     html = html.replace(/SA\d{18,24}/g, '');
     html = html.replace(/علي طلعت محمد زيدان/g, '');
     html = html.replace(/function openAdminGate\(\) \{[\s\S]*?\n        \}/, 'function openAdminGate() {\n            showToast("إعدادات الناشر الدائمة متاحة من لوحة ووردبريس؛ إعدادات الواجهة هنا محلية لهذا المتصفح فقط.");\n        }');
+    const splash = '<div id="oxygen-launch-splash" aria-label="أكسجين"><div class="brand"><div class="mark"><svg viewBox="0 0 64 64" width="54" height="54" aria-hidden="true"><path d="M32 5 53 14v17c0 14-9 23-21 29C20 54 11 45 11 31V14Z" fill="none" stroke="white" stroke-width="3.5"/><path d="M22 40 42 20M22 23l20 20" stroke="#b9ecff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="7" fill="white"/></svg></div><div class="arabic">أكسجين</div><div class="english">OXYGEN</div><div class="tagline">لخدمات الصيانة والتبريد</div></div></div>';
+    html = html.replace(/<body([^>]*)>/i, '$&' + splash);
+    html = html.replace(/<\/body>/i, '<script>(function(){var s=document.getElementById("oxygen-launch-splash");if(!s)return;var leave=function(){s.classList.add("leaving");setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s)},320)};if(document.readyState==="complete")requestAnimationFrame(leave);else window.addEventListener("load",function(){requestAnimationFrame(leave)},{once:true});setTimeout(leave,480)})();<\/script></body>');
     document.open(); document.write(html); document.close();
   } catch (error) {
     status.textContent = error.message + '. حمّل حزمة إضافة ووردبريس من ملفات المشروع في المحادثة.';
