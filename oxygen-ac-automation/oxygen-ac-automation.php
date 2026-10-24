@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Oxygen AC Automation
  * Description: واجهة أكسجين العربية مع ناشر مقالات SEO يومي وتحديثات للمقالات القديمة.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: OXYGEN
  * Requires at least: 6.0
  * Requires PHP: 7.4
