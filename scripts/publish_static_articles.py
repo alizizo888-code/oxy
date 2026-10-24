@@ -280,7 +280,36 @@ def validate_site(catalog: list[dict[str, str]]) -> None:
             raise ValueError(f"Article page is incomplete: {slug}")
         if f"/articles/{slug}/" not in listing or f"/articles/{slug}/" not in sitemap:
             raise ValueError(f"Article listing or sitemap is missing {slug}")
-    print(f"Validated {len(catalog)} article pages, listing, sitemap and robots.txt.")
+
+    pending_dir = ROOT / ".github" / "article-queue" / "pending"
+    for queued_path in sorted(pending_dir.glob("*.json")) if pending_dir.exists() else []:
+        try:
+            queued = json.loads(queued_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Invalid queued article JSON: {queued_path.name}") from exc
+        queued_slug = str(queued.get("slug", "")).strip()
+        queued_title = str(queued.get("title", "")).strip()
+        queued_description = str(queued.get("description", "")).strip()
+        queued_keyword = str(queued.get("keyword", "")).strip()
+        queued_body = sanitize_body(str(queued.get("body_html", "")))
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", queued_slug):
+            raise ValueError(f"Invalid queued article slug: {queued_path.name}")
+        if queued_slug in seen_slugs or queued_title.casefold() in seen_titles:
+            raise ValueError(f"Queued article duplicates published content: {queued_path.name}")
+        if not queued_title or len(queued_title) < 18 or len(queued_title) > 100:
+            raise ValueError(f"Queued article title failed validation: {queued_path.name}")
+        if not 80 <= len(queued_description) <= 200:
+            raise ValueError(f"Queued article description failed validation: {queued_path.name}")
+        if len(queued_keyword) < 3 or word_count(queued_body) < 350:
+            raise ValueError(f"Queued article content failed validation: {queued_path.name}")
+        if "<h2" not in queued_body.lower() or "<p" not in queued_body.lower() or "<script" in queued_body.lower():
+            raise ValueError(f"Queued article HTML failed validation: {queued_path.name}")
+        if len(re.findall(re.escape(queued_keyword), plain_text(queued_body), flags=re.IGNORECASE)) > 8:
+            raise ValueError(f"Queued article keyword stuffing check failed: {queued_path.name}")
+        seen_slugs.add(queued_slug)
+        seen_titles.add(queued_title.casefold())
+
+    print(f"Validated {len(catalog)} published article pages and {sum(1 for _ in pending_dir.glob('*.json')) if pending_dir.exists() else 0} queued drafts, listing, sitemap and robots.txt.")
 
 
 def generate(count: int) -> None:
