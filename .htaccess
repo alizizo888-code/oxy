@@ -1,8 +1,14 @@
-# OXYGEN static customer homepage; keep WordPress available for admin and routes.
+# OXYGEN: keep the public root static, but route the WordPress subdomain to its PHP entry point.
 DirectoryIndex index.html index.php
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
+
+# googl.oxygen11.com is the WordPress administration/publisher host.
+# Do not let the static index.html on the shared webroot mask WordPress there.
+RewriteCond %{HTTP_HOST} ^googl\.oxygen11\.com$ [NC]
+RewriteRule ^$ index.php [L]
+
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 RewriteBase /
 RewriteRule ^index\.php$ - [L]
