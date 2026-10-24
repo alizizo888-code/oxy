@@ -35,7 +35,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
 <main class="notice"><p id="status">جارٍ تحميل واجهة أكسجين…</p></main>
 <script>
 (async function(){
-  const names=['01','02','03','04','05','06'];
+  const names=['01','02','03','04','05','06','07','08','09','10','11','12'];
   const installHtml=function(html){
     if(typeof html!=='string'||html.length<50000||html.toLowerCase().indexOf('<html')===-1||html.toLowerCase().indexOf('</html>')===-1)return false;
     const articleLink='<a id="oxygen-articles-link" href="/articles/" aria-label="مقالات الصيانة" style="position:fixed;right:16px;bottom:18px;z-index:2147482500;padding:10px 14px;border-radius:999px;background:#0b82c6;color:#fff;text-decoration:none;box-shadow:0 5px 16px #0003;font:700 14px Tahoma,Arial,sans-serif">مقالات الصيانة</a>';
@@ -60,11 +60,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك الضغط');
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     let html=await new Response(stream).text();
-    // Legacy fallback is only for recovery; never expose browser-side admin credentials or bank details.
-    html=html.replace(/const\s+ADMIN_PASS\s*=\s*["'][^"']*["']\s*;/g,'// Admin authentication is handled by WordPress.');
-    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="https://googl.oxygen11.com/wp-admin/admin.php?page=oxygen-ac-automation"; }');
     html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
-    html=html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u,'');
     html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
     html=html.replace(/SA\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
     if(!installHtml(html))throw new Error('ملف الواجهة المسترجع غير مكتمل');
