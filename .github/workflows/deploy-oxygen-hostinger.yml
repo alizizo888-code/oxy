@@ -1,0 +1,45 @@
+name: Deploy Oxygen plugin to Hostinger
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oxygen-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+
+      - name: Validate deployment secrets and destination
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          set -euo pipefail
+          [[ -n "$FTP_SERVER" ]] || { echo "::error::Missing repository secret FTP_SERVER"; exit 1; }
+          [[ -n "$FTP_USERNAME" ]] || { echo "::error::Missing repository secret FTP_USERNAME"; exit 1; }
+          [[ -n "$FTP_PASSWORD" ]] || { echo "::error::Missing repository secret FTP_PASSWORD"; exit 1; }
+          [[ "$FTP_SERVER_DIR" == */wp-content/plugins/oxygen-ac-automation/ ]] || {
+            echo "::error::FTP_SERVER_DIR must end with /wp-content/plugins/oxygen-ac-automation/ to prevent uploading to the wrong directory."
+            exit 1
+          }
+
+      - name: Sync plugin files to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          local-dir: ./oxygen-ac-automation/
