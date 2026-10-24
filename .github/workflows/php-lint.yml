@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q '^Theme Name: Oxygen WordPress oxygen-wp-theme/style.css
+          grep -Fq 'Theme Name: Oxygen WordPress' oxygen-wp-theme/style.css
           grep -q "WP_PLUGIN_DIR . '/oxygen-ac-automation/assets/oxygen-maintenance-home.html'" oxygen-wp-theme/front-page.php
           if grep -Eq 'function openAdminGate.*window.location.href|googl.oxygen11.com/wp-admin/admin.php?page=oxygen-ac-automation' oxygen-wp-theme/front-page.php; then
             echo "::error::The theme must preserve the original in-page settings gate."
