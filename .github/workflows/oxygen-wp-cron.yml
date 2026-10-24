@@ -150,7 +150,7 @@ jobs:
             status="$(curl -sS -L --max-time 15 -H 'Cache-Control: no-cache' -o "$body" -w '%{http_code}' "${base}${path}" || true)"
             ctype="$(file -b --mime-type "$body" 2>/dev/null || echo unknown)"
             verdict="not-WordPress"
-            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && head -c 2 "$body" | grep -Eq '\\{|\\[' && grep -q 'namespaces' "$body"; then
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && { head -c 1 "$body" | grep -Fq '{' || head -c 1 "$body" | grep -Fq '['; } && grep -Fq '"namespaces"' "$body"; then
               verdict="WordPress-REST-JSON"
             elif grep -qiE 'name="log"|id="loginform"|wp-login.php|WordPress' "$body" && [[ "$status" =~ ^2[0-9][0-9]$ || "$status" =~ ^3[0-9][0-9]$ ]]; then
               verdict="possible-WordPress-HTML"
