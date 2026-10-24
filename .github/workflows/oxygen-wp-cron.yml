@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: Checkout repository for article and sitemap smoke checks
+        uses: actions/checkout@v7.0.1
+
       - name: Check that the live homepage uses the new loader
         shell: bash
         run: |
