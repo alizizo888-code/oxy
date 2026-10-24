@@ -2,6 +2,12 @@ name: Deploy Oxygen public homepage
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'build-plugin.py'
+      - 'oxygen-ac-automation/assets/**'
 
 permissions:
   contents: read
@@ -34,6 +40,9 @@ jobs:
             echo "::error::FTP_ROOT_DIR must end with /public_html/ for the oxygen11.com public site root."
             exit 1
           }
+
+      - name: Rebuild homepage and fallback chunks
+        run: python3 build-plugin.py
 
       - name: Assemble minimal public-site payload
         shell: bash
