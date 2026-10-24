@@ -4,7 +4,8 @@
 
 ## مكونات المستودع
 
-- `index.html`: مدخل الواجهة العامة العربية، ويُقدّم قبل `index.php` عبر `.htaccess` حتى تظهر واجهة أكسجين بدل صفحة WordPress الافتراضية.
+- `oxygen-wp-theme/`: قالب WordPress فعلي لواجهة أكسجين والصفحات والمقالات.
+- `index.html`: نسخة احتياطية ثابتة للواجهة فقط عند عدم وجود تثبيت WordPress في جذر الاستضافة؛ يجب أن تكون أولوية WordPress أعلى عند وجوده.
 - `articles/`: صفحات المقالات الثابتة وقائمة المقالات.
 - `scripts/publish_static_articles.py`: مولد/ناشر المقالات الثابتة مع التحقق من الجودة ومنع تكرار العناوين والكلمات المفتاحية.
 - `.github/workflows/generate-static-seo-articles.yml`: نشر مقال واحد يوميًا الساعة 04:19 بتوقيت مصر، مع تشغيل يدوي لدفعات 1 أو 3 أو 5 مقالات.
@@ -68,3 +69,14 @@ python build-plugin.py
 توجد حاليًا **12 مقالة مُراجعة** في `.github/article-queue/pending/` تُنشر بالتتابع، مقالًا واحدًا في كل تشغيل يومي، قبل محاولة توليد مقال جديد. بعد نفاد هذه القائمة، يحتاج الاستمرار التلقائي إلى `OPENAI_API_KEY` في **Settings → Secrets and variables → Actions** داخل مستودع GitHub. هذا السر غير موجود/غير متاح في إعداد التشغيل الذي ظهر في سجل التشغيل الفاشل؛ من دونه لا يختلق النظام مقالًا أو ينشر قالبًا عامًا، بل يتوقف برسالة واضحة. لا تضع مفتاح API في الملفات أو داخل المحادثات.
 
 على الاستضافة الرئيسية، يضبط `.htaccess` الأولوية لـ `index.html` مع الحفاظ على قواعد WordPress الأساسية. رابط إدارة ووردبريس المستخدم في واجهة العميل هو `https://googl.oxygen11.com/oxygen-admin/`. يجب تأكيد نتيجة فحص الموقع بعد مزامنة الملفات من GitHub إلى Hostinger؛ نجاح فحص GitHub وحده لا يثبت أن جميع الملفات قد تم نشرها على الخادم.
+
+
+## تحويل التشغيل إلى WordPress
+
+أضيف قالب WordPress باسم **Oxygen WordPress** داخل `oxygen-wp-theme/`. القالب يعرض واجهة أكسجين نفسها من داخل WordPress، ويستخدم تسجيل الدخول وصلاحيات WordPress للوصول إلى لوحة الناشر. صفحات WordPress والمقالات العادية تُعرض بقوالب القالب بدل صفحات PHP مستقلة.
+
+**هذه الملفات ليست نسخة من WordPress Core.** لا يمكن إنشاء `/wp-admin/` أو `/wp-login.php` بمجرد إضافة قالب أو تعديل `.htaccess`: يجب وجود تثبيت WordPress حقيقي في مجلد جذر النطاق، مع `wp-admin/`, `wp-includes/`, `wp-login.php`, `wp-load.php`, `wp-blog-header.php`, `index.php` وقاعدة بياناته وملف `wp-config.php`. استخدم أداة Hostinger Auto Installer للموقع/النطاق الذي تريد تحويله، ولا ترفع ملفات نواة مجهولة ولا تستبدل قاعدة البيانات الحالية.
+
+يُعدّل `.htaccess` الآن أولوية `DirectoryIndex` إلى `index.php` ثم `index.html`، حتى يتقدم WordPress على النسخة الثابتة عند وجود تثبيت فعلي. إذا كان `googl.oxygen11.com` يستخدم مجلدًا مستقلًا، فيجب أن يحتوي مجلد ذلك النطاق على تثبيت WordPress نفسه أو أن يُضبط Document Root على تثبيت قائم.
+
+سير عمل **Deploy Oxygen plugin to Hostinger** يرفع الإضافة إلى `wp-content/plugins/oxygen-ac-automation/` والقالب إلى `wp-content/themes/oxygen-wp-theme/` في تثبيت WordPress نفسه. يرفع الملفات فقط ولا يثبت WordPress Core أو ينشئ قاعدة بيانات أو يُصلح مسار Document Root تلقائيًا.
