@@ -61,12 +61,12 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     let html=await new Response(stream).text();
     // Legacy fallback is only for recovery; never expose browser-side admin credentials or bank details.
-    html=html.replace(/const\\s+ADMIN_PASS\\s*=\\s*["'][^"']*["']\\s*;/g,'// Admin authentication is handled by WordPress.');
-    html=html.replace(/^[ \\t]{8}function openAdminGate\\(\\) \\{[\\s\\S]*?^[ \\t]{8}\\}/m,'        function openAdminGate() { window.location.href="https://googl.oxygen11.com/oxygen-admin/"; }');
-    html=html.replace(/\\s*<button onclick="openAdminGate\\(\\)"[^>]*>[\\s\\S]*?<\\/button>/,'');
-    html=html.replace(/<!--\\s*5\\. لوحة الإعدادات الشاملة[\\s\\S]*?(?=<!-- إشعار عائم -->)/u,'');
-    html=html.replace(/banks:\\s*\\[[\\s\\S]*?\\n\\s*\\]/,'banks: []');
-    html=html.replace(/SA\\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
+    html=html.replace(/const\s+ADMIN_PASS\s*=\s*["'][^"']*["']\s*;/g,'// Admin authentication is handled by WordPress.');
+    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="https://googl.oxygen11.com/oxygen-admin/"; }');
+    html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
+    html=html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u,'');
+    html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
+    html=html.replace(/SA\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
     if(!installHtml(html))throw new Error('ملف الواجهة المسترجع غير مكتمل');
   }catch(e){
     const splash=document.getElementById('oxygen-launch-splash');
