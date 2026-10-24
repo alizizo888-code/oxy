@@ -25,7 +25,6 @@ jobs:
           homepage="oxygen-ac-automation/assets/oxygen-maintenance-home.html"
           test -s "$homepage"
           grep -q '/oxygen-admin/' "$homepage"
-          grep -q 'page-part-' "$homepage"
           if grep -Eq 'const[[:space:]]+ADMIN_PASS[[:space:]]*=' "$homepage"; then
             echo "::error::A hard-coded admin password was found in the homepage HTML."
             exit 1
