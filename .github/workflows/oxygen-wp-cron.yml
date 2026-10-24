@@ -1,0 +1,40 @@
+name: Trigger Oxygen WordPress cron
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oxygen-wp-cron
+  cancel-in-progress: false
+
+jobs:
+  trigger-cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger WP-Cron and reject rewritten homepage responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://googl.oxygen11.com/wp-cron.php?doing_wp_cron=1'
+          status="$(curl -sS -L --max-time 30 -o /tmp/wp-cron-response.txt -w '%{http_code}' "$url")"
+          body_bytes="$(wc -c < /tmp/wp-cron-response.txt | tr -d ' ')"
+
+          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::error::WP-Cron returned HTTP $status"
+            head -c 500 /tmp/wp-cron-response.txt || true
+            exit 1
+          fi
+
+          if [[ "$body_bytes" -gt 8192 ]] || grep -qiE '<!doctype html|<html([[:space:]>])' /tmp/wp-cron-response.txt; then
+            echo "::error::WP-Cron returned page-like HTML; check Hostinger routing/cache rules. This run is not counted as a verified cron trigger."
+            head -c 500 /tmp/wp-cron-response.txt || true
+            exit 1
+          fi
+
+          echo "WP-Cron endpoint returned HTTP $status with $body_bytes response bytes."
