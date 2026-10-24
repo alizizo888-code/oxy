@@ -44,6 +44,7 @@ final class Oxygen_AC_Automation {
   $cards=[
    ['الإعدادات والناشر','إدارة المقالات والجدولة والكلمات المفتاحية',admin_url('admin.php?page=oxygen-ac-automation'),'dashicons-edit-page'],
    ['إعدادات المؤسسة','تعديل بيانات الموقع والخدمات',admin_url('admin.php?page=oxygen-business-control'),'dashicons-admin-generic'],
+   ['تعديلات وطرق الدفع','إدارة طرق الدفع المخفية وإعدادات المؤسسة',admin_url('admin.php?page=oxygen-business-control#payment-settings'),'dashicons-lock'],
    ['المقالات','إضافة المقالات وتحريرها ومراجعة المسودات',admin_url('edit.php?post_type=post'),'dashicons-media-text'],
    ['الوسائط','رفع الصور والفيديوهات وإدارة المعرض',admin_url('upload.php'),'dashicons-format-gallery'],
    ['الصفحات والواجهة','تحرير الصفحات والقوائم ومحتوى الموقع',admin_url('edit.php?post_type=page'),'dashicons-admin-page'],
