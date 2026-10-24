@@ -11,6 +11,7 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 import urllib.error
 import urllib.request
@@ -345,19 +346,116 @@ def generate(count: int) -> None:
         print(f"- {item['title']} ({SITE_URL}/articles/{item['slug']}/)")
 
 
+def publish_queued(count: int, fallback_count: int) -> None:
+    """Publish already-reviewed article drafts first; use OpenAI after the queue is empty."""
+    pending_dir = ROOT / ".github" / "article-queue" / "pending"
+    archive_dir = ROOT / ".github" / "article-queue" / "archive"
+    queue_files = sorted(pending_dir.glob("*.json")) if pending_dir.exists() else []
+    if not queue_files:
+        if os.getenv("OPENAI_API_KEY", "").strip():
+            print("Curated queue is empty; using OpenAI to generate the next validated batch.")
+            generate(fallback_count)
+        else:
+            print("No queued articles remain and OPENAI_API_KEY is not configured. No article was published in this run.")
+        return
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    catalog = load_catalog()
+    existing_slugs = {str(x.get("slug", "")) for x in catalog}
+    existing_titles = {str(x.get("title", "")).strip().casefold() for x in catalog}
+    new_items: list[dict[str, str]] = []
+    consumed: list[Path] = []
+
+    for queue_file in queue_files[:count]:
+        try:
+            raw = json.loads(queue_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Could not read queued article {queue_file.name}: {exc}") from exc
+        slug = str(raw.get("slug", "")).strip()
+        title = str(raw.get("title", "")).strip()
+        description = str(raw.get("description", "")).strip()
+        keyword = str(raw.get("keyword", "")).strip()
+        category = str(raw.get("category", "دليل صيانة")).strip()
+        body = sanitize_body(str(raw.get("body_html", "")))
+        words = word_count(body)
+
+        if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
+            raise ValueError(f"Queued article has invalid slug: {queue_file.name}")
+        if slug in existing_slugs:
+            raise ValueError(f"Queued article slug already published; remove or rename it: {slug}")
+        if not title or len(title) < 18 or len(title) > 100:
+            raise ValueError(f"Queued article title failed validation: {queue_file.name}")
+        if title.casefold() in existing_titles:
+            raise ValueError(f"Duplicate queued title refused: {title}")
+        if len(description) < 80 or len(description) > 200:
+            raise ValueError(f"Queued article meta description must be 80–200 chars: {queue_file.name}")
+        if len(keyword) < 3 or words < 350:
+            raise ValueError(f"Queued article content/keyword failed validation: {queue_file.name} ({words} words)")
+        if "<h2" not in body.lower() or "<p" not in body.lower() or "<script" in body.lower():
+            raise ValueError(f"Queued article HTML structure/safety validation failed: {queue_file.name}")
+        if len(re.findall(re.escape(keyword), plain_text(body), flags=re.IGNORECASE)) > 8:
+            raise ValueError(f"Keyword stuffing guard rejected queued article: {slug}")
+        if ARTICLES_DIR.joinpath(slug, "index.html").exists():
+            raise ValueError(f"Article path already exists; refusing to overwrite: {slug}")
+
+        item = {
+            "slug": slug,
+            "title": title,
+            "description": description,
+            "keyword": keyword,
+            "category": category,
+            "published_at": today,
+            "body_html": body,
+        }
+        page_path = ARTICLES_DIR / slug / "index.html"
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(article_html(item), encoding="utf-8")
+        new_items.append(item)
+        existing_slugs.add(slug)
+        existing_titles.add(title.casefold())
+        consumed.append(queue_file)
+
+    if not new_items:
+        print("No queued articles were eligible for publication.")
+        return
+
+    catalog.extend(new_items)
+    catalog.sort(key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)
+    CATALOG_PATH.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    (ARTICLES_DIR / "index.html").write_text(render_listing(catalog), encoding="utf-8")
+    update_sitemap(catalog)
+    validate_site(catalog)
+
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    for queue_file in consumed:
+        archived = archive_dir / queue_file.name
+        if archived.exists():
+            raise FileExistsError(f"Article queue archive path already exists: {archived.name}")
+        shutil.move(str(queue_file), str(archived))
+
+    print(f"Published {len(new_items)} queued article(s):")
+    for item in new_items:
+        print(f"- {item['title']} ({SITE_URL}/articles/{item['slug']}/)")
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--count", type=int, default=3, help="Number of articles to generate in this run (1–5).")
+    parser.add_argument("--count", type=int, default=1, help="Number of articles to generate with OpenAI when the queue is empty (1–5).")
+    parser.add_argument("--publish-queued", type=int, default=0, help="Publish this many reviewed articles from the repository queue first (0–5).")
     parser.add_argument("--validate-only", action="store_true", help="Validate current static content without calling OpenAI.")
     args = parser.parse_args()
     if args.count < 1 or args.count > 5:
         parser.error("--count must be between 1 and 5")
+    if args.publish_queued < 0 or args.publish_queued > 5:
+        parser.error("--publish-queued must be between 0 and 5")
     try:
         catalog = load_catalog()
         if args.validate_only:
             validate_site(catalog)
             return 0
-        generate(args.count)
+        if args.publish_queued:
+            publish_queued(args.publish_queued, args.count)
+        else:
+            generate(args.count)
         return 0
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
