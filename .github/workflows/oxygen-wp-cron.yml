@@ -10,6 +10,7 @@ on:
       - 'sitemap.xml'
       - 'robots.txt'
       - '.github/workflows/oxygen-wp-cron.yml'
+      - '.htaccess'
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
