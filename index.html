@@ -3,79 +3,65 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>أكسجين للصيانة والتبريد</title>
-<meta name="description" content="واجهة مؤسسة أكسجين لصيانة وغسيل وتركيب المكيفات في مكة المكرمة.">
-<style>body{margin:0;background:#eaf6ff;color:#0f172a;font-family:Tahoma,Arial,sans-serif}.notice{display:none!important;max-width:760px;margin:10vh auto;background:#fff;border:1px solid #bae6fd;border-radius:24px;padding:26px;box-shadow:0 12px 36px #0f172a10;line-height:1.9}h1{color:#0369a1}small{color:#64748b}
-/* Lightweight app-style brand splash: never delays the page load. */
-#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff 0%,#e4f4ff 55%,#fff7ed 100%);font-family:Tahoma,Arial,sans-serif;opacity:1;animation:oxygenSplashAuto .52s ease-in-out .12s forwards;pointer-events:none}
-#oxygen-launch-splash .brand{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#203d67;transform:translateY(0);animation:oxygenBrandIn .24s cubic-bezier(.2,.8,.2,1) both}
-#oxygen-launch-splash .mark{width:76px;height:76px;display:grid;place-items:center;border-radius:24px;background:linear-gradient(145deg,#0b5d89,#138bc0);color:#fff;box-shadow:0 12px 30px #0c5d8933;border:3px solid #fff}
-#oxygen-launch-splash .arabic{font-size:clamp(32px,7vw,48px);font-weight:900;letter-spacing:.2px}
-#oxygen-launch-splash .english{font-size:clamp(25px,5vw,35px);font-weight:900;letter-spacing:2px;direction:ltr}
+<meta name="description" content="واجهة مؤسسة أكسجين للصيانة والتبريد.">
+<style>
+html,body{margin:0;min-height:100%;font-family:Tahoma,Arial,sans-serif}
+body{background:#eaf6ff;color:#0f172a}
+#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff,#e4f4ff 55%,#fff7ed);opacity:1;animation:oxygenSplashOut .32s ease-in .18s forwards;pointer-events:none}
+#oxygen-launch-splash .brand{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#203d67;animation:oxygenBrandIn .22s ease-out both}
+#oxygen-launch-splash .mark{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#0b5d89,#138bc0);box-shadow:0 12px 30px #0c5d8933;border:3px solid white}
+#oxygen-launch-splash .arabic{font-size:clamp(32px,7vw,46px);font-weight:900}
+#oxygen-launch-splash .english{font-size:clamp(24px,5vw,34px);font-weight:900;letter-spacing:2px;direction:ltr}
 #oxygen-launch-splash .tagline{font-size:15px;font-weight:700;color:#345579}
-#oxygen-launch-splash.leaving{animation:oxygenSplashOut .28s ease-in forwards}
-@keyframes oxygenSplashIn{from{opacity:0}to{opacity:1}}
 @keyframes oxygenBrandIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes oxygenSplashOut{to{opacity:0;visibility:hidden}}@keyframes oxygenSplashAuto{0%,58%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}
-@media(prefers-reduced-motion:reduce){#oxygen-launch-splash,#oxygen-launch-splash .brand{animation:none}#oxygen-launch-splash.leaving{opacity:0;visibility:hidden;transition:opacity .12s}}
-/* Dark mode control added to the existing floating contact rail. */
-#oxygen-dark-toggle{position:fixed;left:10px;bottom:205px;z-index:2147483000;width:52px;height:52px;border:2px solid #ffffff55;border-radius:50%;background:#172033;color:#fff;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;font:700 12px Tahoma,Arial,sans-serif;cursor:pointer}
+@keyframes oxygenSplashOut{to{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){#oxygen-launch-splash{animation:none;opacity:0;visibility:hidden}}
+/* The legacy loading message is never shown, including while the source is fetched. */
+.notice,#status{display:none!important}
+#oxygen-dark-toggle,#oxygen-edit-toggle{position:fixed;left:10px;z-index:2147483000;width:48px;height:48px;border:2px solid #ffffff55;border-radius:50%;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;cursor:pointer;font:700 21px Tahoma,Arial,sans-serif}
+#oxygen-dark-toggle{bottom:205px;background:#172033;color:white}
+#oxygen-edit-toggle{bottom:260px;background:#0b82c6;color:white;text-decoration:none}
 body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}
-body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,div,form,details,summary,li){--oxygen-dark-bg:#182438;--oxygen-dark-text:#e5edf8}
 body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,form,details,summary,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}
 body.oxygen-dark-mode :is(h1,h2,h3,h4,p,span,label,strong,small,li,a,button){color:inherit}
 body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important;border-color:#475569!important}
 body.oxygen-dark-mode a{color:#7dd3fc}
-#oxygen-launch-splash{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5f9ff 0%,#e4f4ff 55%,#fff7ed 100%);font-family:Tahoma,Arial,sans-serif;opacity:1;animation:oxygenSplashAuto .52s ease-in-out .12s forwards;pointer-events:none}
-#oxygen-launch-splash .brand{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;color:#203d67;animation:oxygenBrandIn .24s cubic-bezier(.2,.8,.2,1) both}
-#oxygen-launch-splash .mark{width:76px;height:76px;display:grid;place-items:center;border-radius:24px;background:linear-gradient(145deg,#0b5d89,#138bc0);box-shadow:0 12px 30px #0c5d8933;border:3px solid #fff}
-#oxygen-launch-splash .arabic{font-size:clamp(32px,7vw,48px);font-weight:900}
-#oxygen-launch-splash .english{font-size:clamp(25px,5vw,35px);font-weight:900;letter-spacing:2px;direction:ltr}
-#oxygen-launch-splash .tagline{font-size:15px;font-weight:700;color:#345579}
-@keyframes oxygenBrandIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes oxygenSplashAuto{0%,58%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}
-@media(prefers-reduced-motion:reduce){#oxygen-launch-splash{animation:none;opacity:0;visibility:hidden}}
+.oxygen-motion-media{transition:transform .25s ease,filter .25s ease}
+.oxygen-motion-media:hover{transform:scale(1.025);filter:saturate(1.08)}
 </style>
 </head>
-<body><div id="oxygen-launch-splash" aria-label="أكسجين"><div class="brand"><div class="mark"><svg viewBox="0 0 64 64" width="54" height="54" aria-hidden="true"><path d="M32 5 53 14v17c0 14-9 23-21 29C20 54 11 45 11 31V14Z" fill="none" stroke="white" stroke-width="3.5"/><path d="M22 40 42 20M22 23l20 20" stroke="#b9ecff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="7" fill="white"/></svg></div><div class="arabic">أكسجين</div><div class="english">OXYGEN</div><div class="tagline">لخدمات الصيانة والتبريد</div></div></div><main class="notice"><h1>أكسجين للصيانة والتبريد</h1><p id="status">جارٍ تحميل واجهة أكسجين…</p><noscript>يحتاج عرض الواجهة إلى JavaScript.</noscript></main>
+<body>
+<div id="oxygen-launch-splash" aria-label="أكسجين"><div class="brand"><div class="mark"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true"><path d="M32 5 53 14v17c0 14-9 23-21 29C20 54 11 45 11 31V14Z" fill="none" stroke="white" stroke-width="3.5"/><path d="M22 40 42 20M22 23l20 20" stroke="#b9ecff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="7" fill="white"/></svg></div><div class="arabic">أكسجين</div><div class="english">OXYGEN</div><div class="tagline">لخدمات الصيانة والتبريد</div></div></div>
+<main class="notice"><p id="status">جارٍ تحميل واجهة أكسجين…</p></main>
 <script>
-(async () => {
-  const status = document.getElementById('status');
-  try {
-    const names = ['01','02','03','04','05','06'];
-    const responses = await Promise.all(names.map(n => fetch('oxygen-ac-automation/assets/page-part-' + n + '.txt')));
-    if (responses.some(r => !r.ok)) throw new Error('ملفات الواجهة غير مكتملة في المستودع');
-    const encoded = (await Promise.all(responses.map(r => r.text()))).join('').trim();
-    const raw = atob(encoded);
-    const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
-    if (!('DecompressionStream' in window)) throw new Error('المتصفح لا يدعم فك ضغط المصدر');
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    let html = await new Response(stream).text();
-    // The old editor stored changes only in localStorage; do not expose a browser-side passphrase as an admin control.
-    html = html.replace(/^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$/m, '// Frontend settings are local to this browser; use the authenticated WordPress publisher dashboard.');
-    html = html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m, '        function openAdminGate() {\n            showToast("إعدادات الناشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين.");\n        }');
-    html = html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/, '');
-    html = html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u, '');
-    html = html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/, 'banks: []');
-    html = html.replace(/SA\d{18,24}/g, '');
-    html = html.replace(/علي طلعت محمد زيدان/g, '');
-    html = html.replace(/function openAdminGate\(\) \{[\s\S]*?\n        \}/, 'function openAdminGate() {\n            showToast("إعدادات الناشر الدائمة متاحة من لوحة ووردبريس؛ إعدادات الواجهة هنا محلية لهذا المتصفح فقط.");\n        }');
-    const splash = '<div id="oxygen-launch-splash" aria-label="أكسجين"><div class="brand"><div class="mark"><svg viewBox="0 0 64 64" width="54" height="54" aria-hidden="true"><path d="M32 5 53 14v17c0 14-9 23-21 29C20 54 11 45 11 31V14Z" fill="none" stroke="white" stroke-width="3.5"/><path d="M22 40 42 20M22 23l20 20" stroke="#b9ecff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="7" fill="white"/></svg></div><div class="arabic">أكسجين</div><div class="english">OXYGEN</div><div class="tagline">لخدمات الصيانة والتبريد</div></div></div>';
-    html = html.replace(/<body([^>]*)>/i, '$&' + splash);
-    const darkCss = '<style id="oxygen-dark-style">body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,div,form,details,summary,li,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}body.oxygen-dark-mode :is(h1,h2,h3,h4,p,span,label,strong,small,li,a,button){color:inherit}body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important;border-color:#475569!important}body.oxygen-dark-mode a{color:#7dd3fc}</style>';
-    html = html.split('</head>').join(darkCss + '</head>');
-    const darkButton = '<button id="oxygen-dark-toggle" type="button" aria-label="تبديل الوضع الداكن" title="الوضع الداكن" style="position:fixed;left:10px;bottom:205px;z-index:2147483000;width:52px;height:52px;border:2px solid #ffffff55;border-radius:50%;background:#172033;color:#fff;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;font:700 22px Tahoma,Arial,sans-serif;cursor:pointer">☾</button>';
-    html = html.replace(/<body([^>]*)>/i, '$&' + darkButton);
-    html = html.split('</body>').join('<script>(function(){var b=document.getElementById("oxygen-dark-toggle");if(!b)return;b.addEventListener("click",function(){var on=document.body.classList.toggle("oxygen-dark-mode");b.textContent=on?"☀":"☾";b.title=on?"الوضع الفاتح":"الوضع الداكن";b.setAttribute("aria-pressed",on?"true":"false")})})();<\\/script></body>');
-    document.open(); document.write(html); document.close();' + splash);
-    const darkCss = '<style id="oxygen-dark-style">body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,div,form,details,summary,li,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}body.oxygen-dark-mode :is(h1,h2,h3,h4,p,span,label,strong,small,li,a,button){color:inherit}body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important;border-color:#475569!important}body.oxygen-dark-mode a{color:#7dd3fc}</style>';
-    html = html.replace(/<\/head>/i, darkCss + '</head>');
-    const darkButton = '<button id="oxygen-dark-toggle" type="button" aria-label="تبديل الوضع الداكن" title="الوضع الداكن" style="position:fixed;left:10px;bottom:205px;z-index:2147483000;width:52px;height:52px;border:2px solid #ffffff55;border-radius:50%;background:#172033;color:#fff;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;font:700 22px Tahoma,Arial,sans-serif;cursor:pointer">☾</button>';
-    html = html.replace(/<body([^>]*)>/i, '    html = html.replace(/<body([^>]*)>/i, '$&' + splash);
-    document.open(); document.write(html); document.close();' + darkButton);
-    html = html.replace(/<\/body>/i, '<script>(function(){var b=document.getElementById("oxygen-dark-toggle");if(!b)return;b.addEventListener("click",function(){var on=document.body.classList.toggle("oxygen-dark-mode");b.textContent=on?"☀":"☾";b.title=on?"الوضع الفاتح":"الوضع الداكن";b.setAttribute("aria-pressed",on?"true":"false")})})();<\/script></body>');
-    document.open(); document.write(html); document.close();
-  } catch (error) {
-    status.textContent = error.message + '. حمّل حزمة إضافة ووردبريس من ملفات المشروع في المحادثة.';
+(async function(){
+  const names=['01','02','03','04','05','06'];
+  try{
+    const responses=await Promise.all(names.map(n=>fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt',{cache:'no-store'})));
+    if(responses.some(r=>!r.ok)) throw new Error('ملفات الواجهة غير مكتملة');
+    const encoded=(await Promise.all(responses.map(r=>r.text()))).join('').trim();
+    const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
+    if(!('DecompressionStream' in window)) throw new Error('المتصفح لا يدعم فك الضغط');
+    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    let html=await new Response(stream).text();
+    html=html.replace(/^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$/m,'// Use the authenticated WordPress administration page.');
+    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="/oxygen-admin/"; }');
+    html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
+    html=html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u,'');
+    html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
+    html=html.replace(/SA\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
+    html=html.replace(/<video\b(?![^>]*\bmuted)[^>]*>/gi,m=>m.replace(/>$/,' muted autoplay loop playsinline>'));
+    html=html.replace(/<video\b(?![^>]*\bautoplay)[^>]*>/gi,m=>m.replace(/>$/,' autoplay muted loop playsinline>'));
+    html=html.replace(/<img\b(?![^>]*oxygen-motion-media)[^>]*>/gi,m=>m.replace(/>$/,' class="oxygen-motion-media">'));
+    html=html.replace(/<body([^>]*)>/i,'$&<a id="oxygen-edit-toggle" href="/oxygen-admin/" aria-label="التعديلات" title="التعديلات">🔒</a><button id="oxygen-dark-toggle" type="button" aria-label="الوضع الداكن" title="الوضع الداكن">☾</button>');
+    const extra='<style id="oxygen-runtime-style">body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,form,details,summary,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important}body.oxygen-dark-mode a{color:#7dd3fc}</style>';
+    html=html.replace('</head>',extra+'</head>');
+    html=html.replace('</body>','<script>(function(){var b=document.getElementById("oxygen-dark-toggle");if(b)b.addEventListener("click",function(){var on=document.body.classList.toggle("oxygen-dark-mode");b.textContent=on?"☀":"☾";b.title=on?"الوضع الفاتح":"الوضع الداكن";b.setAttribute("aria-pressed",on?"true":"false")});})();<\\/script></body>');
+    document.open();document.write(html);document.close();
+  }catch(e){
+    const splash=document.getElementById('oxygen-launch-splash');if(splash)splash.style.display='none';
+    const n=document.querySelector('.notice');if(n){n.style.display='block';n.textContent='تعذر تحميل الواجهة: '+e.message;}
   }
 })();
-</script></body></html>
+</script>
+</body></html>
