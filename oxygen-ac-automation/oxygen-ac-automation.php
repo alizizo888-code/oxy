@@ -113,7 +113,7 @@ final class Oxygen_AC_Automation {
  private function openai_refresh_section($post,$keyword,$s){
   $apiKey=trim((string)($s['openai_key']??''));
   if($apiKey==='')return '';
-  $existing=mb_substr(wp_strip_all_tags($post->post_content),0,9000);
+  $plain=wp_strip_all_tags($post->post_content);$existing=function_exists('mb_substr')?mb_substr($plain,0,9000):substr($plain,0,9000);
   $prompt="راجع المقال الحالي وأضف له قسمًا تكميليًا أصيلًا باللغة العربية، لا تعِد كتابة المقال كاملًا ولا تكرر الفقرات الموجودة.\\nالعنوان: {$post->post_title}\\nالكلمة المستهدفة: {$keyword}\\nالموقع المستهدف: ".($s['city']??'مكة المكرمة')."\\nالمحتوى الحالي: {$existing}\\nاكتب HTML فقط، 180 إلى 300 كلمة، بعنوان H2 واحد أو اثنين وفقرات/H3 عند الحاجة. يجب أن تضيف خطوات تشخيص آمنة أو قائمة تحضير أو أسئلة عملية جديدة مرتبطة بما في المقال. لا تضف تاريخًا مصطنعًا أو حشو كلمات مفتاحية أو عبارة (عبارات البحث ذات الصلة). لا تخترع أسعارًا أو ضمانات أو تفاصيل محلية أو مواصفات. حافظ على نصائح السلامة: أعمال الكهرباء ودائرة التبريد للفني المؤهل. لا تستخدم H1 أو Markdown أو روابط خارجية.";
   $response=wp_remote_post('https://api.openai.com/v1/chat/completions',['timeout'=>30,'headers'=>['Authorization'=>'Bearer '.$apiKey,'Content-Type'=>'application/json'],'body'=>wp_json_encode(['model'=>sanitize_text_field($s['openai_model']??'gpt-4o-mini'),'messages'=>[['role'=>'system','content'=>'أنت محرر تقني عربي يراجع المقالات الموجودة دون حشو أو تكرار، ويضيف إرشادات مفيدة وسليمة فقط.'],['role'=>'user','content'=>$prompt]],'temperature'=>0.55,'max_tokens'=>900])]);
   if(is_wp_error($response))return '';
