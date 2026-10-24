@@ -35,7 +35,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
 <main class="notice"><p id="status">جارٍ تحميل واجهة أكسجين…</p></main>
 <script>
 (async function(){
-  const names=['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const names=Array.from({length:20},(_,i)=>String(i+1).padStart(2,'0'));
   const installHtml=function(html){
     if(typeof html!=='string'||html.length<50000||html.toLowerCase().indexOf('<html')===-1||html.toLowerCase().indexOf('</html>')===-1)return false;
     const articleLink='<a id="oxygen-articles-link" href="/articles/" aria-label="مقالات الصيانة" style="position:fixed;right:16px;bottom:18px;z-index:2147482500;padding:10px 14px;border-radius:999px;background:#0b82c6;color:#fff;text-decoration:none;box-shadow:0 5px 16px #0003;font:700 14px Tahoma,Arial,sans-serif">مقالات الصيانة</a>';
@@ -53,9 +53,13 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     }
   }catch(e){}
   try{
-    const responses=await Promise.all(names.map(n=>fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt',{cache:'no-store'})));
-    if(responses.some(r=>!r.ok))throw new Error('ملفات الواجهة غير موجودة على الاستضافة');
-    const encoded=(await Promise.all(responses.map(r=>r.text()))).join('').trim();
+    const chunks=[];
+    for(const n of names){
+      const response=await fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt',{cache:'no-store'});
+      if(!response.ok){if(chunks.length===0)throw new Error('ملفات الواجهة غير موجودة على الاستضافة');break;}
+      chunks.push(await response.text());
+    }
+    const encoded=chunks.join('').trim();
     const raw=atob(encoded),bytes=Uint8Array.from(raw,ch=>ch.charCodeAt(0));
     if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك الضغط');
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
