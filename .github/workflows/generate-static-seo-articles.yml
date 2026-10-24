@@ -46,9 +46,9 @@ jobs:
 
       - name: Publish reviewed queue first or generate fresh articles
         env:
-          OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: \${{ vars.OPENAI_MODEL }}
-          ARTICLE_COUNT: \${{ inputs.count || '1' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          ARTICLE_COUNT: ${{ inputs.count || '1' }}
         run: python scripts/publish_static_articles.py --publish-queued "$ARTICLE_COUNT" --count "$ARTICLE_COUNT"
 
       - name: Commit the new articles, catalog, queue history and sitemap
