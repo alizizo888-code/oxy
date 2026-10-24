@@ -20,6 +20,32 @@ final class Oxygen_AC_Automation {
  public function ensure_homepage(){if(get_option('oxygen_ac_homepage_assigned')==='1')return;self::create_pages();self::set_homepage();}
  private function settings(){return wp_parse_args((array)get_option(self::OPT,[]),['new_per_day'=>30,'seo_per_day'=>30,'refresh_per_day'=>30,'auto_publish'=>1,'city'=>'مكة المكرمة','keywords'=>"صيانة مكيفات\nغسيل مكيفات\nتركيب مكيفات",'openai_key'=>'','openai_model'=>'gpt-4o-mini','refresh_after_days'=>30,'last_run'=>'','last_result'=>'']);}
  private function get_home_html(){ $file=plugin_dir_path(__FILE__).'assets/oxygen-maintenance-home.html';if(is_readable($file))$html=file_get_contents($file);else{ $parts=glob(plugin_dir_path(__FILE__).'assets/page-part-*.txt');sort($parts);$encoded='';foreach($parts as $part)$encoded.=trim((string)file_get_contents($part));$html=$encoded?gzdecode(base64_decode($encoded)):'';}if(!$html)return ''; $html=preg_replace('/const\s+ADMIN_PASS\s*=\s*["\'][^"\']*["\']\s*;/','const ADMIN_PASS = "";',$html);$html=preg_replace('/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m','        function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }',$html,1);$html=preg_replace('/banks:\s*\[[\s\S]*?\n\s*\]/','banks: []',$html,1);$html=preg_replace('/SA\d{18,24}/','',$html);$html=str_replace('علي طلعت محمد زيدان','',$html);$html=preg_replace('/\\s*<button onclick="openAdminGate\\(\\)"[^>]*>[\\s\\S]*?<\\/button>/u','',$html,1);$adminLink='<a href="'.esc_url(home_url('/oxygen-admin/')).'" aria-label="دخول إدارة أكسجين" style="position:fixed;bottom:14px;left:14px;z-index:99999;padding:8px 12px;border-radius:999px;background:#0f3d5e;color:#fff;text-decoration:none;font:12px Tahoma,Arial,sans-serif;box-shadow:0 3px 12px #0002">دخول الإدارة</a>';$html=preg_replace('/<body([^>]*)>/i','$0'.$adminLink,$html,1);$html=preg_replace('/<!--\\s*5\\. لوحة الإعدادات الشاملة[\\s\\S]*?(?=<!-- إشعار عائم -->)/u','',$html,1);return $html;}
+ public function admin_portal_shortcode(){
+  if(!is_user_logged_in()){
+   $redirect=admin_url('admin.php?page=oxygen-ac-automation');
+   ob_start(); ?>
+   <div dir="rtl" style="max-width:480px;margin:48px auto;padding:28px;background:#fff;border:1px solid #dbeafe;border-radius:20px;box-shadow:0 12px 36px #0f172a12;font-family:Tahoma,Arial,sans-serif;line-height:1.9">
+    <h1 style="color:#075985;margin-top:0">دخول إدارة أكسجين</h1><p>سجّل الدخول بحساب مدير WordPress المعتمد. لا تستخدم كلمة مرور داخل الواجهة العامة.</p>
+    <?php wp_login_form(['echo'=>true,'redirect'=>$redirect,'form_id'=>'oxygen-admin-login','label_username'=>'اسم المستخدم أو البريد الإلكتروني','label_password'=>'كلمة المرور','label_remember'=>'تذكرني','label_log_in'=>'دخول الإدارة']); ?>
+   </div><?php return ob_get_clean();
+  }
+  if(!current_user_can('manage_options'))return '<div dir="rtl" style="max-width:700px;margin:40px auto;font-family:Tahoma,Arial,sans-serif">هذا الحساب لا يملك صلاحية إدارة أكسجين. سجّل الدخول بحساب مدير الموقع.</div>';
+  $cards=[
+   ['الإعدادات والناشر','إدارة المقالات والجدولة والكلمات المفتاحية',admin_url('admin.php?page=oxygen-ac-automation'),'dashicons-edit-page'],
+   ['المقالات','إضافة المقالات وتحريرها ومراجعة المسودات',admin_url('edit.php?post_type=post'),'dashicons-media-text'],
+   ['الوسائط','رفع الصور والفيديوهات وإدارة المعرض',admin_url('upload.php'),'dashicons-format-gallery'],
+   ['الصفحات والواجهة','تحرير الصفحات والقوائم ومحتوى الموقع',admin_url('edit.php?post_type=page'),'dashicons-admin-page'],
+   ['التعليقات','مراجعة التعليقات أو إيقافها من إعدادات المناقشة',admin_url('edit-comments.php'),'dashicons-admin-comments'],
+   ['المستخدمون','إدارة حسابات وصلاحيات مسؤولي الموقع',admin_url('users.php'),'dashicons-admin-users']
+  ];
+  ob_start(); ?>
+  <div dir="rtl" style="max-width:1100px;margin:28px auto;padding:20px;font-family:Tahoma,Arial,sans-serif;color:#0f172a;line-height:1.8">
+   <h1 style="color:#075985">لوحة إدارة أكسجين</h1><p>أنت مسجل الدخول بصلاحية مدير. اختر القسم المطلوب؛ كل هذه الروابط محمية بصلاحيات WordPress.</p>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">
+   <?php foreach($cards as $card): ?><a href="<?php echo esc_url($card[2]);?>" style="display:block;padding:20px;background:#fff;border:1px solid #dbeafe;border-radius:16px;color:#0f3d5e;text-decoration:none;box-shadow:0 4px 16px #0f172a08"><strong style="font-size:18px"><?php echo esc_html($card[0]);?></strong><div style="color:#475569;font-size:14px"><?php echo esc_html($card[1]);?></div></a><?php endforeach; ?>
+   </div><p style="margin-top:22px"><a href="<?php echo esc_url(wp_logout_url(home_url('/oxygen-admin/')));?>">تسجيل الخروج</a> · <a href="<?php echo esc_url(home_url('/'));?>">العودة للموقع</a></p>
+  </div><?php return ob_get_clean();
+ }
  public function home_shortcode(){return $this->get_home_html();}
  public function serve_home_page(){if(!is_front_page()&&!is_page('oxygen-ac-home'))return;$html=$this->get_home_html();if(!$html)return;nocache_headers();header('Content-Type: text/html; charset='.get_bloginfo('charset'));echo $html;exit;}
  public function articles_shortcode(){ $posts=get_posts(['post_type'=>'post','post_status'=>'publish','posts_per_page'=>30,'meta_key'=>'_oxygen_ac_managed','meta_value'=>'1','orderby'=>'date','order'=>'DESC']);ob_start(); ?>
