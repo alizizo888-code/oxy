@@ -60,7 +60,6 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك الضغط');
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     let html=await new Response(stream).text();
-    html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
     html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
     html=html.replace(/SA\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
     if(!installHtml(html))throw new Error('ملف الواجهة المسترجع غير مكتمل');
