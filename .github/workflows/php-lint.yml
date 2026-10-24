@@ -29,3 +29,10 @@ jobs:
             echo "::error::A hard-coded admin password was found in the homepage HTML."
             exit 1
           fi
+
+          plugin="oxygen-ac-automation/oxygen-ac-automation.php"
+          grep -Fq "function ensure_daily_schedule" "$plugin"
+          grep -Fq "create_new_articles((int)(\$s['seo_per_day']??30),\$s,10000,'page')" "$plugin"
+          grep -Fq "public function daily_job(\$force=false)" "$plugin"
+          grep -Fq "openai_refresh_section" "$plugin"
+          grep -Fq "if(trim((string)(\$s['openai_key']??''))==='')return 0;" "$plugin"
