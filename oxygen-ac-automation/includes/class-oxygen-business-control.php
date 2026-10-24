@@ -70,7 +70,7 @@ final class Oxygen_Business_Control {
     public static function media_assets($hook) {
         if (strpos((string) $hook, self::MENU) === false) return;
         wp_enqueue_media();
-        wp_add_inline_script('jquery', "jQuery(function($){$(document).on('click','.oxygen-pick-media',function(e){e.preventDefault();var target=$($(this).data('target'));var frame=wp.media({title:'اختيار صورة أو فيديو',button:{text:'استخدام الملف'},multiple:false});frame.on('select',function(){var a=frame.state().get('selection').first().toJSON();target.val(a.url).trigger('change');});frame.open();});});");
+        wp_add_inline_script('jquery', "jQuery(function(\$){\$(document).on('click','.oxygen-pick-media',function(e){e.preventDefault();var target=\$(\$(this).data('target'));var frame=wp.media({title:'اختيار صورة أو فيديو',button:{text:'استخدام الملف'},multiple:false});frame.on('select',function(){var a=frame.state().get('selection').first().toJSON();target.val(a.url).trigger('change');});frame.open();});});");
     }
 
     private static function field($label, $name, $value, $type = 'text', $help = '') {
