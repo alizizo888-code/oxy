@@ -121,7 +121,7 @@ final class Oxygen_Business_Control {
         self::field('رابط فيديو البانر (اختياري)', 'banner_video', $s['banner_video'], 'url');
         echo '<tr><th>اختيار فيديو من مكتبة الوسائط</th><td><button class="button oxygen-pick-media" data-target="#obc_banner_video">اختيار فيديو</button></td></tr>';
         self::field('روابط صور المعرض (سطر لكل رابط)', 'gallery_urls', $s['gallery_urls'], 'textarea', 'يمكن اختيار الصور ورفعها من مكتبة الوسائط ثم نسخ رابط كل صورة هنا.');
-        echo '</table><h2>4. الدفع والتعليقات</h2><table class="form-table">';
+        echo '</table><h2 id="payment-settings">4. الدفع والتعليقات</h2><table class="form-table">';
         self::field('طرق الدفع والتحويل المعروضة للعميل', 'payment_methods', $s['payment_methods'], 'textarea', 'أسماء طرق الدفع فقط. لا تضع بيانات حساب أو أرقام بطاقات حساسة في نص عام.');
         self::checkbox('السماح بالتعليقات', 'comments_enabled', $s['comments_enabled'], 'يؤثر على فتح التعليقات في WordPress؛ قد يحتاج قالب الواجهة إلى ربط إضافي لعرضها.');
         echo '</table><h2>5. Google Search Console</h2><table class="form-table">';
@@ -204,7 +204,7 @@ final class Oxygen_Business_Control {
             'offers' => array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) $s['offers'])))),
             'banner_text' => $s['banner_text'], 'banner_image' => $s['banner_image'], 'banner_video' => $s['banner_video'],
             'gallery_urls' => array_values(array_filter(array_map('esc_url_raw', preg_split('/\r\n|\r|\n/', (string) $s['gallery_urls'])))),
-            'payment_methods' => array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) $s['payment_methods'])))),
+            // Payment configuration stays server-side until a real payment gateway is connected.
             'registration_enabled' => (bool) $s['registration_enabled'], 'ai_enabled' => (bool) $s['ai_enabled'],
             'last_saved' => $s['last_saved'],
         ];
