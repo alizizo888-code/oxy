@@ -37,7 +37,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
 (async function(){
   const names=['01','02','03','04','05','06'];
   const installHtml=function(html){
-    if(typeof html!=='string'||html.length<50000||!/<html[\\s>]/i.test(html)||!/<\\/html>/i.test(html))return false;
+    if(typeof html!=='string'||html.length<50000||html.toLowerCase().indexOf('<html')===-1||html.toLowerCase().indexOf('</html>')===-1)return false;
     document.open();document.write(html);document.close();return true;
   };
   try{
