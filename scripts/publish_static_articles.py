@@ -421,7 +421,7 @@ def publish_queued(count: int, fallback_count: int) -> None:
 
     catalog.extend(new_items)
     catalog.sort(key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)
-        CATALOG_PATH.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    CATALOG_PATH.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (ARTICLES_DIR / "index.html").write_text(render_listing(catalog), encoding="utf-8")
     update_sitemap(catalog)
     validate_site(catalog)
