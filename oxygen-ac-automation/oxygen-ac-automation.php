@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Oxygen AC Automation
  * Description: واجهة أكسجين العربية مع ناشر مقالات SEO يومي وتحديثات للمقالات القديمة.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: OXYGEN
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -33,6 +33,7 @@ final class Oxygen_AC_Automation {
   if(!current_user_can('manage_options'))return '<div dir="rtl" style="max-width:700px;margin:40px auto;font-family:Tahoma,Arial,sans-serif">هذا الحساب لا يملك صلاحية إدارة أكسجين. سجّل الدخول بحساب مدير الموقع.</div>';
   $cards=[
    ['الإعدادات والناشر','إدارة المقالات والجدولة والكلمات المفتاحية',admin_url('admin.php?page=oxygen-ac-automation'),'dashicons-edit-page'],
+   ['إعدادات المؤسسة','تعديل بيانات الموقع والخدمات',admin_url('admin.php?page=oxygen-business-control'),'dashicons-admin-generic'],
    ['المقالات','إضافة المقالات وتحريرها ومراجعة المسودات',admin_url('edit.php?post_type=post'),'dashicons-media-text'],
    ['الوسائط','رفع الصور والفيديوهات وإدارة المعرض',admin_url('upload.php'),'dashicons-format-gallery'],
    ['الصفحات والواجهة','تحرير الصفحات والقوائم ومحتوى الموقع',admin_url('edit.php?post_type=page'),'dashicons-admin-page'],
