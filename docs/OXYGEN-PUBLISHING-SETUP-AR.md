@@ -37,16 +37,21 @@
 
 ## النشر إلى Hostinger
 
-يوجد سير عمل يدوي:
+### نشر واجهة الموقع العامة
+يوجد سير عمل `.github/workflows/deploy-oxygen-static-homepage.yml` لرفع `index.html` والواجهة الكاملة وأجزاء الاحتياط فقط إلى جذر الموقع العام. يحتاج نفس أسرار FTP بالإضافة إلى:
+- `FTP_ROOT_DIR`: المسار الكامل لجذر الدومين في Hostinger، ويجب أن ينتهي بـ `/public_html/` (مثل مسار public_html الخاص بالدومين الرئيسي).
+
+بعد ضبط الأسرار، شغّل **Actions → Deploy Oxygen public homepage → Run workflow**. ويمكن تشغيله تلقائيًا عند تعديل ملفات الواجهة في `main`.
+
+### نشر إضافة WordPress
+يوجد سير عمل منفصل:
 `.github/workflows/deploy-oxygen-hostinger.yml`
 
-لتمكينه من **Settings → Secrets and variables → Actions** في مستودع GitHub، أضف الأسرار التالية:
-- `FTP_SERVER`: اسم خادم FTP من Hostinger.
-- `FTP_USERNAME`: اسم مستخدم FTP.
-- `FTP_PASSWORD`: كلمة مرور FTP.
-- `FTP_SERVER_DIR`: مسار مجلد الإضافة في الاستضافة، ويجب أن ينتهي بـ `/wp-content/plugins/oxygen-ac-automation/`.
+أضف `FTP_SERVER_DIR` على أن ينتهي بـ `/wp-content/plugins/oxygen-ac-automation/`، ثم شغّل **Actions → Deploy Oxygen plugin to Hostinger → Run workflow**. هذا يرفع ملفات الإضافة فقط ولا ينشئ تثبيت WordPress أو يعدّل قاعدة البيانات.
 
-بعد ضبط الأسرار، افتح **Actions → Deploy Oxygen plugin to Hostinger → Run workflow**. هذا النشر اليدوي يرفع ملفات مجلد الإضافة فقط، ولا يعدّل قاعدة بيانات ووردبريس. لا يحتوي المستودع على بيانات FTP، لذلك لا يمكن تشغيل نشر Hostinger من GitHub قبل إعداد هذه الأسرار.
+**تنبيه مهم من الفحص الفعلي:** اختبار GitHub وصل إلى ملف الواجهة الحالي على الدومين الرئيسي برد HTTP 200، لكن `/wp-cron.php` يرجع HTTP 404 على كل من `oxygen11.com` و`googl.oxygen11.com`. هذا يعني أن نشر الواجهة العامة لا يثبت وجود WordPress في أي من هذين المسارين. يلزم تحديد جذر تثبيت WordPress الفعلي أو إكمال تثبيته قبل الاعتماد على توليد المقالات اليومي.
+
+لا يحتوي المستودع على بيانات FTP، لذلك لا يمكننا رفع الملفات إلى Hostinger حتى تُضاف الأسرار المطلوبة.
 
 ## الفحوص
 
