@@ -55,6 +55,7 @@ jobs:
           rm -f "$body"
 
       - name: Discover and trigger the WordPress cron endpoint
+        if: ${{ vars.OXYGEN_WP_CRON_ENABLED == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
