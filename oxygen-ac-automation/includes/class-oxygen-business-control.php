@@ -183,7 +183,7 @@ final class Oxygen_Business_Control {
         $s = self::settings();
         if (!empty($s['cache_enabled'])) {
             $cached = get_transient('oxygen_business_public_config');
-            if (is_array($cached)) return $cached;
+            if (is_array($cached)) { unset($cached['payment_methods']); return $cached; }
         }
         $services = [];
         foreach (preg_split('/\r\n|\r|\n/', (string) $s['services']) as $line) {
