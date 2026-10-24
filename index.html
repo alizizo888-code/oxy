@@ -62,7 +62,7 @@ body.oxygen-dark-mode a{color:#7dd3fc}
     let html=await new Response(stream).text();
     // Legacy fallback is only for recovery; never expose browser-side admin credentials or bank details.
     html=html.replace(/const\s+ADMIN_PASS\s*=\s*["'][^"']*["']\s*;/g,'// Admin authentication is handled by WordPress.');
-    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="https://googl.oxygen11.com/oxygen-admin/"; }');
+    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="https://googl.oxygen11.com/wp-admin/admin.php?page=oxygen-ac-automation"; }');
     html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
     html=html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u,'');
     html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
