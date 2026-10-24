@@ -22,24 +22,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Trigger WP-Cron and reject rewritten homepage responses
+      - name: Discover and trigger the WordPress cron endpoint
         shell: bash
         run: |
           set -euo pipefail
-          url='https://googl.oxygen11.com/wp-cron.php?doing_wp_cron=1'
-          status="$(curl -sS -L --max-time 30 -o /tmp/wp-cron-response.txt -w '%{http_code}' "$url")"
-          body_bytes="$(wc -c < /tmp/wp-cron-response.txt | tr -d ' ')"
-
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]]; then
-            echo "::error::WP-Cron returned HTTP $status"
-            head -c 500 /tmp/wp-cron-response.txt || true
+          targets=(
+            'https://oxygen11.com/wp-cron.php?doing_wp_cron=1'
+            'https://googl.oxygen11.com/wp-cron.php?doing_wp_cron=1'
+          )
+          found=0
+          for url in "${targets[@]}"; do
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
+            bytes="$(wc -c < "$body" | tr -d ' ')"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$bytes" -le 8192 ]] && ! grep -qiE '<!doctype html|<html([[:space:]>])' "$body"; then
+              echo "WordPress cron endpoint responded on $url (HTTP $status, $bytes bytes)."
+              found=1
+              rm -f "$body"
+              break
+            fi
+            echo "::warning::Cron endpoint did not validate: $url returned HTTP $status with $bytes bytes."
+            head -c 160 "$body" || true
+            echo
+            rm -f "$body"
+          done
+          if [[ "$found" -ne 1 ]]; then
+            echo "::error::Neither oxygen11.com nor googl.oxygen11.com exposes a valid wp-cron.php response. Confirm the WordPress installation root and Hostinger cron configuration before relying on daily publishing."
             exit 1
           fi
-
-          if [[ "$body_bytes" -gt 8192 ]] || grep -qiE '<!doctype html|<html([[:space:]>])' /tmp/wp-cron-response.txt; then
-            echo "::error::WP-Cron returned page-like HTML; check Hostinger routing/cache rules. This run is not counted as a verified cron trigger."
-            head -c 500 /tmp/wp-cron-response.txt || true
-            exit 1
-          fi
-
-          echo "WP-Cron endpoint returned HTTP $status with $body_bytes response bytes."
