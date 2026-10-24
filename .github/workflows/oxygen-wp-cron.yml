@@ -101,6 +101,39 @@ jobs:
           echo "Sitemap is publicly served."
           rm -f "$sitemap"
 
+      - name: Diagnose WordPress admin and REST routes on googl subdomain
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_route() {
+            local path="$1"
+            local label="$2"
+            local body status ctype
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 20 -H 'Cache-Control: no-cache' -o "$body" -w '%{http_code}' "https://googl.oxygen11.com$path" || true)"
+            ctype="$(file -b --mime-type "$body" 2>/dev/null || echo unknown)"
+            if [[ "$path" == "/wp-json/" ]]; then
+              if [[ "$status" =~ ^2[0-9][0-9]$ ]] && head -c 2 "$body" | grep -Eq '\\{|\\['; then
+                echo "WordPress REST route OK: $path (HTTP $status, $ctype)"
+              else
+                echo "::warning::WordPress REST route is not returning JSON: $path (HTTP $status, $ctype). Check the subdomain document root and WordPress core files."
+              fi
+            elif [[ "$status" =~ ^2[0-9][0-9]$ || "$status" =~ ^3[0-9][0-9]$ ]]; then
+              if grep -qi 'أكسجين للصيانة والتبريد' "$body" && [[ "$path" == "/wp-login.php" || "$path" == "/wp-admin/" || "$path" == "/oxygen-admin/" ]]; then
+                echo "::warning::WordPress path $path returned the static Oxygen homepage, not WordPress."
+              else
+                echo "WordPress route responded: $path (HTTP $status, $ctype)"
+              fi
+            else
+              echo "::warning::WordPress route unavailable: $path (HTTP $status, $ctype). Check Hostinger subdomain document root / rewrite rules."
+            fi
+            rm -f "$body"
+          }
+          check_route "/wp-login.php" "login"
+          check_route "/wp-admin/" "admin"
+          check_route "/wp-json/" "REST API"
+          check_route "/wp-admin/admin.php?page=oxygen-ac-automation" "Oxygen publisher"
+          check_route "/oxygen-admin/" "legacy admin portal"
       - name: Discover and trigger the WordPress cron endpoint
         if: ${{ vars.OXYGEN_WP_CRON_ENABLED == 'true' }}
         shell: bash
