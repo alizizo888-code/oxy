@@ -24,6 +24,14 @@ jobs:
           set -euo pipefail
           node -e "const fs=require('fs');const s=fs.readFileSync('index.html','utf8');const m=s.match(/<script>([\\s\\S]*?)<\\/script>/i);if(!m)throw new Error('root loader script missing');new Function(m[1]);console.log('Root homepage loader JavaScript syntax OK.');"
 
+      - name: Set up Python for article-pipeline validation
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate published static articles and sitemap
+        run: python scripts/publish_static_articles.py --validate-only
+
       - name: Check homepage integration guardrails
         shell: bash
         run: |
