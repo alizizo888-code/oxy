@@ -16,8 +16,8 @@ body{background:#eaf6ff;color:#0f172a}
 @keyframes oxygenBrandIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes oxygenSplashOut{to{opacity:0;visibility:hidden}}
 @media(prefers-reduced-motion:reduce){#oxygen-launch-splash{opacity:1;visibility:visible}}
-/* The legacy loading message is never shown, including while the source is fetched. */
-.notice,#status{display:none!important}
+/* Hide the waiting message during a normal load, but allow a useful error if assets are unavailable. */
+.notice{display:none}#status{display:none}
 #oxygen-dark-toggle,#oxygen-edit-toggle{position:fixed;left:10px;z-index:2147483000;width:48px;height:48px;border:2px solid #ffffff55;border-radius:50%;box-shadow:0 6px 20px #0003;display:flex;align-items:center;justify-content:center;cursor:pointer;font:700 21px Tahoma,Arial,sans-serif}
 #oxygen-dark-toggle{bottom:205px;background:#172033;color:white}
 #oxygen-edit-toggle{bottom:260px;background:#0b82c6;color:white;text-decoration:none}
@@ -36,31 +36,35 @@ body.oxygen-dark-mode a{color:#7dd3fc}
 <script>
 (async function(){
   const names=['01','02','03','04','05','06'];
+  const installHtml=function(html){
+    if(typeof html!=='string'||html.length<50000||!/<html[\\s>]/i.test(html)||!/<\\/html>/i.test(html))return false;
+    document.open();document.write(html);document.close();return true;
+  };
+  try{
+    const direct=await fetch('oxygen-ac-automation/assets/oxygen-maintenance-home.html',{cache:'no-store'});
+    if(direct.ok){
+      const html=await direct.text();
+      if(installHtml(html))return;
+    }
+  }catch(e){}
   try{
     const responses=await Promise.all(names.map(n=>fetch('oxygen-ac-automation/assets/page-part-'+n+'.txt',{cache:'no-store'})));
-    if(responses.some(r=>!r.ok)) throw new Error('ملفات الواجهة غير مكتملة');
+    if(responses.some(r=>!r.ok))throw new Error('ملفات الواجهة غير موجودة على الاستضافة');
     const encoded=(await Promise.all(responses.map(r=>r.text()))).join('').trim();
-    const raw=atob(encoded),bytes=Uint8Array.from(raw,c=>c.charCodeAt(0));
-    if(!('DecompressionStream' in window)) throw new Error('المتصفح لا يدعم فك الضغط');
+    const raw=atob(encoded),bytes=Uint8Array.from(raw,ch=>ch.charCodeAt(0));
+    if(!('DecompressionStream' in window))throw new Error('المتصفح لا يدعم فك الضغط');
     const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    let html=await new Response(stream).text();
-    html=html.replace(/^\s*const ADMIN_PASS\s*=\s*[^;]+;\s*$/m,'// Use the authenticated WordPress administration page.');
-    html=html.replace(/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m,'        function openAdminGate() { window.location.href="/oxygen-admin/"; }');
-    html=html.replace(/\s*<button onclick="openAdminGate\(\)"[^>]*>[\s\S]*?<\/button>/,'');
-    html=html.replace(/<!--\s*5\. لوحة الإعدادات الشاملة[\s\S]*?(?=<!-- إشعار عائم -->)/u,'');
-    html=html.replace(/banks:\s*\[[\s\S]*?\n\s*\]/,'banks: []');
-    html=html.replace(/SA\d{18,24}/g,'').replace(/علي طلعت محمد زيدان/g,'');
-    html=html.replace(/<video\b(?![^>]*\bmuted)[^>]*>/gi,m=>m.replace(/>$/,' muted autoplay loop playsinline>'));
-    html=html.replace(/<video\b(?![^>]*\bautoplay)[^>]*>/gi,m=>m.replace(/>$/,' autoplay muted loop playsinline>'));
-    html=html.replace(/<img\b(?![^>]*oxygen-motion-media)[^>]*>/gi,m=>m.replace(/>$/,' class="oxygen-motion-media">'));
-    html=html.replace(/(تتبع\s*طلبي)([\s\S]{0,180}?)(?:⚡|ϟ|&#9889;|&#x26A1;)/i,'$1$2<a id="oxygen-edit-toggle" href="/oxygen-admin/" aria-label="التعديلات" title="التعديلات" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#0b82c6;color:#fff;text-decoration:none;font-size:17px;margin-inline:5px">🔒</a>');
-    const extra='<style id="oxygen-runtime-style">body.oxygen-dark-mode{background:#101827!important;color:#e5edf8!important}body.oxygen-dark-mode :is(main,section,article,header,footer,nav,aside,form,details,summary,.card,.service-card,.service-item,.service-box,.panel,.modal,.container,.content,.gallery,.booking-card){background-color:#182438!important;color:#e5edf8!important;border-color:#33445f!important}body.oxygen-dark-mode :is(input,textarea,select){background:#101827!important;color:#f1f5f9!important}body.oxygen-dark-mode a{color:#7dd3fc}</style>';
-    html=html.replace('</head>',extra+'</head>');
-    html=html.replace('</body>','<script>(function(){function addDark(){var candidates=Array.from(document.querySelectorAll("body *"));var quick=candidates.find(function(e){return e.children.length===0&&e.textContent.trim()==="سريع"});var rail=quick&&quick.parentElement;for(var i=0;rail&&i<4;i++,rail=rail.parentElement){if(getComputedStyle(rail).position==="fixed"||rail.querySelector("a[href*=\"wa.me\"],a[href*=\"whatsapp\"],a[href^=\"tel:\"]"))break}if(!rail)rail=document.body;var b=document.getElementById("oxygen-dark-toggle");if(!b){b=document.createElement("button");b.id="oxygen-dark-toggle";b.type="button";b.setAttribute("aria-label","الوضع الداكن");b.title="الوضع الداكن";b.textContent="☾";b.style.cssText="width:42px;height:42px;border:2px solid #ffffff55;border-radius:50%;background:#172033;color:#fff;box-shadow:0 4px 14px #0003;display:flex;align-items:center;justify-content:center;font:700 21px Tahoma,Arial,sans-serif;cursor:pointer;margin:5px;";rail.appendChild(b);b.addEventListener("click",function(){var on=document.body.classList.toggle("oxygen-dark-mode");b.textContent=on?"☀":"☾";b.title=on?"الوضع الفاتح":"الوضع الداكن";b.setAttribute("aria-pressed",on?"true":"false")})}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",addDark,{once:true});else addDark()})();<' + '/script></body>');
-    document.open();document.write(html);document.close();
+    const html=await new Response(stream).text();
+    if(!installHtml(html))throw new Error('ملف الواجهة المسترجع غير مكتمل');
   }catch(e){
-    const splash=document.getElementById('oxygen-launch-splash');if(splash)splash.style.display='none';
-    const n=document.querySelector('.notice');if(n){n.style.display='block';n.textContent='تعذر تحميل الواجهة: '+e.message;}
+    const splash=document.getElementById('oxygen-launch-splash');
+    if(splash)splash.style.display='none';
+    const n=document.querySelector('.notice');
+    if(n){
+      n.style.display='block';
+      n.style.cssText='display:block!important;max-width:720px;margin:24px auto;padding:18px;border-radius:14px;background:#fff1f2;color:#881337;font:16px/1.8 Tahoma,Arial,sans-serif;direction:rtl';
+      n.textContent='تعذر تحميل واجهة أكسجين: '+(e&&e.message?e.message:'تحقق من ملفات الواجهة في الاستضافة.');
+    }
   }
 })();
 </script>
