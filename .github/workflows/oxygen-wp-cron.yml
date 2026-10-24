@@ -38,11 +38,15 @@ jobs:
           body="$(mktemp)"
           status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
           if [[ "$status" =~ ^2[0-9][0-9]$ ]] && grep -Fq "oxygen-maintenance-home.html" "$body"; then
-            echo "Live root loader includes the full-page asset fetch."
+            echo "Live root loader verified: the public homepage fetches the Oxygen full-page asset."
+            rm -f "$body"
           else
-            echo "::warning::Live homepage index is not using the new full-page loader yet (HTTP $status). The public-root FTP deployment is still required."
+            echo "::error::Live homepage is not serving the expected Oxygen loader (HTTP $status). Check Hostinger sync and the root DirectoryIndex rule."
+            head -c 500 "$body" || true
+            echo
+            rm -f "$body"
+            exit 1
           fi
-          rm -f "$body"
 
       - name: Check that the live homepage asset is deployed
         shell: bash
