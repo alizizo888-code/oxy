@@ -2,13 +2,14 @@
 /**
  * Plugin Name: Oxygen AC Automation
  * Description: واجهة أكسجين العربية مع ناشر مقالات SEO يومي وتحديثات للمقالات القديمة.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Author: OXYGEN
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Text Domain: oxygen-ac-automation
  */
 if (!defined('ABSPATH')) { exit; }
+require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-business-control.php';
 final class Oxygen_AC_Automation {
  const OPT='oxygen_ac_automation_settings'; const CRON='oxygen_ac_daily_job'; private static $instance=null;
  public static function instance(){if(self::$instance===null)self::$instance=new self();return self::$instance;}
@@ -19,7 +20,7 @@ final class Oxygen_AC_Automation {
  private static function set_homepage(){$home=get_page_by_path('oxygen-ac-home',OBJECT,'page');if(!$home||$home->post_status!=='publish')return;update_option('show_on_front','page');update_option('page_on_front',(int)$home->ID);update_option('oxygen_ac_homepage_assigned','1',false);}
  public function ensure_homepage(){if(get_option('oxygen_ac_homepage_assigned')==='1')return;self::create_pages();self::set_homepage();}
  private function settings(){return wp_parse_args((array)get_option(self::OPT,[]),['new_per_day'=>30,'seo_per_day'=>30,'refresh_per_day'=>30,'auto_publish'=>1,'city'=>'مكة المكرمة','keywords'=>"صيانة مكيفات\nغسيل مكيفات\nتركيب مكيفات",'openai_key'=>'','openai_model'=>'gpt-4o-mini','refresh_after_days'=>30,'last_run'=>'','last_result'=>'']);}
- private function get_home_html(){ $file=plugin_dir_path(__FILE__).'assets/oxygen-maintenance-home.html';if(is_readable($file))$html=file_get_contents($file);else{ $parts=glob(plugin_dir_path(__FILE__).'assets/page-part-*.txt');sort($parts);$encoded='';foreach($parts as $part)$encoded.=trim((string)file_get_contents($part));$html=$encoded?gzdecode(base64_decode($encoded)):'';}if(!$html)return ''; $html=preg_replace('/const\s+ADMIN_PASS\s*=\s*["\'][^"\']*["\']\s*;/','const ADMIN_PASS = "";',$html);$html=preg_replace('/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m','        function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }',$html,1);$html=preg_replace('/banks:\s*\[[\s\S]*?\n\s*\]/','banks: []',$html,1);$html=preg_replace('/SA\d{18,24}/','',$html);$html=str_replace('علي طلعت محمد زيدان','',$html);$html=preg_replace('/\\s*<button onclick="openAdminGate\\(\\)"[^>]*>[\\s\\S]*?<\\/button>/u','',$html,1);$adminLink='<a href="'.esc_url(home_url('/oxygen-admin/')).'" aria-label="دخول إدارة أكسجين" style="position:fixed;bottom:14px;left:14px;z-index:99999;padding:8px 12px;border-radius:999px;background:#0f3d5e;color:#fff;text-decoration:none;font:12px Tahoma,Arial,sans-serif;box-shadow:0 3px 12px #0002">دخول الإدارة</a>';$html=preg_replace('/<body([^>]*)>/i','$0'.$adminLink,$html,1);$html=preg_replace('/<!--\\s*5\\. لوحة الإعدادات الشاملة[\\s\\S]*?(?=<!-- إشعار عائم -->)/u','',$html,1);return $html;}
+ private function get_home_html(){ $file=plugin_dir_path(__FILE__).'assets/oxygen-maintenance-home.html';if(is_readable($file))$html=file_get_contents($file);else{ $parts=glob(plugin_dir_path(__FILE__).'assets/page-part-*.txt');sort($parts);$encoded='';foreach($parts as $part)$encoded.=trim((string)file_get_contents($part));$html=$encoded?gzdecode(base64_decode($encoded)):'';}if(!$html)return ''; $html=preg_replace('/const\s+ADMIN_PASS\s*=\s*["\'][^"\']*["\']\s*;/','const ADMIN_PASS = "";',$html);$html=preg_replace('/^[ \t]{8}function openAdminGate\(\) \{[\s\S]*?^[ \t]{8}\}/m','        function openAdminGate() { showToast("إعدادات النشر الدائمة متاحة من لوحة ووردبريس عبر قائمة ناشر أكسجين."); }',$html,1);$html=preg_replace('/banks:\s*\[[\s\S]*?\n\s*\]/','banks: []',$html,1);$html=preg_replace('/SA\d{18,24}/','',$html);$html=str_replace('علي طلعت محمد زيدان','',$html);$html=preg_replace('/\\s*<button onclick="openAdminGate\\(\\)"[^>]*>[\\s\\S]*?<\\/button>/u','',$html,1);$adminLink='<a href="'.esc_url(home_url('/oxygen-admin/')).'" aria-label="دخول إدارة أكسجين" style="position:fixed;bottom:14px;left:14px;z-index:99999;padding:8px 12px;border-radius:999px;background:#0f3d5e;color:#fff;text-decoration:none;font:12px Tahoma,Arial,sans-serif;box-shadow:0 3px 12px #0002">دخول الإدارة</a>';$html=preg_replace('/<body([^>]*)>/i','$0'.$adminLink,$html,1);$html=preg_replace('/<!--\\s*5\\. لوحة الإعدادات الشاملة[\\s\\S]*?(?=<!-- إشعار عائم -->)/u','',$html,1);return apply_filters('oxygen_ac_home_html',$html);}
  public function admin_portal_shortcode(){
   if(!is_user_logged_in()){
    $redirect=admin_url('admin.php?page=oxygen-ac-automation');
