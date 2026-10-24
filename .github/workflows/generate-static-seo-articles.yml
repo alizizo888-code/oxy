@@ -1,11 +1,6 @@
 name: Publish OXYGEN static SEO articles
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/article-queue/pending/**'
-      - 'scripts/publish_static_articles.py'
   schedule:
     - cron: "19 1 * * *"
   workflow_dispatch:
