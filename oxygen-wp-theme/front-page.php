@@ -18,17 +18,7 @@ foreach ($oxygen_theme_assets as $oxygen_theme_asset) {
 }
 
 if (is_string($oxygen_theme_html) && $oxygen_theme_html !== '') {
-    $oxygen_admin_url = admin_url('admin.php?page=oxygen-ac-automation');
-    $oxygen_replacement = 'function openAdminGate() { window.location.href = ' . wp_json_encode($oxygen_admin_url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '; }';
-    $oxygen_rewritten = preg_replace('/function\s+openAdminGate\s*\(\)\s*\{[\s\S]*?\n\s*\}/', $oxygen_replacement, $oxygen_theme_html, 1);
-    if (is_string($oxygen_rewritten)) {
-        $oxygen_theme_html = $oxygen_rewritten;
-    }
-    $oxygen_theme_html = str_replace(
-        'https://googl.oxygen11.com/wp-admin/admin.php?page=oxygen-ac-automation',
-        esc_url($oxygen_admin_url),
-        $oxygen_theme_html
-    );
+    // Keep the original in-page password gate and settings modal; do not redirect into WP admin.
     nocache_headers();
     header('Content-Type: text/html; charset=' . get_bloginfo('charset'));
     echo $oxygen_theme_html;
