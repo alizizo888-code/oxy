@@ -16,7 +16,7 @@ jobs:
           php-version: '8.2'
       - name: Check PHP syntax
         run: |
-          find oxygen-ac-automation -name '*.php' -print0 | xargs -0 -n1 php -l
+          find oxygen-ac-automation oxygen-wp-theme -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Check root homepage loader JavaScript
         shell: bash
@@ -50,3 +50,12 @@ jobs:
           grep -Fq "public function daily_job(\$force=false)" "$plugin"
           grep -Fq "openai_refresh_section" "$plugin"
           grep -Fq "if(trim((string)(\$s['openai_key']??''))==='')return 0;" "$plugin"
+
+      - name: Validate WordPress theme entry points
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '^Theme Name: Oxygen WordPress$' oxygen-wp-theme/style.css
+          grep -q 'function openAdminGate' oxygen-wp-theme/front-page.php
+          grep -q "WP_PLUGIN_DIR . '/oxygen-ac-automation/assets/oxygen-maintenance-home.html'" oxygen-wp-theme/front-page.php
+          echo "WordPress theme files and Oxygen asset integration verified."
