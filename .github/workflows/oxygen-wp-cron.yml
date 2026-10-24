@@ -6,6 +6,9 @@ on:
     paths:
       - 'oxygen-ac-automation/**'
       - 'index.html'
+      - 'articles/**'
+      - 'sitemap.xml'
+      - 'robots.txt'
       - '.github/workflows/oxygen-wp-cron.yml'
   schedule:
     - cron: "*/15 * * * *"
@@ -53,6 +56,42 @@ jobs:
           fi
           echo "Live homepage asset is reachable: HTTP $status, $bytes bytes."
           rm -f "$body"
+
+      - name: Verify latest article pages and sitemap are publicly served
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/oxygen-article-urls.txt
+          import json
+          from pathlib import Path
+          rows = json.loads(Path("articles/catalog.json").read_text(encoding="utf-8"))
+          rows = sorted(rows, key=lambda x: (x.get("published_at", ""), x.get("slug", "")), reverse=True)[:3]
+          for row in rows:
+              print("https://oxygen11.com/articles/" + row["slug"] + "/")
+          PY
+          while IFS= read -r url; do
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
+            bytes="$(wc -c < "$body" | tr -d ' ')"
+            if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || [[ "$bytes" -lt 1500 ]] || ! grep -qi '<title>' "$body"; then
+              echo "::error::Article page not publicly served: $url (HTTP $status, $bytes bytes)"
+              head -c 180 "$body" || true
+              rm -f "$body"
+              exit 1
+            fi
+            echo "Article page OK: $url ($bytes bytes)."
+            rm -f "$body"
+          done < /tmp/oxygen-article-urls.txt
+
+          sitemap="$(mktemp)"
+          status="$(curl -sS -L --max-time 30 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
+          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
+            echo "::error::Sitemap is not publicly served (HTTP $status)."
+            rm -f "$sitemap"
+            exit 1
+          fi
+          echo "Sitemap is publicly served."
+          rm -f "$sitemap"
 
       - name: Discover and trigger the WordPress cron endpoint
         if: ${{ vars.OXYGEN_WP_CRON_ENABLED == 'true' }}
