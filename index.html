@@ -38,6 +38,11 @@ body.oxygen-dark-mode a{color:#7dd3fc}
   const names=['01','02','03','04','05','06'];
   const installHtml=function(html){
     if(typeof html!=='string'||html.length<50000||html.toLowerCase().indexOf('<html')===-1||html.toLowerCase().indexOf('</html>')===-1)return false;
+    const articleLink='<a id="oxygen-articles-link" href="/articles/" aria-label="مقالات الصيانة" style="position:fixed;right:16px;bottom:18px;z-index:2147482500;padding:10px 14px;border-radius:999px;background:#0b82c6;color:#fff;text-decoration:none;box-shadow:0 5px 16px #0003;font:700 14px Tahoma,Arial,sans-serif">مقالات الصيانة</a>';
+    if(!html.includes('id="oxygen-articles-link"')){
+      const bodyEnd=html.toLowerCase().lastIndexOf('</body>');
+      if(bodyEnd>=0)html=html.slice(0,bodyEnd)+articleLink+html.slice(bodyEnd);
+    }
     document.open();document.write(html);document.close();return true;
   };
   try{
