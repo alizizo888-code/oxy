@@ -1,6 +1,11 @@
 name: Trigger Oxygen WordPress cron
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'oxygen-ac-automation/**'
+      - '.github/workflows/oxygen-wp-cron.yml'
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
