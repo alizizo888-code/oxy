@@ -23,6 +23,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: Check that the live homepage uses the new loader
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://oxygen11.com/?deployment_check=$(date +%s)"
+          body="$(mktemp)"
+          status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
+          if [[ "$status" =~ ^2[0-9][0-9]$ ]] && grep -Fq "oxygen-maintenance-home.html" "$body"; then
+            echo "Live root loader includes the full-page asset fetch."
+          else
+            echo "::warning::Live homepage index is not using the new full-page loader yet (HTTP $status). The public-root FTP deployment is still required."
+          fi
+          rm -f "$body"
+
       - name: Check that the live homepage asset is deployed
         shell: bash
         run: |
