@@ -1,13 +1,6 @@
 name: Deploy Oxygen public homepage
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'oxygen-ac-automation/assets/oxygen-maintenance-home.html'
-      - 'oxygen-ac-automation/assets/page-part-*.txt'
-      - '.github/workflows/deploy-oxygen-static-homepage.yml'
   workflow_dispatch:
 
 permissions:
