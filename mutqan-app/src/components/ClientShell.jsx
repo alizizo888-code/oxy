@@ -33,7 +33,7 @@ export default function ClientShell() {
             <Snowflake size={20} className="text-white" />
           </div>
           <div>
-            <p className="font-display font-black text-slate-900 text-lg leading-none">OXYGEN</p>
+            <p className="font-display font-black text-slate-900 text-lg leading-none">MUTQAN</p>
             <p className="text-[10px] text-sky-600 font-bold mt-1">الصيانة والمقاولات العامة</p>
           </div>
         </div>

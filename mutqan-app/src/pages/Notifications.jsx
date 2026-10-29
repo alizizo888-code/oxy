@@ -151,7 +151,7 @@ function Offers() {
     } finally { setBusy(false) }
   }
   async function doShare() {
-    try { if (navigator.share) { await navigator.share({ title: 'أكسجين — متقن', text }); return } } catch { /* cancelled */ }
+    try { if (navigator.share) { await navigator.share({ title: 'متقن', text }); return } } catch { /* cancelled */ }
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* ignore */ }
   }
   const stateText = {

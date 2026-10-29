@@ -90,7 +90,7 @@ function SideMenu({ items, role, bell, unread, open, setOpen }) {
   )
   const body = (
     <nav dir="rtl" className="h-full w-64 bg-[#0d1220] border-l border-white/10 flex flex-col p-3 gap-1 overflow-y-auto pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]" data-keep-colors>
-      <p className="text-xs font-black text-primary px-3 py-2">متقن · أكسجين</p>
+      <p className="text-xs font-black text-primary px-3 py-2">متقن</p>
       {items.map(link)}
       {canManage && (
         <>

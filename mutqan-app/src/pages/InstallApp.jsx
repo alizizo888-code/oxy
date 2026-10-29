@@ -15,13 +15,13 @@ export default function InstallApp() {
       <header className="sticky top-0 z-20 bg-[#f5f7f5]/90 backdrop-blur border-b border-black/5 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-xl mx-auto w-full px-4 py-4 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white border border-black/5 shadow-sm flex items-center justify-center"><ChevronRight size={18} className="text-slate-600" /></button>
-          <h1 className="font-display text-lg font-black text-slate-900">تحميل تطبيق أكسجين</h1>
+          <h1 className="font-display text-lg font-black text-slate-900">تحميل تطبيق متقن</h1>
         </div>
       </header>
       <div className="max-w-xl mx-auto w-full px-4 pt-5 flex flex-col gap-4">
         <div className="rounded-3xl bg-gradient-to-br from-[#0b7a75] to-[#071a33] text-white p-6 text-center shadow-lg" data-keep-colors>
           <img src={`${window.__MUTQAN__?.app || "/app/"}icon-192.png`} alt="" className="w-20 h-20 rounded-2xl mx-auto shadow-xl" />
-          <p className="font-display font-black text-xl mt-3">أكسجين — مُتقن</p>
+          <p className="font-display font-black text-xl mt-3">مُتقن</p>
           <p className="text-xs text-white/80 mt-1 leading-relaxed">طلباتك وإشعاراتك ومحادثاتك في تطبيق واحد على شاشة جوالك — للعملاء والفنيين والإدارة.</p>
           {installed && <p className="mt-3 inline-flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1 text-xs font-bold"><CheckCircle2 size={14} /> أنت تستخدم التطبيق الآن</p>}
         </div>
@@ -33,7 +33,7 @@ export default function InstallApp() {
             <ol className="text-sm text-slate-700 leading-loose list-decimal pr-5">
               <li>افتح الرابط في متصفح <b>Chrome</b>: <span dir="ltr" className="font-mono text-xs break-all">{APP_URL}</span></li>
               <li>اضغط ⋮ (القائمة) ثم <b>«تثبيت التطبيق»</b> أو «إضافة إلى الشاشة الرئيسية».</li>
-              <li>سيظهر «أكسجين» بين تطبيقاتك ويفتح بملء الشاشة.</li>
+              <li>سيظهر «متقن» بين تطبيقاتك ويفتح بملء الشاشة.</li>
             </ol>
           )}
         </Card>

@@ -80,7 +80,7 @@ export default function Home() {
 
   function contactWhatsapp() {
     // All WhatsApp numbers are managed from the WhatsApp center — route to the public contact page
-    if (BUSINESS_WHATSAPP) share.whatsapp(BUSINESS_WHATSAPP, 'السلام عليكم، أرغب بخدمة صيانة من OXYGEN.')
+    if (BUSINESS_WHATSAPP) share.whatsapp(BUSINESS_WHATSAPP, 'السلام عليكم، أرغب بخدمة صيانة من MUTQAN.')
     else navigate('/contact')
   }
 
@@ -279,7 +279,7 @@ export default function Home() {
           </div>
         </section>
 
-        <p className="text-center text-[10px] text-slate-400 pb-2">OXYGEN — الصيانة والمقاولات العامة • راحة بيتك مسؤوليتنا</p>
+        <p className="text-center text-[10px] text-slate-400 pb-2">MUTQAN — الصيانة والمقاولات العامة • راحة بيتك مسؤوليتنا</p>
       </div>
 
       {/* Guarantee sheet */}

@@ -15,7 +15,7 @@ export default function IosInstallSheet({ open, onClose }) {
   const steps = [
     [<Share size={20} />, 'اضغط زر المشاركة', 'في أسفل شاشة Safari (المربع والسهم للأعلى).'],
     [<SquarePlus size={20} />, 'اختر «إضافة إلى الشاشة الرئيسية»', 'مرّر القائمة للأسفل إن لم تظهر.'],
-    [<Check size={20} />, 'اضغط «إضافة»', 'سيظهر «أكسجين» بين تطبيقاتك ويفتح بملء الشاشة.'],
+    [<Check size={20} />, 'اضغط «إضافة»', 'سيظهر «متقن» بين تطبيقاتك ويفتح بملء الشاشة.'],
   ]
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 flex items-end sm:items-center justify-center" onClick={onClose} dir="rtl">

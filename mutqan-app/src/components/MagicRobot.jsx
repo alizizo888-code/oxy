@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 // A "magic" 3D-looking robot assistant (pure SVG + CSS, no assets): floats, blinks, tilts toward the finger/cursor,
 // waves and greets (typed speech bubble), and "thinks" with orbiting gears and rotating thoughts.
 // mode: 'greet' | 'idle' | 'think'
-const GREET = ['أهلًا بك في أكسجين! 👋', 'أنا مساعدك الذكي ✨', 'كيف أقدر أساعدك اليوم؟']
+const GREET = ['أهلًا بك في متقن! 👋', 'أنا مساعدك الذكي ✨', 'كيف أقدر أساعدك اليوم؟']
 const THINK = ['أفكر…', 'أراجع الأسعار والخدمات…', 'أجهّز لك أفضل حل ✨']
 
 function useTyped(lines, on, speed = 38, hold = 1400, loop = false) {
@@ -53,7 +53,7 @@ export default function MagicRobot({ mode = 'idle', size = 180, bubble = true, c
         </div>
       )}
       <div ref={ref} className="mr-stage" style={{ width: size, height: size * 1.1, transform: `perspective(700px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}>
-        <svg viewBox="0 0 200 220" width="100%" height="100%" role="img" aria-label="مساعد أكسجين الذكي" className={`mr-float ${think ? 'is-think' : ''} ${greet ? 'is-greet' : ''}`}>
+        <svg viewBox="0 0 200 220" width="100%" height="100%" role="img" aria-label="مساعد متقن الذكي" className={`mr-float ${think ? 'is-think' : ''} ${greet ? 'is-greet' : ''}`}>
           <defs>
             <linearGradient id="mrBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset=".55" stopColor="#dbeafe" /><stop offset="1" stopColor="#93c5fd" /></linearGradient>
             <linearGradient id="mrHead" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#e0edff" /><stop offset="1" stopColor="#7fb2f5" /></linearGradient>

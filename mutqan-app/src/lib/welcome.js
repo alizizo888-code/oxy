@@ -25,5 +25,5 @@ export function useWelcome() {
 }
 
 export function shareText() {
-  return `🎁 حمّل تطبيق أكسجين (متقن) واحصل على خصم ${WELCOME_LABEL} على أول طلب صيانة!\nالتطبيق: ${APP_SHARE_URL}\nالموقع: ${SITE_URL}`
+  return `🎁 حمّل تطبيق متقن واحصل على خصم ${WELCOME_LABEL} على أول طلب صيانة!\nالتطبيق: ${APP_SHARE_URL}\nالموقع: ${SITE_URL}`
 }

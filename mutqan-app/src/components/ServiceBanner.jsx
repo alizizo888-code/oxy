@@ -62,7 +62,7 @@ export default function ServiceBanner({ onOpen }) {
           <span className="inline-flex items-center gap-1.5 text-[10px] font-black tracking-wider bg-white/10 backdrop-blur border border-sky-300/30 rounded-full px-2.5 py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />مُتقن · MUTQAN</span>
           <div className="flex items-center gap-2 mt-1.5">
             <Snowflake size={24} className="text-sky-200" />
-            <h1 className="font-display font-black text-3xl md:text-4xl tracking-wide drop-shadow">OXYGEN</h1>
+            <h1 className="font-display font-black text-3xl md:text-4xl tracking-wide drop-shadow">MUTQAN</h1>
           </div>
           <p className="font-display font-black text-sm md:text-base text-sky-200 w-fit mt-0.5">الصيانة والمقاولات العامة</p>
         </div>

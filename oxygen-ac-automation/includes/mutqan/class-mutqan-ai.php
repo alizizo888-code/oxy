@@ -144,7 +144,7 @@ final class Mutqan_AI {
     private static function call($id, $c, $prompt, $json, $temp) {
         switch ($id) {
             case 'groq': return self::call_openai_compat('https://api.groq.com/openai/v1/chat/completions', $c, $prompt, $json, $temp, []);
-            case 'openrouter': return self::call_openai_compat('https://openrouter.ai/api/v1/chat/completions', $c, $prompt, $json, $temp, ['X-Title' => 'Oxygen Mutqan']);
+            case 'openrouter': return self::call_openai_compat('https://openrouter.ai/api/v1/chat/completions', $c, $prompt, $json, $temp, ['X-Title' => 'Mutqan']);
             case 'gemini': return self::call_gemini($c, $prompt, $json, $temp);
             case 'cloudflare': return self::call_cloudflare($c, $prompt, $temp);
         }

@@ -1,4 +1,4 @@
-// OXYGEN owns the screen: no third-party "powered by" mark.
+// MUTQAN owns the screen: no third-party "powered by" mark.
 export const brandingHidden = true
 export const brandIdentity = null
 export const brandingKnown = true

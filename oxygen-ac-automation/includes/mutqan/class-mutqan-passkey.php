@@ -79,7 +79,7 @@ final class Mutqan_Passkey {
         $ids = array_map(function ($id) { return ['type' => 'public-key', 'id' => (string) $id]; }, array_keys(self::all()));
         return ['publicKey' => [
             'challenge' => self::new_challenge('reg'),
-            'rp' => ['name' => 'متقن · أكسجين', 'id' => self::rp_id()],
+            'rp' => ['name' => 'متقن', 'id' => self::rp_id()],
             'user' => ['id' => self::b64u((string) $p['id']), 'name' => (string) ($p['handle'] ?: 'owner'), 'displayName' => (string) ($p['name'] ?: 'المالك')],
             'pubKeyCredParams' => [['type' => 'public-key', 'alg' => -7]],
             'authenticatorSelection' => ['authenticatorAttachment' => 'platform', 'userVerification' => 'required', 'residentKey' => 'preferred'],

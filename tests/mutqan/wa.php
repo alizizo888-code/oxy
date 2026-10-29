@@ -16,7 +16,7 @@ $c['faq'] = [['keywords' => 'ضمان', 'reply' => 'الضمان 6 أشهر']];
 $noon = strtotime('2026-10-28 12:00:00 Asia/Riyadh'); $night = strtotime('2026-10-28 03:00:00 Asia/Riyadh');
 $t('open at noon', $B::open_now($c['hours'], $noon)); $t('closed at 3am', !$B::open_now($c['hours'], $night));
 $o = $B::decide($c, [], 'السلام عليكم', $noon);
-$t('first msg -> welcome+menu', count($o['replies']) === 1 && strpos($o['replies'][0], 'أكسجين') !== false && strpos($o['replies'][0], '5️⃣') !== false);
+$t('first msg -> welcome+menu', count($o['replies']) === 1 && strpos($o['replies'][0], 'متقن') !== false && strpos($o['replies'][0], '5️⃣') !== false);
 $th = ['bot' => $o['patch']['bot']];
 $o = $B::decide($c, $th, '2', $noon + 5);
 $t('2 -> tiktok link', strpos($o['replies'][0], 'tiktok.com') !== false);

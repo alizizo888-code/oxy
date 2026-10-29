@@ -36,7 +36,7 @@ export default function More() {
           </button>
           <div className="flex-1">
             <h1 className="font-display text-lg font-black text-slate-900">المزيد</h1>
-            <p className="text-[11px] text-slate-500">كل أقسام OXYGEN في مكان واحد</p>
+            <p className="text-[11px] text-slate-500">كل أقسام MUTQAN في مكان واحد</p>
           </div>
           <Snowflake size={20} className="text-sky-400" />
         </div>
@@ -44,7 +44,7 @@ export default function More() {
 
       <div className="max-w-3xl mx-auto w-full px-4 pt-4 flex flex-col gap-2.5">
         <AppPromoBanner />
-        <Row icon={<Wrench size={18} />} tint="bg-sky-100 text-sky-700" title="كل الخدمات" sub="18 تخصصًا معتمدًا بضمان OXYGEN" onClick={() => navigate('/services')} />
+        <Row icon={<Wrench size={18} />} tint="bg-sky-100 text-sky-700" title="كل الخدمات" sub="18 تخصصًا معتمدًا بضمان MUTQAN" onClick={() => navigate('/services')} />
         <Row icon={<Percent size={18} />} tint="bg-rose-100 text-rose-600" title="العروض الموسمية" sub="أسعار خاصة تشمل الضمان والتركيب" onClick={() => navigate('/offers')} />
         <Row icon={<ShoppingBag size={18} />} tint="bg-violet-100 text-violet-600" title="المتجر" sub="أجهزة ومعدات أصلية مع التوريد والتركيب" onClick={() => navigate('/store')} />
         <Row icon={<CalcIcon size={18} />} tint="bg-amber-100 text-amber-700" title="حاسب الأسعار" sub="تقدير فوري لتكلفة خدمتك" onClick={() => navigate('/calculator')} />
@@ -70,7 +70,7 @@ export default function More() {
           </div>
           <div className="flex gap-2 mt-3">
             <button
-              onClick={() => share.whatsapp('', `جرّب تطبيق OXYGEN لخدمات الصيانة — فنيون معتمدون وتتبع حي للطلب:\n${APP_URL}`)}
+              onClick={() => share.whatsapp('', `جرّب تطبيق MUTQAN لخدمات الصيانة — فنيون معتمدون وتتبع حي للطلب:\n${APP_URL}`)}
               className="flex-1 flex items-center justify-center gap-1.5 bg-white text-blue-700 font-bold rounded-full py-2.5 text-xs active:scale-95 transition-transform"
             >
               <Share2 size={14} />
@@ -83,7 +83,7 @@ export default function More() {
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-slate-400 py-2">OXYGEN — الصيانة والمقاولات العامة • راحة بيتك مسؤوليتنا</p>
+        <p className="text-center text-[10px] text-slate-400 py-2">MUTQAN — الصيانة والمقاولات العامة • راحة بيتك مسؤوليتنا</p>
       </div>
 
       {guaranteeOpen && (
