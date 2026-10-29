@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X } from 'lucide-react'
+import { LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, UserPlus, Smartphone, Home } from 'lucide-react'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
@@ -9,6 +9,7 @@ const NAV = {
   owner: [
     ['/staff', 'الرئيسية', LayoutDashboard, true],
     ['/staff/operations', 'العمليات', Briefcase],
+    ['/staff/map', 'الخريطة', MapIcon],
     ['/staff/wa-inbox', 'المحادثات', MessageCircle, false, 'wa'],
     ['/notifications', 'الإشعارات', Bell, false, 'bell'],
     ['/staff/payment-methods', 'الدفع', Wallet],
@@ -18,10 +19,12 @@ const NAV = {
     ['/staff/wa-inbox', 'المحادثات', MessageCircle, false, 'wa'],
     ['/notifications', 'الإشعارات', Bell, false, 'bell'],
     ['/staff/radar', 'الرادار', Radar],
+    ['/staff/map', 'الخريطة', MapIcon],
     ['/staff/payment-methods', 'الدفع', Wallet],
   ],
   technician: [
     ['/staff', 'المهام', ListChecks, true],
+    ['/staff?tab=map', 'الخريطة', MapIcon],
     ['/notifications', 'الإشعارات', Bell, false, 'bell'],
   ],
 }
@@ -31,6 +34,7 @@ NAV.supervisor = NAV.operations
 const WORKSPACES = [
   ['/staff', 'لوحة المالك (كل التحكمات)'],
   ['/staff/operations', 'غرفة العمليات'],
+  ['/staff/map', 'الخريطة الميدانية'],
   ['/staff/tech-requests', 'مشرف الموقع — طلبات الفنيين'],
   ['/staff/radar', 'الفني — الرادار والمهام'],
   ['/staff/wa-inbox', 'محادثات الواتساب'],
@@ -57,10 +61,60 @@ function OwnerSwitcher() {
   )
 }
 
-// One navigation bar for every staff role: tasks/operations, chats, notifications, radar, payments.
+// Management pages, shown inside the collapsible "إدارة" group of the side menu.
+const MANAGE = [
+  ['/staff/pricing', 'التسعير والخصومات', Tags],
+  ['/staff/ac', 'خدمات المكيفات', Snowflake],
+  ['/staff/ai-command', 'مركز قيادة الذكاء', Bot],
+  ['/staff/ai-settings', 'إعدادات البوت', Settings2],
+  ['/staff/ai-owner', 'تحكم المالك بالبوت', Bot],
+  ['/staff/whatsapp', 'أرقام الواتساب', Smartphone],
+  ['/staff/notify-settings', 'الإشعارات والرنين', Bell],
+  ['/staff/warranties', 'الضمانات', ShieldCheck],
+  ['/staff/tech-requests', 'طلبات الفنيين', UserPlus],
+  ['/staff/payment-methods', 'طرق الدفع', Wallet],
+]
+
+function SideMenu({ items, role, bell, unread, open, setOpen }) {
+  const { pathname } = useLocation()
+  const canManage = role === 'owner' || role === 'operations' || role === 'supervisor'
+  const [manage, setManage] = useState(() => MANAGE.some((m) => pathname.startsWith(m[0])))
+  useEffect(() => { setOpen(false) }, [pathname]) // eslint-disable-line
+  const link = ([to, label, Icon, end, badge]) => (
+    <NavLink key={to} to={to} end={!!end} className={({ isActive }) => `relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold ${isActive ? 'bg-primary/15 text-primary' : 'text-slate-300 hover:bg-white/5'}`}>
+      <Icon size={18} /><span className="flex-1">{label}</span>
+      {badge === 'bell' && bell > 0 && <span className="min-w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center px-1">{bell > 99 ? '99+' : bell}</span>}
+      {badge === 'wa' && unread > 0 && <span className="min-w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center px-1">{unread > 99 ? '99+' : unread}</span>}
+    </NavLink>
+  )
+  const body = (
+    <nav dir="rtl" className="h-full w-64 bg-[#0d1220] border-l border-white/10 flex flex-col p-3 gap-1 overflow-y-auto pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]" data-keep-colors>
+      <p className="text-xs font-black text-primary px-3 py-2">متقن · أكسجين</p>
+      {items.map(link)}
+      {canManage && (
+        <>
+          <button onClick={() => setManage((v) => !v)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/5 mt-1">
+            <Settings2 size={18} /><span className="flex-1 text-right">إدارة</span><ChevronDown size={16} className={`transition-transform ${manage ? 'rotate-180' : ''}`} />
+          </button>
+          {manage && <div className="mr-3 pr-2 border-r border-white/10 grid gap-0.5">{MANAGE.map(([to, label, Icon]) => link([to, label, Icon]))}</div>}
+        </>
+      )}
+      {role === 'owner' && <NavLink to="/" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-400 hover:bg-white/5 mt-auto"><Home size={18} />تطبيق العميل</NavLink>}
+    </nav>
+  )
+  return (
+    <>
+      <div className="hidden md:block shrink-0 h-full">{body}</div>
+      {open && <div className="md:hidden fixed inset-0 z-50 bg-black/60" onClick={() => setOpen(false)}><div className="absolute right-0 top-0 h-full" onClick={(e) => e.stopPropagation()}>{body}</div></div>}
+    </>
+  )
+}
+
+// Side navigation for every staff role (drawer on phones, fixed sidebar on wide screens).
 export default function StaffLayout() {
   const { signedIn, role, loading } = useTeamRole()
   const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
   const items = signedIn ? NAV[role] : null
   const showWa = !!items?.some((i) => i[4] === 'wa')
   const { data: threads } = useLiveShared('wa_threads', { order: '-lastAt', limit: showWa ? 200 : 1 })
@@ -70,24 +124,13 @@ export default function StaffLayout() {
   const unread = showWa ? (threads || []).reduce((a, t) => a + (t.unread || 0), 0) : 0
   const hide = loading || !items || /\/staff\/order\//.test(pathname)
   return (
-    <div className="h-full flex flex-col bg-[#090c14]">
-      <div className="flex-1 min-h-0 relative"><Outlet />{!hide && role === 'owner' && <OwnerSwitcher />}</div>
-      {!hide && (
-        <nav dir="rtl" className="shrink-0 bg-[#0d1220]/95 backdrop-blur border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]" data-keep-colors>
-          <ul className="max-w-3xl mx-auto grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0,1fr))` }}>
-            {items.map(([to, label, Icon, end, badge]) => (
-              <li key={to}>
-                <NavLink to={to} end={!!end} className={({ isActive }) => `relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold ${isActive ? 'text-primary' : 'text-slate-400'}`}>
-                  <Icon size={19} />
-                  {label}
-                  {badge === 'bell' && bell > 0 && <span className="absolute top-1 right-[calc(50%-18px)] min-w-[16px] h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center px-1">{bell > 99 ? '99+' : bell}</span>}
-                  {badge === 'wa' && unread > 0 && <span className="absolute top-1 right-[calc(50%-18px)] min-w-[16px] h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center px-1">{unread > 99 ? '99+' : unread}</span>}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+    <div className="h-full flex bg-[#090c14]" dir="rtl">
+      {!hide && <SideMenu items={items} role={role} bell={bell} unread={unread} open={open} setOpen={setOpen} />}
+      <div className="flex-1 min-w-0 min-h-0 relative" dir="rtl">
+        <Outlet />
+        {!hide && <button onClick={() => setOpen(true)} aria-label="القائمة" className="md:hidden fixed z-40 right-3 top-[calc(env(safe-area-inset-top,0px)+0.6rem)] w-9 h-9 rounded-full bg-[#0d1220]/90 border border-white/15 text-white flex items-center justify-center shadow-lg"><Menu size={18} />{(bell + unread) > 0 && <span className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-rose-500" />}</button>}
+        {!hide && role === 'owner' && <OwnerSwitcher />}
+      </div>
     </div>
   )
 }

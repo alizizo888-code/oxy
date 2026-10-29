@@ -6,6 +6,7 @@ import Home from './pages/client/Home'
 import Services from './pages/client/Services'
 import Offers from './pages/client/Offers'
 import Notifications from './pages/Notifications'
+const FieldMap = lazyRetry(() => import('./pages/FieldMap'))
 const NotifySettings = lazyRetry(() => import('./pages/NotifySettings'))
 import Store from './pages/client/Store'
 import MyOrders from './pages/client/MyOrders'
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="/staff/order/:id" element={<OrderDetailStaff />} />
         <Route path="/staff/operations" element={<OperationsRoom />} />
         <Route path="/staff/radar" element={<TechRadar />} />
+        <Route path="/staff/map" element={<FieldMap />} />
         <Route path="/staff/handoff/:id" element={<HandoffDetail />} />
         <Route path="/staff/ai-settings" element={<AiSettings />} />
         <Route path="/staff/pricing" element={<PricingRules />} />

@@ -115,4 +115,14 @@ $t('owner reply learned (pending)', $lr && $lr['status'] === 'pending' && $lr['c
 $st = Mutqan_Store::get_raw('wa_bot', 'style'); $t('style profile', $st && $st['n'] === 1 && $st['emoji'] >= 1);
 Mutqan_WA::learn_miss('عندكم رش مبيدات للنمل');
 $t('miss logged', Mutqan_Store::get_raw('wa_bot', 'miss:' . substr(md5($B::norm('عندكم رش مبيدات للنمل')), 0, 16))['count'] === 1);
+// ── field map collections ──
+$tech = ['id' => 't1', 'role' => 'technician', 'kind' => 'user', 'powers' => []];
+Mutqan_Store::insert('customer_profiles', ['status' => 'vip', 'finance' => 'ok'], 'p500000001', [], Mutqan_WA::sys());
+Mutqan_Store::insert('shops', ['name' => 'محل الاختبار', 'lat' => 21.4, 'lng' => 39.8, 'available' => true], 's1', [], Mutqan_WA::sys());
+$t('ops reads customer profiles', count(Mutqan_Store::select('customer_profiles', [], ['limit' => 10], $ops, false)) === 1);
+$t('customer cannot read profiles', count(Mutqan_Store::select('customer_profiles', [], ['limit' => 10], $cust, false)) === 0);
+$t('technician cannot read profiles', count(Mutqan_Store::select('customer_profiles', [], ['limit' => 10], $tech, false)) === 0);
+$t('technician reads shops', count(Mutqan_Store::select('shops', [], ['limit' => 10], $tech, false)) === 1);
+$t('customer cannot read shops', count(Mutqan_Store::select('shops', [], ['limit' => 10], $cust, false)) === 0);
+try { Mutqan_Store::insert('shops', ['name' => 'x'], null, [], $tech); $t('technician cannot write shops', false); } catch (Mutqan_Error $e) { $t('technician cannot write shops', true); }
 exit($ok ? 0 : 1);

@@ -10,6 +10,7 @@ import { useTechProfiles } from '../hooks/useTechProfiles'
 import { useAssignment } from '../hooks/useAssignment'
 import { remainingCapacity, TECH_LEVELS } from '../assignment'
 import OrderCard from '../components/OrderCard'
+import TechMap from '../components/TechMap'
 import { SERVICE_SCOPES, serviceScopeLabel, ACTIVE_STATUSES, SPECIALTIES } from '../constants'
 
 export default function TechRadar() {
@@ -25,7 +26,8 @@ export default function TechRadar() {
   const { data: myApps } = useLiveShared('tech_applications', { filters: { userId: myId || '__none__', status: 'approved' }, limit: 1 })
   const myApp = myApps?.[0] || null
 
-  const [tab, setTab] = useState('mine')
+  const { data: shops } = useLiveShared('shops', { limit: 300 })
+  const [tab, setTab] = useState(() => { try { return new URLSearchParams((location.hash.split('?')[1]) || '').get('tab') || 'mine' } catch { return 'mine' } })
   const [myName, setMyName] = useState('')
   const [dailyCapacity, setDailyCapacity] = useState('8')
   const [scope, setScope] = useState('wash_maintenance_install')
@@ -37,6 +39,7 @@ export default function TechRadar() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
+  useEffect(() => { const f = () => { const t = new URLSearchParams((location.hash.split('?')[1]) || '').get('tab'); if (t) setTab(t) }; window.addEventListener('hashchange', f); return () => window.removeEventListener('hashchange', f) }, [])
 
   // Seed the form from the technician's saved profile, and their real name from the roster.
   useEffect(() => {
@@ -142,6 +145,7 @@ export default function TechRadar() {
           {[
             { k: 'mine', label: `مهامي (${myActive.length})` },
             { k: 'available', label: `متاحة للقبول (${available.length})` },
+            { k: 'map', label: '🗺️ الخريطة' },
             { k: 'profile', label: 'ملفي اليومي' },
           ].map((t) => (
             <button
@@ -195,6 +199,7 @@ export default function TechRadar() {
           </div>
         )}
 
+        {tab === 'map' && <TechMap myId={myId} myProfile={myProfile} profiles={profiles} orders={orders} shops={shops || []} upsertProfile={upsertProfile} />}
         {tab === 'profile' && (
           <section className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 flex flex-col gap-4">
             <div className="flex items-center justify-between">

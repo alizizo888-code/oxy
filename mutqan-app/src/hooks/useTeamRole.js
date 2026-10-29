@@ -10,6 +10,7 @@ export function useTeamRole() {
 
   const load = useCallback(async () => {
     try {
+      try { await auth.refresh() } catch {}
       const gid = await team.groupId()
       const isOwner = auth.isAppOwner()
       if (isOwner) {
