@@ -19,12 +19,20 @@ final class Mutqan_Rest {
     /* ------------------------------------------------------------------ routing */
 
     public static function routes() {
-        foreach (['db', 'auth', 'team', 'ai', 'push', 'promo'] as $name) {
+        foreach (['db', 'auth', 'team', 'ai', 'push', 'promo', 'wa'] as $name) {
             register_rest_route(self::NS, '/' . $name, [
                 'methods' => 'POST', 'permission_callback' => '__return_true',
                 'callback' => function ($req) use ($name) { return self::guard($req, [__CLASS__, 'h_' . $name]); },
             ]);
         }
+        register_rest_route(self::NS, '/wa-hook', ['methods' => 'POST', 'permission_callback' => '__return_true',
+            'callback' => function ($req) {
+                try { $out = Mutqan_WA::webhook((string) $req->get_body(), (string) $req->get_header('x-mq-signature')); $res = new WP_REST_Response(['data' => $out], 200); }
+                catch (Mutqan_Error $e) { $res = new WP_REST_Response(['error' => ['code' => $e->slug, 'message' => $e->getMessage()]], $e->status); }
+                catch (Throwable $e) { error_log('[mutqan] wa-hook ' . $e->getMessage()); $res = new WP_REST_Response(['error' => ['code' => 'server_error']], 500); }
+                $res->header('Cache-Control', 'no-store');
+                return $res;
+            }]);
         register_rest_route(self::NS, '/upload', ['methods' => 'POST', 'permission_callback' => '__return_true',
             'callback' => function ($req) { return self::guard($req, [__CLASS__, 'h_upload']); }]);
         register_rest_route(self::NS, '/geocode', ['methods' => 'GET', 'permission_callback' => '__return_true',
@@ -114,6 +122,11 @@ final class Mutqan_Rest {
         if (!empty($doc['address'])) { $lines[] = 'العنوان: ' . $doc['address']; }
         if (isset($doc['lat'], $doc['lng']) && is_numeric($doc['lat']) && is_numeric($doc['lng'])) { $lines[] = 'الموقع: https://maps.google.com/?q=' . $doc['lat'] . ',' . $doc['lng']; }
         try { Oxygen_Orders_Chat::whatsapp_owner(implode("\n", $lines)); } catch (Throwable $e) { error_log('[mutqan] whatsapp notify failed: ' . $e->getMessage()); }
+    }
+
+    public static function h_wa($req, $p) {
+        if (($p['kind'] ?? 'guest') !== 'user') { throw new Mutqan_Error('unauthorized', 'سجّل الدخول.', 401); }
+        return Mutqan_WA::handle(self::body($req), $p);
     }
 
     public static function h_promo($req, $p) {

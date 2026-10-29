@@ -31,6 +31,7 @@ final class Mutqan_Policy {
                 'notifications' => ['creator_or_read', 'authed', 'target_or_write', 'write'],
                 'warranties' => ['read', 'write', 'write', 'write'],
                 'warranty_claims' => ['creator_or_read', 'authed', 'write', 'write'],
+                'wa_threads' => ['read', 'write', 'write', 'write'], 'wa_msgs' => ['read', 'write', 'write', 'write'], 'wa_bot' => ['read', 'write', 'write', 'write'],
                 'wa_leads' => ['read', 'anon_ok', 'write', 'write'],
                 'ai_logs' => ['read', 'anon_ok', 'write', 'write'],
                 '_ai_usage' => ['read', 'anon_ok', 'write', 'write'],
