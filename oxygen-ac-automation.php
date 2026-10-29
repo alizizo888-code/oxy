@@ -13,8 +13,8 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-business-control
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-media-library.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-article-index-admin.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-orders-chat.php';
-foreach (['store', 'policy', 'auth', 'ai', 'rest', 'admin', 'wabot'] as $mutqan_part) { require_once plugin_dir_path(__FILE__) . 'includes/mutqan/class-mutqan-' . $mutqan_part . '.php'; }
-Mutqan_Rest::boot(); Mutqan_Admin::boot(); Mutqan_Wabot::boot();
+foreach (['store', 'policy', 'auth', 'ai', 'rest', 'admin'] as $mutqan_part) { require_once plugin_dir_path(__FILE__) . 'includes/mutqan/class-mutqan-' . $mutqan_part . '.php'; }
+Mutqan_Rest::boot(); Mutqan_Admin::boot();
 final class Oxygen_AC_Automation {
  const OPT='oxygen_ac_automation_settings'; const CRON='oxygen_ac_daily_job'; private static $instance=null;
  public static function instance(){if(self::$instance===null)self::$instance=new self();return self::$instance;}
