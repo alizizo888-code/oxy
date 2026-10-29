@@ -1,0 +1,20 @@
+# Oxygen / WordPress
+# Prefer WordPress when Core is installed; keep the static homepage as a fallback.
+DirectoryIndex index.php index.html
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Dev-only folders must never be served from the web root.
+RewriteRule ^(tests|mutqan-app|scripts|\.github)(/|$) - [F,L]
+
+# Preserve Authorization for REST API/application passwords.
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Standard WordPress front-controller rules.
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>

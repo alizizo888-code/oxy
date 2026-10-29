@@ -1,0 +1,78 @@
+name: PHP syntax checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Check PHP syntax
+        run: |
+          find oxygen-ac-automation oxygen-wp-theme -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Check root homepage loader JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs');const s=fs.readFileSync('index.html','utf8');const m=s.match(/<script>([\\s\\S]*?)<\\/script>/i);if(!m)throw new Error('root loader script missing');new Function(m[1]);console.log('Root homepage loader JavaScript syntax OK.');"
+
+      - name: Set up Python for article-pipeline validation
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Run article pipeline regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate OXYGEN gallery enhancement JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs');const s=fs.readFileSync('oxygen-ac-automation/assets/oxygen-maintenance-home.html','utf8');const m=s.match(/<script id=\"oxygen-github-ui-enhancements-js\">([\\s\\S]*?)<\\/script>/i);if(!m)throw new Error('OXYGEN gallery enhancement script missing');new Function(m[1]);if(!s.includes('#module-seo-hub'))throw new Error('Homepage article hub hide rule missing');console.log('OXYGEN gallery enhancement JavaScript syntax OK.');"
+
+      - name: Validate published static articles and sitemap
+        run: python scripts/publish_static_articles.py --validate-only
+
+      - name: Build canonical homepage assets
+        run: python build-plugin.py
+
+      - name: Check homepage integration guardrails
+        shell: bash
+        run: |
+          set -euo pipefail
+          homepage="oxygen-ac-automation/assets/oxygen-maintenance-home.html"
+          test -s "$homepage"
+          grep -q 'function openAdminGate' "$homepage"
+          grep -q 'admin-settings-modal' "$homepage"
+          grep -Eq 'const[[:space:]]+ADMIN_PASS[[:space:]]*=' "$homepage"
+          if grep -q '/wp-admin/admin.php?page=oxygen-ac-automation' "$homepage"; then
+            echo "::error::The homepage settings button must not redirect to WordPress admin."
+            exit 1
+          fi
+
+          plugin="oxygen-ac-automation/oxygen-ac-automation.php"
+          grep -Fq "function ensure_daily_schedule" "$plugin"
+          grep -Fq "create_new_articles((int)(\$s['seo_per_day']??30),\$s,10000,'page')" "$plugin"
+          grep -Fq "public function daily_job(\$force=false)" "$plugin"
+          grep -Fq "openai_refresh_section" "$plugin"
+          grep -Fq "if(trim((string)(\$s['openai_key']??''))==='')return 0;" "$plugin"
+
+      - name: Validate WordPress theme entry points
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'Theme Name: Oxygen WordPress' oxygen-wp-theme/style.css
+          grep -q "WP_PLUGIN_DIR . '/oxygen-ac-automation/assets/oxygen-maintenance-home.html'" oxygen-wp-theme/front-page.php
+          if grep -Eq 'function openAdminGate.*window.location.href|googl.oxygen11.com/wp-admin/admin.php?page=oxygen-ac-automation' oxygen-wp-theme/front-page.php; then
+            echo "::error::The theme must preserve the original in-page settings gate."
+            exit 1
+          fi
+          echo "WordPress theme files preserve the original in-page settings modal."

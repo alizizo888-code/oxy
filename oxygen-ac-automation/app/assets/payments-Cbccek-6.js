@@ -1,0 +1,1 @@
+const e=()=>Promise.reject(Object.assign(new Error("الدفع الإلكتروني غير مفعّل."),{code:"PAYMENTS_UNAVAILABLE"})),a={status:async()=>({available:!1,connections:[]}),checkout:e,hasPurchased:async()=>!1,checkoutResult:()=>null,onPayment:()=>()=>{}};export{a as p};
