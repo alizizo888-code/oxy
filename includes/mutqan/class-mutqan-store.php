@@ -215,6 +215,11 @@ final class Mutqan_Store {
         return $data;
     }
 
+    /** Trusted server-side read of one doc's data (no policy check). */
+    public static function peek_doc($coll, $id) {
+        $row = self::fetch_row($coll, $id);
+        return $row ? (json_decode($row['data'], true) ?: []) : [];
+    }
     private static function fetch_row($coll, $id) {
         global $wpdb;
         $t = self::table('docs');

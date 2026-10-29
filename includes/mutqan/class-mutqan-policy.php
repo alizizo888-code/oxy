@@ -163,6 +163,11 @@ final class Mutqan_Policy {
 
     /* ------------------------------------------------------------------ write sanitising */
 
+    /** Owner switch (pricing/ops_mode): when on, new customer orders are executed in-house. */
+    public static function inhouse_mode() {
+        try { $d = Mutqan_Store::peek_doc('pricing', 'ops_mode'); } catch (Throwable $e) { return false; }
+        return !empty($d['inhouse']);
+    }
     /** Payment links must be https and bounded; anything else is dropped. */
     public static function clean_pay_url($u) {
         if (!is_string($u)) { return null; }
@@ -186,7 +191,8 @@ final class Mutqan_Policy {
             $data['paymentStatus'] = 'unpaid';
             $data['clientId'] = ($p['kind'] ?? '') === 'user' ? $p['id'] : null;
             $dev = $data['deviceId'] ?? '';
-            unset($data['deviceId'], $data['welcomeDiscountPct'], $data['payLink']);
+            unset($data['deviceId'], $data['welcomeDiscountPct'], $data['payLink'], $data['inhouse'], $data['inhouseAt']);
+            if (self::inhouse_mode()) { $data['inhouse'] = true; $data['inhouseAt'] = gmdate('c'); }
             $pct = Mutqan_Promo::valid_device($dev) ? Mutqan_Promo::consume($dev) : 0;
             if ($pct > 0) { $data['welcomeDiscountPct'] = $pct; }
             self::price_guard($data, $pct);
@@ -214,7 +220,7 @@ final class Mutqan_Policy {
             }
         }
         if ($coll === 'orders' && !self::has_power($p, 'write')) {
-            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'payLink', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
+            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'payLink', 'inhouse', 'inhouseAt', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
             $creator = $row['owner_id'] === $me;
             if ($creator && ($p['role'] ?? null) !== 'technician') {
                 $deny = array_merge($deny, ['technicianId', 'technicianName', 'paymentStatus', 'paidAt', 'paymentMethod', 'paidRecordedBy']);
