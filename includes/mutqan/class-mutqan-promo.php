@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) { exit; }
 final class Mutqan_Promo {
     const OPT = 'mutqan_welcome';
     const PCT = 30;
+    const MAX_OFF = 20;   // SAR — advertised openly as "30% up to 20 SAR"
     const IP_MAX = 2;
     const CAP = 50000;
 
@@ -19,6 +20,9 @@ final class Mutqan_Promo {
         foreach (['d', 'i'] as $k) { if (count($o[$k]) > self::CAP) { $o[$k] = array_slice($o[$k], -self::CAP, null, true); } }
         update_option(self::OPT, $o, false);
     }
+
+    /** Real discount amount for a total: PCT% but never more than MAX_OFF. */
+    public static function off($total, $pct = self::PCT) { return round(min(((float) $total) * $pct / 100, self::MAX_OFF), 2); }
 
     /** @return array [state, pct]  state: available | claimed | used | blocked */
     public static function status($device) {

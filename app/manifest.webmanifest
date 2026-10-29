@@ -1,39 +1,26 @@
 {
+  "id": "__APP__",
   "name": "أكسجين — مُتقن للصيانة",
   "short_name": "أكسجين",
+  "description": "طلبات الصيانة والإشعارات والمحادثات والمهام في تطبيق واحد",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "__APP__?source=pwa",
+  "scope": "__APP__",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#071a33",
   "theme_color": "#071a33",
+  "categories": ["business", "utilities"],
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ],
-  "description": "حجز فنيين وصيانة وحاسبة أسعار ومساعد ذكي",
-  "orientation": "portrait",
-  "categories": [
-    "business",
-    "utilities"
+    { "src": "__APP__icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "__APP__icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "__APP__icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    {
-      "name": "المساعد الذكي",
-      "url": "./#/ai"
-    },
-    {
-      "name": "طلباتي",
-      "url": "./#/orders"
-    },
-    {
-      "name": "حاسبة الأسعار",
-      "url": "./#/calculator"
-    }
+    { "name": "طلب جديد", "url": "__APP__#/new" },
+    { "name": "طلباتي", "url": "__APP__#/orders" },
+    { "name": "الإشعارات", "url": "__APP__#/notifications" },
+    { "name": "صندوق الواتساب", "url": "__APP__#/staff/wa-inbox" }
   ]
 }

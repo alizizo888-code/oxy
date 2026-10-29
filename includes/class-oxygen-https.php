@@ -48,3 +48,16 @@ final class Oxygen_Https {
     }
 }
 Oxygen_Https::boot();
+
+/** [oxygen_app_download] — download buttons for the web site (Android install / iPhone steps / open the web app). */
+add_shortcode('oxygen_app_download', function () {
+    $app = esc_url('https://mutqan.oxygen11.com/app/');
+    $inst = esc_url('https://mutqan.oxygen11.com/app/#/install');
+    return '<div class="oxy-app-dl" style="direction:rtl;text-align:center;padding:20px;border-radius:16px;background:linear-gradient(135deg,#0b7a75,#071a33);color:#fff;font-family:inherit">'
+        . '<p style="font-size:20px;font-weight:800;margin:0 0 6px">حمّل تطبيق أكسجين</p>'
+        . '<p style="margin:0 0 14px;opacity:.85">خصم 30% حتى 20 ريال على أول طلب · طلباتك وإشعاراتك ومحادثاتك في مكان واحد</p>'
+        . '<a href="' . $inst . '" style="display:inline-block;margin:4px;padding:11px 22px;border-radius:12px;background:#fff;color:#071a33;font-weight:800;text-decoration:none">أندرويد — تثبيت</a>'
+        . '<a href="' . $inst . '" style="display:inline-block;margin:4px;padding:11px 22px;border-radius:12px;background:#fff;color:#071a33;font-weight:800;text-decoration:none">آيفون — الخطوات</a>'
+        . '<a href="' . $app . '" style="display:inline-block;margin:4px;padding:11px 22px;border-radius:12px;border:1px solid rgba(255,255,255,.5);color:#fff;font-weight:700;text-decoration:none">فتح التطبيق على الويب</a>'
+        . '</div>';
+});

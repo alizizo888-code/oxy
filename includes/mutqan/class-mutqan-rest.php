@@ -136,7 +136,7 @@ final class Mutqan_Rest {
         $op = (string) ($in['op'] ?? 'status');
         if ($op === 'claim') { list($st, $pct) = Mutqan_Promo::claim($dev); }
         else { list($st, $pct) = Mutqan_Promo::status($dev); }
-        return ['state' => $st, 'pct' => $pct];
+        return ['state' => $st, 'pct' => $pct, 'max' => Mutqan_Promo::MAX_OFF];
     }
 
     /* ------------------------------------------------------------------ /auth, /team */
@@ -272,11 +272,31 @@ final class Mutqan_Rest {
 
     public static function app_dir() { return plugin_dir_path(dirname(dirname(__FILE__))) . 'app/'; }
 
+    private static function serve_pwa_file($name) {
+        $file = self::app_dir() . $name;
+        if (!is_readable($file)) { status_header(404); exit; }
+        $types = ['js' => 'application/javascript; charset=utf-8', 'webmanifest' => 'application/manifest+json; charset=utf-8', 'png' => 'image/png', 'svg' => 'image/svg+xml'];
+        $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $body = (string) file_get_contents($file);
+        $app_path = (string) wp_parse_url(home_url('/app/'), PHP_URL_PATH);
+        if ($ext === 'js') { $body = str_replace('__BUILD__', (string) (int) @filemtime(self::app_dir() . 'index.html'), $body); }
+        if ($ext === 'webmanifest') { $body = str_replace('__APP__', $app_path, $body); }
+        header('Content-Type: ' . $types[$ext]);
+        header('X-Content-Type-Options: nosniff');
+        if ($ext === 'js') { header('Service-Worker-Allowed: ' . $app_path); header('Cache-Control: no-cache'); }
+        elseif ($ext === 'webmanifest') { header('Cache-Control: no-cache'); }
+        else { header('Cache-Control: public, max-age=86400'); }
+        echo $body;
+        exit;
+    }
+
     public static function serve_app() {
         if (empty($_SERVER['REQUEST_URI']) || (defined('WP_CLI') && WP_CLI) || (defined('DOING_CRON') && DOING_CRON) || (defined('DOING_AJAX') && DOING_AJAX)) { return; }
         $path = isset($_SERVER['REQUEST_URI']) ? (string) wp_parse_url(wp_unslash($_SERVER['REQUEST_URI']), PHP_URL_PATH) : '';
         $base = rtrim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
         $rel = substr($path, strlen($base));
+        // PWA files must live under /app/ so the service worker's scope covers the app (plugin dir paths would not).
+        if (preg_match('#^/app/(sw\.js|manifest\.webmanifest|icon-192\.png|icon-512\.png|icon-maskable-512\.png|apple-touch-icon\.png|icon\.svg)$#', $rel, $m)) { self::serve_pwa_file($m[1]); }
         $is_root = ($rel === '' || $rel === '/');
         if ($is_root) {
             // Domain front page opens the app (owner can switch it off in the Mutqan settings; ?site=wp bypasses it).
@@ -301,6 +321,8 @@ final class Mutqan_Rest {
         $cfg = wp_json_encode(['api' => esc_url_raw(rest_url(self::NS)), 'app' => home_url('/app/')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
         $inject = '<script>window.__MUTQAN__=' . $cfg . ';</script>';
         if ($is_root) { $inject .= '<link rel="canonical" href="' . esc_url(home_url('/')) . '">'; }
+        $app_path = (string) wp_parse_url(home_url('/app/'), PHP_URL_PATH);
+        $html = str_replace(['href="./manifest.webmanifest"', 'href="./icon.svg"'], ['href="' . esc_attr($app_path) . 'manifest.webmanifest"', 'href="' . esc_attr($app_path) . 'apple-touch-icon.png"'], $html);
         $html = preg_replace('/<head>/i', '<head>' . $inject, $html, 1);
         echo $html;
         exit;

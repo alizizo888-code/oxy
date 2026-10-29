@@ -192,10 +192,10 @@ final class Mutqan_Policy {
             $data['paymentStatus'] = 'unpaid';
             $data['clientId'] = ($p['kind'] ?? '') === 'user' ? $p['id'] : null;
             $dev = $data['deviceId'] ?? '';
-            unset($data['deviceId'], $data['welcomeDiscountPct'], $data['payLink'], $data['inhouse'], $data['inhouseAt']);
+            unset($data['deviceId'], $data['welcomeDiscountPct'], $data['welcomeDiscountMax'], $data['payLink'], $data['inhouse'], $data['inhouseAt']);
             if (self::inhouse_mode()) { $data['inhouse'] = true; $data['inhouseAt'] = gmdate('c'); }
             $pct = Mutqan_Promo::valid_device($dev) ? Mutqan_Promo::consume($dev) : 0;
-            if ($pct > 0) { $data['welcomeDiscountPct'] = $pct; }
+            if ($pct > 0) { $data['welcomeDiscountPct'] = $pct; $data['welcomeDiscountMax'] = Mutqan_Promo::MAX_OFF; }
             self::price_guard($data, $pct);
         }
         if ($coll === 'tech_applications' && !$priv) {
@@ -221,7 +221,7 @@ final class Mutqan_Policy {
             }
         }
         if ($coll === 'orders' && !self::has_power($p, 'write')) {
-            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'payLink', 'inhouse', 'inhouseAt', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
+            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'welcomeDiscountMax', 'deviceId', 'payLink', 'inhouse', 'inhouseAt', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
             $creator = $row['owner_id'] === $me;
             if ($creator && ($p['role'] ?? null) !== 'technician') {
                 $deny = array_merge($deny, ['technicianId', 'technicianName', 'paymentStatus', 'paidAt', 'paymentMethod', 'paidRecordedBy']);
@@ -347,7 +347,7 @@ final class Mutqan_Policy {
         } else {
             $floor = self::floor_for($spec, $data['qty'] ?? 1, ($data['priority'] ?? '') === 'urgent');
         }
-        if ($pct > 0) { $floor = $floor * (1 - $pct / 100); }
+        if ($pct > 0) { $floor = $floor - Mutqan_Promo::off($floor, $pct); }
         $candidates = [];
         if (isset($data['agreedPrice']) && $data['agreedPrice'] !== null) { $candidates[] = $data['agreedPrice']; }
         if (isset($data['priceQuote']['total'])) { $candidates[] = $data['priceQuote']['total']; }
