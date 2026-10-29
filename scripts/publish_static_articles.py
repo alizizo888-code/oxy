@@ -24,7 +24,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ARTICLES_DIR = ROOT / "articles"
 CATALOG_PATH = ARTICLES_DIR / "catalog.json"
-SITE_URL = "https://oxygen11.com"
+try:
+    _SITE = json.loads((ARTICLES_DIR / "site.json").read_text())
+except Exception:
+    _SITE = {}
+SITE_URL = os.getenv("SITE_URL", _SITE.get("site_url", "https://oxygen11.com")).rstrip("/")
+SLUG_EPOCH = int(_SITE.get("epoch", 0))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 ALLOWED_TAGS = {"p", "h2", "h3", "ul", "ol", "li", "strong", "em", "blockquote", "br", "hr", "a"}
 VOID_TAGS = {"br", "hr"}
@@ -363,7 +368,7 @@ def generate(count: int) -> None:
     new_items: list[dict[str, str]] = []
     for i in range(count):
         topic = TOPICS[(len(catalog) + i) % len(TOPICS)]
-        slug = f"{topic['slug']}-{today.replace('-', '')}-{i + 1:02d}"
+        slug = f"{topic['slug']}-{today.replace('-', '')}-{i + 1:02d}" + (f"-d{SLUG_EPOCH}" if SLUG_EPOCH else "")
         if slug in existing_slugs:
             continue
         data = openai_json(topic, titles, today, i + 1)
