@@ -1212,7 +1212,7 @@ button[onclick*="openSequentialArticlePage"] { display:none !important; }
     </div>
 
     <!-- ========================================================= -->
-    <!-- 5. لوحة الإعدادات الشاملة للأدمن (الرمز السري: 789512364)  -->
+    <!-- 5. لوحة الإعدادات الشاملة للأدمن  -->
     <!-- ========================================================= -->
     <div id="admin-settings-modal" class="bottom-sheet-overlay" onclick="if(event.target===this) closeAdminModal()">
         <div class="bottom-sheet-card">
@@ -1624,7 +1624,8 @@ button[onclick*="openSequentialArticlePage"] { display:none !important; }
     <script id="dynamic-seo-jsonld" type="application/ld+json">{}</script>
 
     <script>
-        const ADMIN_PASS = "789512364";
+        // ADMIN_PASS: no secret is stored in the page. The owner sets a local code on first use (kept hashed in this browser only).
+        const ADMIN_PASS = null;
 
         // تم مسح جميع الأرقام الإضافية تماماً؛ المصفوفة فارغة بانتظار الأرقام التي يضيفها المستخدم بنفسه
         const USER_ADDED_SEO_PHONES = [];
@@ -3389,12 +3390,38 @@ button[onclick*="openSequentialArticlePage"] { display:none !important; }
             window.location.href = `https://wa.me/${getPrimaryWhatsapp()}?text=${encodeURIComponent(waText)}`;
         }
 
-        function openAdminGate() {
-            const pass = prompt("أدخل الرمز السري لقفل الإعدادات:");
-            if (pass === ADMIN_PASS) {
-                populateAdminPanel();
-                document.getElementById('admin-settings-modal').classList.add('active');
-            } else if (pass !== null) showToast("❌ الرمز السري غير صحيح");
+        async function adminHash(code, saltB64) {
+            const enc = new TextEncoder();
+            const key = await crypto.subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveBits']);
+            const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+            const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 120000 }, key, 256);
+            return btoa(String.fromCharCode(...new Uint8Array(bits)));
+        }
+
+        async function openAdminGate() {
+            let rec = null;
+            try { rec = JSON.parse(localStorage.getItem('oxygen_admin_lock') || 'null'); } catch (e) { rec = null; }
+            try {
+                if (!rec) {
+                    const a = prompt("أول مرة: اختر رمزاً سرياً لقفل الإعدادات على هذا الجهاز (6 أحرف أو أكثر):");
+                    if (a === null) return;
+                    if (a.length < 6) { showToast("❌ الرمز قصير (6 أحرف على الأقل)"); return; }
+                    const b = prompt("أعد كتابة الرمز للتأكيد:");
+                    if (b !== a) { if (b !== null) showToast("❌ الرمزان غير متطابقين"); return; }
+                    const salt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+                    rec = { salt, hash: await adminHash(a, salt) };
+                    localStorage.setItem('oxygen_admin_lock', JSON.stringify(rec));
+                    populateAdminPanel();
+                    document.getElementById('admin-settings-modal').classList.add('active');
+                    return;
+                }
+                const pass = prompt("أدخل الرمز السري لقفل الإعدادات:");
+                if (pass === null) return;
+                if (await adminHash(pass, rec.salt) === rec.hash) {
+                    populateAdminPanel();
+                    document.getElementById('admin-settings-modal').classList.add('active');
+                } else showToast("❌ الرمز السري غير صحيح");
+            } catch (e) { showToast("❌ تعذر فتح الإعدادات على هذا المتصفح"); }
         }
 
         function closeAdminModal() { document.getElementById('admin-settings-modal').classList.remove('active'); }
