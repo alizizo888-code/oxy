@@ -252,7 +252,7 @@ h1{{font-size:clamp(26px,4.5vw,38px);line-height:1.5;color:#0f3d5e;margin:8px 0 
 .lead{{font-size:18px;color:#475569}}.meta{{font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;padding-bottom:16px;margin-bottom:22px}}
 li{{margin:8px 0}}strong{{color:#0f3d5e}}.cta{{margin-top:32px;padding:18px;border-radius:14px;background:#eaf6ff;border:1px solid #cfe7f7}}
 footer{{text-align:center;padding:26px 16px;color:#64748b;font-size:13px}}footer a{{margin:0 7px}}@media(max-width:600px){{header{{padding:12px}}article{{padding:20px 16px;border-radius:12px}}h2{{font-size:21px}}}}
-</style></head><body>
+</style></head><body><div class="mainsite" style="background:#0ea5e9;color:#fff;text-align:center;padding:8px 12px;font-weight:700;font-size:14px"><a href="https://oxygen11.com/" style="color:#fff;text-decoration:none">← الموقع الرئيسي لأكسجين · oxygen11.com</a></div>
 <header><div class="bar"><a class="brand" href="/">أكسجين | OXYGEN</a><nav><a href="/articles/">كل المقالات</a> · <a href="/">الرئيسية والخدمات</a></nav></div></header>
 <main><div class="crumb"><a href="/">الرئيسية</a> ← <a href="/articles/">مقالات الصيانة</a> ← {category}</div>
 <article><h1>{title}</h1><p class="lead">{description}</p>
@@ -260,7 +260,7 @@ footer{{text-align:center;padding:26px 16px;color:#64748b;font-size:13px}}footer
 {image_block}
 {body}
 <div class="cta"><strong>معلومات وخدمات الصيانة</strong><p>راجع <a href="/">موقع أكسجين الرئيسي</a> لمعرفة الخدمات المتاحة وطرق التواصل.</p></div>
-</article></main><footer>© {item['published_at'][:4]} OXYGEN · <a href="/">الرئيسية</a> · <a href="/articles/">مقالات الصيانة</a></footer>
+</article></main><footer>© {item['published_at'][:4]} OXYGEN · <a href="/">الرئيسية</a> · <a href="/articles/">مقالات الصيانة</a> · <a href="https://oxygen11.com/">الموقع الرئيسي</a></footer>
 </body></html>"""
 
 
@@ -277,9 +277,9 @@ def render_listing(catalog: list[dict[str, str]]) -> str:
 <title>مقالات صيانة المكيفات | أكسجين OXYGEN</title><meta name="description" content="أدلة عملية للعناية بالمكيفات وتشخيص مشكلات التبريد وصيانة أنظمة التكييف.">
 <meta name="robots" content="index,follow"><link rel="canonical" href="{SITE_URL}/articles/">
 <style>body{{margin:0;background:#f5f9fc;color:#1e293b;font-family:Tahoma,Arial,sans-serif;line-height:1.9}}header{{background:#fff;border-bottom:1px solid #dbe5ef;padding:14px 20px}}.bar,main{{max-width:980px;margin:auto}}.bar{{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}}.brand{{font-weight:900;color:#075985;text-decoration:none;font-size:18px}}a{{color:#0369a1}}main{{padding:28px 16px}}h1{{font-size:clamp(28px,5vw,38px);color:#0f3d5e}}.intro{{color:#475569;font-size:17px;max-width:760px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:24px}}.card{{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:22px;box-shadow:0 8px 25px #0f172a08}}.card h2{{font-size:21px;line-height:1.6;color:#0f3d5e;margin:4px 0 10px}}.tag{{font-size:12px;color:#64748b}}footer{{text-align:center;padding:26px;color:#64748b;font-size:13px}}</style></head>
-<body><header><div class="bar"><a class="brand" href="/">أكسجين | OXYGEN</a><a href="/">الرئيسية والخدمات</a></div></header>
+<body><div class="mainsite" style="background:#0ea5e9;color:#fff;text-align:center;padding:8px 12px;font-weight:700;font-size:14px"><a href="https://oxygen11.com/" style="color:#fff;text-decoration:none">← الموقع الرئيسي لأكسجين · oxygen11.com</a></div><header><div class="bar"><a class="brand" href="/">أكسجين | OXYGEN</a><a href="/">الرئيسية والخدمات</a></div></header>
 <main><h1>مقالات صيانة المكيفات</h1><p class="intro">أدلة عملية لفهم مشكلات التبريد، والعناية الآمنة بالمكيف، وتنظيم الصيانة الدورية. الأعمال الكهربائية ودائرة التبريد من اختصاص فني مؤهل.</p>
-<div class="grid">{''.join(cards)}</div></main><footer>© {datetime.now(timezone.utc).year} OXYGEN · <a href="/">الرئيسية</a></footer></body></html>"""
+<div class="grid">{''.join(cards)}</div></main><footer>© {datetime.now(timezone.utc).year} OXYGEN · <a href="/">الرئيسية</a> · <a href="https://oxygen11.com/">الموقع الرئيسي</a></footer></body></html>"""
 
 
 def update_sitemap(catalog: list[dict[str, str]]) -> None:

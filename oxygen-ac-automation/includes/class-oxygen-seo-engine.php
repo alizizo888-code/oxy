@@ -303,11 +303,17 @@ class Oxygen_SEO_Engine {
         if (!is_singular('post') || !in_the_loop() || !is_main_query()) { return $c; }
         $id = get_the_ID();
         if (!self::meta_for($id)) { return $c; }
+        $main = esc_url(apply_filters('oxygen_main_site_url', 'https://oxygen11.com/'));
+        $top = '<p class="oxy-mainsite" style="background:#0ea5e9;color:#fff;border-radius:10px;padding:8px 12px;font-weight:700;text-align:center;margin:0 0 14px"><a href="' . $main . '" style="color:#fff;text-decoration:none">← الموقع الرئيسي لأكسجين · oxygen11.com</a></p>';
+        $bottom = '<div class="oxy-mainsite-cta" style="margin-top:22px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:12px;padding:12px 14px;text-align:center"><strong>خدمات الصيانة والتبريد</strong><br><a href="' . $main . '" style="font-weight:700">زيارة الموقع الرئيسي لأكسجين (oxygen11.com) للخدمات والحجز</a></div>';
         $rev = (int) get_post_meta($id, '_oxy_seo_rev', true);
-        if ($rev < 1) { return $c; }
-        $d = get_post_meta($id, '_oxy_seo_updated', true);
-        $ts = strtotime((string) $d) ?: time();
-        return '<p class="oxy-seo-updated" style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:8px 12px;font-weight:700">✅ تم التحديث بتاريخ ' . esc_html(wp_date('j F Y', $ts)) . '</p>' . $c;
+        $upd = '';
+        if ($rev >= 1) {
+            $d = get_post_meta($id, '_oxy_seo_updated', true);
+            $ts = strtotime((string) $d) ?: time();
+            $upd = '<p class="oxy-seo-updated" style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:8px 12px;font-weight:700">✅ تم التحديث بتاريخ ' . esc_html(wp_date('j F Y', $ts)) . '</p>';
+        }
+        return $top . $upd . $c . $bottom;
     }
     public static function head() {
         if (!is_singular('post') || defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION')) { return; }
