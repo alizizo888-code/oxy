@@ -155,7 +155,8 @@ final class Mutqan_WA {
         $label = ($th['name'] ?? '') ?: $phone;
         self::notify_admins('رسالة واتساب جديدة', $label . ': ' . mb_substr((string) ($e['text'] ?? ''), 0, 80), 'wa-' . $tid, 120);
         $cfg = Mutqan_Store::get_raw('wa_bot', 'cfg') ?: [];
-        if (empty($cfg['enabled'])) { return ['ok' => true]; }
+        $acfg = Mutqan_Store::get_raw('wa_bot', 'acct:' . $acct) ?: [];
+        if (empty($cfg['enabled']) || (isset($acfg['botEnabled']) && !$acfg['botEnabled'])) { return ['ok' => true]; }
         $out = Mutqan_WA_Bot::decide($cfg + Mutqan_WA_Bot::defaults(), $th, (string) ($e['text'] ?? ''), (int) ($e['ts'] ?? time()), (string) ($e['kind'] ?? 'text'));
         if ($out['patch']) { self::put_thread($tid, $out['patch']); }
         foreach ($out['replies'] as $txt) {

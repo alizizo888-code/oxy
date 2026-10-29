@@ -114,7 +114,7 @@ final class Mutqan_Rest {
     public static function admin_alert($title, $body, $url, $event, $priority = 'high', $orderId = null) {
         $sys = ['id' => 'system', 'role' => 'owner', 'powers' => ['read', 'write', 'manage'], 'kind' => 'user'];
         try {
-            Mutqan_Store::insert('_push', ['target' => ['admins' => true], 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'sound' => 'bell', 'priority' => $priority, 'from' => 'system'], null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys);
+            Mutqan_Store::insert('_push', ['target' => ['admins' => true], 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'sound' => 'bell', 'priority' => $priority, 'event' => $event, 'from' => 'system'], null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys);
             Mutqan_Store::insert('notifications', ['userId' => null, 'audience' => 'ops', 'event' => $event, 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'orderId' => $orderId, 'priority' => $priority, 'read' => false, 'at' => gmdate('c')], null, ['visibleTo' => 'creator-and-admin', 'writableBy' => 'admins', 'expiresAt' => gmdate('c', time() + 60 * 86400)], $sys);
         } catch (Throwable $e) { error_log('[mutqan] admin_alert: ' . $e->getMessage()); }
     }
@@ -206,7 +206,7 @@ final class Mutqan_Rest {
                 $mine = (isset($t['user']) && $t['user'] === $p['id'])
                     || (isset($t['role']) && $t['role'] === ($p['role'] ?? '#'))
                     || (!empty($t['admins']) && Mutqan_Policy::has_power($p, 'read'));
-                if ($mine) { $out[] = ['id' => $m['id'], 'title' => $m['title'] ?? '', 'body' => $m['body'] ?? '', 'url' => $m['url'] ?? '', 'sound' => $m['sound'] ?? null, 'priority' => $m['priority'] ?? 'normal', 'at' => $m['createdAt']]; }
+                if ($mine) { $out[] = ['id' => $m['id'], 'title' => $m['title'] ?? '', 'body' => $m['body'] ?? '', 'url' => $m['url'] ?? '', 'sound' => $m['sound'] ?? null, 'priority' => $m['priority'] ?? 'normal', 'event' => $m['event'] ?? null, 'at' => $m['createdAt']]; }
             }
             return ['items' => $out, 'now' => Mutqan_Store::iso(Mutqan_Store::now())];
         }
@@ -224,7 +224,7 @@ final class Mutqan_Rest {
             $doc = [
                 'target' => $target, 'title' => mb_substr((string) ($msg['title'] ?? ''), 0, 120), 'body' => mb_substr((string) ($msg['body'] ?? ''), 0, 300),
                 'url' => mb_substr((string) ($msg['url'] ?? ''), 0, 200), 'sound' => isset($msg['sound']) ? mb_substr((string) $msg['sound'], 0, 20) : null, 'from' => $p['id'],
-                'priority' => (Mutqan_Policy::is_staff($p) && ($msg['priority'] ?? '') === 'high') ? 'high' : 'normal',
+                'priority' => (Mutqan_Policy::is_staff($p) && ($msg['priority'] ?? '') === 'high') ? 'high' : 'normal', 'event' => isset($msg['event']) ? preg_replace('/[^a-z_]/', '', mb_substr((string) $msg['event'], 0, 30)) : null,
             ];
             $sys = ['id' => 'system', 'role' => 'owner', 'powers' => ['read', 'write', 'manage'], 'kind' => 'user'];
             Mutqan_Store::insert('_push', $doc, null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys, false);
