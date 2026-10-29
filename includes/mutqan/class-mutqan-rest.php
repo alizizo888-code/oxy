@@ -19,7 +19,7 @@ final class Mutqan_Rest {
     /* ------------------------------------------------------------------ routing */
 
     public static function routes() {
-        foreach (['db', 'auth', 'team', 'ai', 'push'] as $name) {
+        foreach (['db', 'auth', 'team', 'ai', 'push', 'promo'] as $name) {
             register_rest_route(self::NS, '/' . $name, [
                 'methods' => 'POST', 'permission_callback' => '__return_true',
                 'callback' => function ($req) use ($name) { return self::guard($req, [__CLASS__, 'h_' . $name]); },
@@ -114,6 +114,16 @@ final class Mutqan_Rest {
         if (!empty($doc['address'])) { $lines[] = 'العنوان: ' . $doc['address']; }
         if (isset($doc['lat'], $doc['lng']) && is_numeric($doc['lat']) && is_numeric($doc['lng'])) { $lines[] = 'الموقع: https://maps.google.com/?q=' . $doc['lat'] . ',' . $doc['lng']; }
         try { Oxygen_Orders_Chat::whatsapp_owner(implode("\n", $lines)); } catch (Throwable $e) { error_log('[mutqan] whatsapp notify failed: ' . $e->getMessage()); }
+    }
+
+    public static function h_promo($req, $p) {
+        $in = self::body($req);
+        Mutqan_Limiter::hit('promo', 60, 3600);
+        $dev = $in['deviceId'] ?? '';
+        $op = (string) ($in['op'] ?? 'status');
+        if ($op === 'claim') { list($st, $pct) = Mutqan_Promo::claim($dev); }
+        else { list($st, $pct) = Mutqan_Promo::status($dev); }
+        return ['state' => $st, 'pct' => $pct];
     }
 
     /* ------------------------------------------------------------------ /auth, /team */

@@ -172,7 +172,11 @@ final class Mutqan_Policy {
             $data['status'] = 'new';
             $data['paymentStatus'] = 'unpaid';
             $data['clientId'] = ($p['kind'] ?? '') === 'user' ? $p['id'] : null;
-            self::price_guard($data);
+            $dev = $data['deviceId'] ?? '';
+            unset($data['deviceId'], $data['welcomeDiscountPct']);
+            $pct = Mutqan_Promo::valid_device($dev) ? Mutqan_Promo::consume($dev) : 0;
+            if ($pct > 0) { $data['welcomeDiscountPct'] = $pct; }
+            self::price_guard($data, $pct);
         }
         if ($coll === 'tech_applications' && !$priv) {
             $data['status'] = 'pending';
@@ -196,7 +200,7 @@ final class Mutqan_Policy {
             }
         }
         if ($coll === 'orders' && !self::has_power($p, 'write')) {
-            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
+            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
             $creator = $row['owner_id'] === $me;
             if ($creator && ($p['role'] ?? null) !== 'technician') {
                 $deny = array_merge($deny, ['technicianId', 'technicianName', 'paymentStatus', 'paidAt', 'paymentMethod', 'paidRecordedBy']);
@@ -314,7 +318,7 @@ final class Mutqan_Policy {
     }
 
     /** Reject orders whose agreed or quoted total is below what the owner's rules allow. */
-    private static function price_guard($data) {
+    private static function price_guard($data, $pct = 0) {
         $spec = $data['specialtyId'] ?? null;
         if (!is_string($spec) || $spec === '') { return; }
         if ($spec === 'ac' && isset($data['acQuote']) && is_array($data['acQuote'])) {
@@ -322,6 +326,7 @@ final class Mutqan_Policy {
         } else {
             $floor = self::floor_for($spec, $data['qty'] ?? 1, ($data['priority'] ?? '') === 'urgent');
         }
+        if ($pct > 0) { $floor = $floor * (1 - $pct / 100); }
         $candidates = [];
         if (isset($data['agreedPrice']) && $data['agreedPrice'] !== null) { $candidates[] = $data['agreedPrice']; }
         if (isset($data['priceQuote']['total'])) { $candidates[] = $data['priceQuote']['total']; }
