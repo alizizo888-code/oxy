@@ -242,7 +242,7 @@ final class Mutqan_Rest {
         $ai = Mutqan_AI::any_enabled();
         $wa = false;
         if (class_exists('Oxygen_Orders_Chat')) { $s = Oxygen_Orders_Chat::get(); $wa = $s['wa_token'] !== '' && $s['wa_phone_id'] !== '' && $s['wa_owner'] !== ''; }
-        return ['ai' => ['available' => $ai], 'whatsapp' => ['connected' => $wa], 'ownerReady' => Mutqan_Auth::owner_exists(), 'diag' => json_decode((string) get_option('mutqan_root_diag', 'null'), true), 'rootApp' => get_option('mutqan_root_app', '1'), 'time' => Mutqan_Store::iso(Mutqan_Store::now())];
+        return ['ai' => ['available' => $ai], 'whatsapp' => ['connected' => $wa], 'ownerReady' => Mutqan_Auth::owner_exists(), 'time' => Mutqan_Store::iso(Mutqan_Store::now())];
     }
 
     /* ------------------------------------------------------------------ serving /app/ */
@@ -255,17 +255,15 @@ final class Mutqan_Rest {
         $base = rtrim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
         $rel = substr($path, strlen($base));
         $is_root = ($rel === '' || $rel === '/');
-        $dg = function ($why) use ($path, $rel, $is_root) { if ((isset($_GET['utm_source']) || isset($_GET['mq']))) { update_option('mutqan_root_diag', wp_json_encode(['why' => $why, 'uri' => $path, 'rel' => $rel, 'root' => $is_root, 't' => gmdate('c')]), false); } };
         if ($is_root) {
             // Domain front page opens the app (owner can switch it off in the Mutqan settings; ?site=wp bypasses it).
-            if (get_option('mutqan_root_app', '1') === '0') { $dg('opt_off'); return; }
-            if (!empty($_GET['site']) || (defined('REST_REQUEST') && REST_REQUEST) || (function_exists('is_admin') && is_admin())) { $dg('site/rest/admin'); return; }
+            if (get_option('mutqan_root_app', '1') === '0') { return; }
+            if (!empty($_GET['site']) || (defined('REST_REQUEST') && REST_REQUEST) || (function_exists('is_admin') && is_admin())) { return; }
             // Only a clean front-page visit (tracking params allowed) opens the app; any other query (rest_route, cron, preview, search…) is left to WordPress.
-            foreach (array_keys($_GET) as $k) { if (!preg_match('/^(utm_[a-z_]+|fbclid|gclid|ref|source|v|mq|pwa)$/i', (string) $k)) { $dg('param:' . $k); return; } }
-            if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'HEAD') { $dg('method'); return; }
+            foreach (array_keys($_GET) as $k) { if (!preg_match('/^(utm_[a-z_]+|fbclid|gclid|ref|source|v|pwa)$/i', (string) $k)) { return; } }
+            if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'HEAD') { return; }
         } elseif ($rel !== '/app' && $rel !== '/app/' && $rel !== '/app/index.html') { return; }
         if ($rel === '/app') { wp_safe_redirect(home_url('/app/') . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); exit; }
-        $dg('serving');
         $file = self::app_dir() . 'index.html';
         nocache_headers();
         header('Content-Type: text/html; charset=utf-8');
