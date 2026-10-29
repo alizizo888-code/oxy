@@ -7,6 +7,16 @@ self.addEventListener('activate', (e) => {
     await self.clients.claim()
   })())
 })
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = e.notification.data && e.notification.data.url ? String(e.notification.data.url).replace(/^#/, '') : ''
+  e.waitUntil((async () => {
+    const all = await clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const w = all[0]
+    if (w) { await w.focus(); if (url) w.postMessage({ type: 'goto', url }); return }
+    await clients.openWindow(self.registration.scope + (url ? '#' + url : ''))
+  })())
+})
 self.addEventListener('fetch', (e) => {
   const r = e.request
   if (r.method !== 'GET') return

@@ -99,7 +99,8 @@ final class Mutqan_Rest {
             }
             case 'insert': case 'insertShared': {
                 $doc = Mutqan_Store::insert($coll, $in['data'] ?? [], $in['id'] ?? null, $opts, $p, $private);
-                if ($coll === 'orders' && !$private) { self::after_order_created($doc); }
+                if ($coll === 'orders' && !$private) { self::after_order_created($doc); self::alert_new_order($doc); }
+                if ($coll === 'tech_applications' && !$private) { self::alert_tech_application($doc); }
                 return $doc;
             }
             case 'update': case 'updateShared': return Mutqan_Store::update($coll, $in['id'] ?? '', $in['data'] ?? [], $p);
@@ -107,6 +108,26 @@ final class Mutqan_Rest {
             case 'delete': case 'deleteShared': return ['deleted' => Mutqan_Store::delete($coll, $in['id'] ?? '', $p, $private)];
         }
         throw new Mutqan_Error('bad_op', 'عملية غير معروفة.', 400);
+    }
+
+    /** Reaches every admin (owner, operations, supervisor): push + a row in the notification center. */
+    public static function admin_alert($title, $body, $url, $event, $priority = 'high', $orderId = null) {
+        $sys = ['id' => 'system', 'role' => 'owner', 'powers' => ['read', 'write', 'manage'], 'kind' => 'user'];
+        try {
+            Mutqan_Store::insert('_push', ['target' => ['admins' => true], 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'sound' => 'bell', 'priority' => $priority, 'from' => 'system'], null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys);
+            Mutqan_Store::insert('notifications', ['userId' => null, 'audience' => 'ops', 'event' => $event, 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'orderId' => $orderId, 'priority' => $priority, 'read' => false, 'at' => gmdate('c')], null, ['visibleTo' => 'creator-and-admin', 'writableBy' => 'admins', 'expiresAt' => gmdate('c', time() + 60 * 86400)], $sys);
+        } catch (Throwable $e) { error_log('[mutqan] admin_alert: ' . $e->getMessage()); }
+    }
+
+    /** Top priority: every new order alerts the whole admin team immediately, server-side (cannot be skipped by the client). */
+    private static function alert_new_order($doc) {
+        $urgent = (($doc['priority'] ?? '') === 'urgent');
+        $bits = array_filter([(string) ($doc['clientName'] ?? ''), mb_substr((string) ($doc['address'] ?? ''), 0, 40), !empty($doc['inhouse']) ? 'تنفيذ داخلي' : '']);
+        self::admin_alert(($urgent ? '🚨 طلب عاجل جديد' : '🆕 طلب جديد') . (!empty($doc['specialtyId']) ? ' — ' . $doc['specialtyId'] : ''), implode(' · ', $bits) ?: 'طلب خدمة جديد بانتظار المعالجة', '#/staff/order/' . $doc['id'], 'new_order', 'high', $doc['id']);
+    }
+
+    private static function alert_tech_application($doc) {
+        self::admin_alert('👷 طلب انضمام فني جديد', trim((string) ($doc['name'] ?? $doc['fullName'] ?? '') . ' ' . (string) ($doc['specialty'] ?? $doc['specialtyId'] ?? '')) ?: 'طلب جديد بانتظار المراجعة', '#/staff/tech-requests', 'tech_application', 'high');
     }
 
     /** New order -> WhatsApp message to the owner (if Cloud API is configured in "الشات بوت والطلبات"). */
@@ -185,7 +206,7 @@ final class Mutqan_Rest {
                 $mine = (isset($t['user']) && $t['user'] === $p['id'])
                     || (isset($t['role']) && $t['role'] === ($p['role'] ?? '#'))
                     || (!empty($t['admins']) && Mutqan_Policy::has_power($p, 'read'));
-                if ($mine) { $out[] = ['id' => $m['id'], 'title' => $m['title'] ?? '', 'body' => $m['body'] ?? '', 'url' => $m['url'] ?? '', 'sound' => $m['sound'] ?? null, 'at' => $m['createdAt']]; }
+                if ($mine) { $out[] = ['id' => $m['id'], 'title' => $m['title'] ?? '', 'body' => $m['body'] ?? '', 'url' => $m['url'] ?? '', 'sound' => $m['sound'] ?? null, 'priority' => $m['priority'] ?? 'normal', 'at' => $m['createdAt']]; }
             }
             return ['items' => $out, 'now' => Mutqan_Store::iso(Mutqan_Store::now())];
         }
@@ -203,6 +224,7 @@ final class Mutqan_Rest {
             $doc = [
                 'target' => $target, 'title' => mb_substr((string) ($msg['title'] ?? ''), 0, 120), 'body' => mb_substr((string) ($msg['body'] ?? ''), 0, 300),
                 'url' => mb_substr((string) ($msg['url'] ?? ''), 0, 200), 'sound' => isset($msg['sound']) ? mb_substr((string) $msg['sound'], 0, 20) : null, 'from' => $p['id'],
+                'priority' => (Mutqan_Policy::is_staff($p) && ($msg['priority'] ?? '') === 'high') ? 'high' : 'normal',
             ];
             $sys = ['id' => 'system', 'role' => 'owner', 'powers' => ['read', 'write', 'manage'], 'kind' => 'user'];
             Mutqan_Store::insert('_push', $doc, null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys, false);
