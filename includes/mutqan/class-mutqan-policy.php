@@ -257,6 +257,20 @@ final class Mutqan_Policy {
 
     /** Official AC total (0 = priced after inspection). Same rules as acPricing.js. */
     public static function ac_total($q) {
+        if (!empty($q['items']) && is_array($q['items'])) {
+            $row = Mutqan_Store::get_raw('pricing', 'ac_calc') ?: [];
+            $g = function ($k, $d) use ($row) { return (isset($row[$k]) && is_numeric($row[$k])) ? max(0, (float) $row[$k]) : (float) $d; };
+            $sum = 0.0; $units = 0;
+            foreach (array_slice($q['items'], 0, 10) as $it) {
+                $line = ['mode' => 'wash', 'type' => (string) ($it['type'] ?? 'سبليت'), 'qty' => (int) ($it['qty'] ?? 1), 'full' => !isset($it['full']) || $it['full'], 'warranty' => 'بدون', 'vat' => false];
+                $sum += self::ac_total($line);
+                $units += max(1, min(50, $line['qty']));
+            }
+            $wmap = ['شهر' => $g('w1', 10), 'شهرين' => $g('w2', 20), '3 شهور' => $g('w3', 30)];
+            $sum += $units * ($wmap[(string) ($q['warranty'] ?? '')] ?? 0);
+            if (!empty($q['vat'])) { $sum *= 1 + $g('vatPct', 15) / 100; }
+            return (float) $sum;
+        }
         $row = Mutqan_Store::get_raw('pricing', 'ac_calc') ?: [];
         $d = ['split1' => 100, 'split2' => 140, 'split3' => 200, 'win1' => 60, 'win2' => 100, 'win3' => 150, 'winExtra' => 50, 'other1' => 180,
               'innerOff1' => 10, 'innerOff2' => 20, 'innerOff3' => 40, 'w1' => 10, 'w2' => 20, 'w3' => 30, 'vatPct' => 15, 'maxDiscountPct' => 10];
@@ -275,7 +289,7 @@ final class Mutqan_Policy {
         } else {
             $base = null;
             $offerKey = $q['offerKey'] ?? null;
-            if ($offerKey) {
+            if ($offerKey && $full) {
                 $o = Mutqan_Store::get_raw('offers', (string) $offerKey) ?: [];
                 if (!empty($o['acMode']) && $o['acMode'] === 'wash' && (int) ($o['qty'] ?? 0) === $qty && ($o['acType'] ?? 'سبليت') === $type && ($o['active'] ?? true) !== false && is_numeric($o['price'] ?? null)) { $base = (float) $o['price']; }
             }
