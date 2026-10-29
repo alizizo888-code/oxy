@@ -1,7 +1,7 @@
 {
   "id": "__APP__",
-  "name": "أكسجين — مُتقن للصيانة",
-  "short_name": "أكسجين",
+  "name": "OXYGEN للصيانة",
+  "short_name": "OXYGEN للصيانة",
   "description": "طلبات الصيانة والإشعارات والمحادثات والمهام في تطبيق واحد",
   "lang": "ar",
   "dir": "rtl",
@@ -9,7 +9,7 @@
   "scope": "__APP__",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#071a33",
+  "background_color": "#ffffff",
   "theme_color": "#071a33",
   "categories": ["business", "utilities"],
   "icons": [
