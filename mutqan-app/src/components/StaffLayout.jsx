@@ -1,5 +1,6 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase } from 'lucide-react'
+import { useState } from 'react'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X } from 'lucide-react'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
@@ -26,6 +27,36 @@ const NAV = {
 }
 NAV.supervisor = NAV.operations
 
+// Owner only: jump into every workspace (operations room, supervisor board, technician radar, the customer app…) without logging out.
+const WORKSPACES = [
+  ['/staff', 'لوحة المالك (كل التحكمات)'],
+  ['/staff/operations', 'غرفة العمليات'],
+  ['/staff/tech-requests', 'مشرف الموقع — طلبات الفنيين'],
+  ['/staff/radar', 'الفني — الرادار والمهام'],
+  ['/staff/wa-inbox', 'محادثات الواتساب'],
+  ['/staff/payment-methods', 'طرق الدفع'],
+  ['/', 'تطبيق العميل'],
+]
+function OwnerSwitcher() {
+  const [open, setOpen] = useState(false)
+  const nav = useNavigate()
+  return (
+    <>
+      <button onClick={() => setOpen(true)} aria-label="تبديل الواجهة" className="fixed z-40 left-3 top-[calc(env(safe-area-inset-top,0px)+0.6rem)] w-9 h-9 rounded-full bg-primary text-black flex items-center justify-center shadow-lg"><Layers size={17} /></button>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setOpen(false)}>
+          <div dir="rtl" onClick={(e) => e.stopPropagation()} className="w-full max-w-sm bg-[#0d1220] border border-white/10 rounded-t-3xl sm:rounded-3xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center mb-3"><p className="flex-1 text-sm font-black text-white">دخول كل الواجهات (المالك)</p><button onClick={() => setOpen(false)} className="text-slate-400"><X size={18} /></button></div>
+            <div className="grid gap-2">
+              {WORKSPACES.map(([to, label]) => <button key={to} onClick={() => { setOpen(false); nav(to) }} className="text-right rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm font-bold text-slate-100">{label}</button>)}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // One navigation bar for every staff role: tasks/operations, chats, notifications, radar, payments.
 export default function StaffLayout() {
   const { signedIn, role, loading } = useTeamRole()
@@ -40,7 +71,7 @@ export default function StaffLayout() {
   const hide = loading || !items || /\/staff\/order\//.test(pathname)
   return (
     <div className="h-full flex flex-col bg-[#090c14]">
-      <div className="flex-1 min-h-0 relative"><Outlet /></div>
+      <div className="flex-1 min-h-0 relative"><Outlet />{!hide && role === 'owner' && <OwnerSwitcher />}</div>
       {!hide && (
         <nav dir="rtl" className="shrink-0 bg-[#0d1220]/95 backdrop-blur border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]" data-keep-colors>
           <ul className="max-w-3xl mx-auto grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0,1fr))` }}>
