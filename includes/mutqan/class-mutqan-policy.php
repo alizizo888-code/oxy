@@ -163,8 +163,21 @@ final class Mutqan_Policy {
 
     /* ------------------------------------------------------------------ write sanitising */
 
+    /** Payment links must be https and bounded; anything else is dropped. */
+    public static function clean_pay_url($u) {
+        if (!is_string($u)) { return null; }
+        $u = trim($u);
+        return (strlen($u) <= 600 && preg_match('#^https://[^\s<>"\']+$#i', $u)) ? $u : null;
+    }
+    private static function clean_pay_fields($coll, $data) {
+        if ($coll === 'payment_methods' && array_key_exists('payUrl', $data) && $data['payUrl'] !== '') { $data['payUrl'] = self::clean_pay_url($data['payUrl']) ?? ''; }
+        if ($coll === 'orders' && array_key_exists('payLink', $data) && $data['payLink'] !== null) { $data['payLink'] = self::clean_pay_url($data['payLink']); }
+        return $data;
+    }
+
     public static function sanitize_insert($coll, $data, $p) {
         if (!is_array($data)) { return $data; }
+        $data = self::clean_pay_fields($coll, $data);
         $priv = self::has_power($p, 'write');
         if ($coll === 'orders' && !$priv) {
             Mutqan_Limiter::hit('order_insert', 6, 3600);
@@ -173,7 +186,7 @@ final class Mutqan_Policy {
             $data['paymentStatus'] = 'unpaid';
             $data['clientId'] = ($p['kind'] ?? '') === 'user' ? $p['id'] : null;
             $dev = $data['deviceId'] ?? '';
-            unset($data['deviceId'], $data['welcomeDiscountPct']);
+            unset($data['deviceId'], $data['welcomeDiscountPct'], $data['payLink']);
             $pct = Mutqan_Promo::valid_device($dev) ? Mutqan_Promo::consume($dev) : 0;
             if ($pct > 0) { $data['welcomeDiscountPct'] = $pct; }
             self::price_guard($data, $pct);
@@ -194,13 +207,14 @@ final class Mutqan_Policy {
 
     public static function sanitize_update($coll, $old, $patch, $p, $row) {
         $me = $p['id'];
+        $patch = self::clean_pay_fields($coll, $patch);
         if ($coll === 'ai_settings' && ($p['role'] ?? null) !== 'owner') {
             foreach (self::OWNER_ONLY_AI_KEYS as $k) {
                 if (array_key_exists($k, $old)) { $patch[$k] = $old[$k]; } else { unset($patch[$k]); }
             }
         }
         if ($coll === 'orders' && !self::has_power($p, 'write')) {
-            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
+            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'welcomeDiscountPct', 'deviceId', 'payLink', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
             $creator = $row['owner_id'] === $me;
             if ($creator && ($p['role'] ?? null) !== 'technician') {
                 $deny = array_merge($deny, ['technicianId', 'technicianName', 'paymentStatus', 'paidAt', 'paymentMethod', 'paidRecordedBy']);
