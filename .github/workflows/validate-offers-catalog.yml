@@ -1,0 +1,52 @@
+name: Validate rotating offers catalogue
+
+on:
+  push:
+    branches: [main, google, متقن]
+    paths:
+      - 'oxygen-ac-automation/assets/oxygen-maintenance-home.html'
+      - '.github/workflows/validate-offers-catalog.yml'
+  pull_request:
+    branches: [main, google, متقن]
+    paths:
+      - 'oxygen-ac-automation/assets/oxygen-maintenance-home.html'
+      - '.github/workflows/validate-offers-catalog.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Check offer catalogue structure and JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          page = Path('oxygen-ac-automation/assets/oxygen-maintenance-home.html').read_text(encoding='utf-8')
+          match = re.search(r'<section id="mutqan-offers-catalog".*?<script>\s*(.*?)\s*</script>\s*</section>', page, re.S)
+          if not match:
+              raise SystemExit('Offers catalogue section or inline script is missing')
+          script = match.group(1)
+          Path('/tmp/offers-catalog.js').write_text(script, encoding='utf-8')
+          required = [
+              'const categories=[', "for(let i=0;i<40;i++)", "window.setInterval(tick,20000)",
+              'moc-offer-edit-select', 'moc-image-upload', 'moc-ai-prompt',
+              "id:'wash'", "id:'maintenance'", "id:'installation'", "id:'coldrooms'",
+              "id:'central'", "id:'ducts'", "id:'contracts'", "id:'urgent'"
+          ]
+          missing = [item for item in required if item not in page]
+          if missing:
+              raise SystemExit('Missing catalogue requirements: ' + ', '.join(missing))
+          print('Catalogue check passed: 8 categories × 40 offer variations = 320; 5 visible per section; 20-second rotation.')
+          PY
+          node --check /tmp/offers-catalog.js

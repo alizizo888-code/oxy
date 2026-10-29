@@ -1,0 +1,74 @@
+name: Deploy Oxygen public homepage
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'build-plugin.py'
+      - 'oxygen-ac-automation/assets/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oxygen-static-homepage-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Keep publishing disabled until Oxygen's own Hostinger secrets and root are configured.
+    if: vars.OXYGEN_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7.0.1
+
+      - name: Validate Hostinger FTP secrets and public root
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_ROOT_DIR: ${{ secrets.FTP_ROOT_DIR }}
+        run: |
+          set -euo pipefail
+          [[ -n "$FTP_SERVER" ]] || { echo "::error::Missing repository secret FTP_SERVER"; exit 1; }
+          [[ -n "$FTP_USERNAME" ]] || { echo "::error::Missing repository secret FTP_USERNAME"; exit 1; }
+          [[ -n "$FTP_PASSWORD" ]] || { echo "::error::Missing repository secret FTP_PASSWORD"; exit 1; }
+          [[ "$FTP_ROOT_DIR" == */public_html/ ]] || {
+            echo "::error::FTP_ROOT_DIR must end with /public_html/ for the oxygen11.com public site root."
+            exit 1
+          }
+
+      - name: Rebuild homepage and fallback chunks
+        run: python3 build-plugin.py
+
+      - name: Assemble minimal public-site payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          test -s oxygen-ac-automation/assets/oxygen-maintenance-home.html
+          mkdir -p dist/oxygen-ac-automation/assets
+          cp index.html dist/index.html
+          cp oxygen-ac-automation/assets/oxygen-maintenance-home.html dist/oxygen-ac-automation/assets/
+          cp oxygen-ac-automation/assets/page-part-*.txt dist/oxygen-ac-automation/assets/
+          # Include Oxygen's own article pages and sitemap without deleting unrelated files.
+          test -d articles
+          test -s sitemap.xml
+          cp -a articles dist/articles
+          cp sitemap.xml dist/sitemap.xml
+          test -s dist/index.html
+          test -s dist/oxygen-ac-automation/assets/oxygen-maintenance-home.html
+
+      - name: Upload only homepage and required assets
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_ROOT_DIR }}
+          local-dir: ./dist/
