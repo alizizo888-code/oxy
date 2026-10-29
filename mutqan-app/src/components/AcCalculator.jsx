@@ -93,7 +93,7 @@ export default function AcCalculator({ offerKey, onChange }) {
 
       {mode === 'maintenance' && (
         <p className="bg-amber-50 border-r-4 border-amber-400 rounded-xl p-3 text-[11px] font-bold text-amber-900 leading-relaxed">
-          الفحص مجاني إذا فحصنا مكيفين أو أكثر ولم يتم العمل، أما إذا كان مكيفًا واحدًا ولم يتم الاتفاق فتُحتسب كشفية الزيارة {cfg.visitFee} ريال فقط.
+          الكشفية مجانية لفحص حتى مكيفين، وإذا زاد العدد عن مكيفين ولم يتم العمل أو الاتفاق تُحتسب كشفية الزيارة {cfg.visitFee} ريال.
         </p>
       )}
 
