@@ -1,5 +1,5 @@
 import { Component } from 'react'
-import { logError, hardRefresh, autoRepairOnce } from '../lib/recover'
+import { logError, hardRefresh, autoRepairOnce, CHUNK_RE } from '../lib/recover'
 
 export default class ErrorBoundary extends Component {
   state = { err: null, tries: 0 }
@@ -18,11 +18,11 @@ export default class ErrorBoundary extends Component {
     } else if (!sessionStorage.getItem('mq_soft_home')) {
       try { sessionStorage.setItem('mq_soft_home', '1'); location.hash = '#/'; this.timer = setTimeout(() => this.setState({ err: null, tries: 0 }), 300) } catch { /* ignore */ }
     }
-    if (/Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically/i.test(String(err?.message))) autoRepairOnce('chunk-load')
+    if (CHUNK_RE.test(String(err?.message))) { this.repairing = autoRepairOnce('chunk-load'); if (this.repairing) return }
   }
   render() {
     if (!this.state.err) return this.props.children
-    if (this.state.tries < 2) return null // silent while self-healing
+    if (this.repairing || this.state.tries < 2) return null // silent while self-healing / refreshing to the new build
     return (
       <div dir="rtl" style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#071a33', color: '#fff', fontFamily: 'Tajawal, Tahoma, sans-serif', textAlign: 'center' }}>
         <div style={{ maxWidth: 340 }}>

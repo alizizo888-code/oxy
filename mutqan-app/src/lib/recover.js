@@ -9,8 +9,16 @@ export async function hardRefresh() {
   const u = new URL(location.href); u.searchParams.set('r', String(Date.now()))
   location.replace(u.toString())
 }
-// One automatic repair per session for the classic "old cached file after a new release" failure.
+// Automatic repair for the classic "old cached file after a new release" failure (a lazy chunk whose hash no longer exists).
+// Loop-safe: at most 3 automatic repairs per 5 minutes; returns true when a repair was started (the caller should stay silent).
+export const CHUNK_RE = /Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically|error loading dynamically|Unable to preload|module script/i
 export function autoRepairOnce(reason) {
-  try { if (sessionStorage.getItem('mutqan_repaired')) return false; sessionStorage.setItem('mutqan_repaired', '1') } catch { return false }
+  try {
+    const now = Date.now()
+    const list = JSON.parse(sessionStorage.getItem('mq_repairs') || '[]').filter((t) => now - t < 5 * 60 * 1000)
+    if (list.length >= 3) return false
+    list.push(now); sessionStorage.setItem('mq_repairs', JSON.stringify(list))
+  } catch { /* storage blocked: still try once per page load */ if (window.__mqRepaired) return false }
+  window.__mqRepaired = true
   logError(reason, 'auto-repair'); hardRefresh(); return true
 }

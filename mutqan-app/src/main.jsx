@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import { initPerf } from './lib/perf'
-import { logError, autoRepairOnce } from './lib/recover'
+import { logError, autoRepairOnce, CHUNK_RE } from './lib/recover'
+window.addEventListener('vite:preloadError', (e) => { e.preventDefault(); autoRepairOnce('preload') })
 import './index.css'
 import { auth } from './lib/auth'
 import { startInbox } from './lib/push'
@@ -11,8 +12,8 @@ import { registerServiceWorker } from './lib/install'
 
 initPerf()
 registerServiceWorker()
-window.addEventListener('error', (e) => { logError(e.error || e.message, 'window'); if (/Loading chunk|dynamically imported|module script/i.test(String(e.message))) autoRepairOnce('chunk-load') })
-window.addEventListener('unhandledrejection', (e) => { logError(e.reason, 'promise'); if (/Loading chunk|dynamically imported|Importing a module/i.test(String(e.reason?.message))) autoRepairOnce('chunk-load') })
+window.addEventListener('error', (e) => { logError(e.error || e.message, 'window'); if (CHUNK_RE.test(String(e.message))) autoRepairOnce('chunk-load') })
+window.addEventListener('unhandledrejection', (e) => { logError(e.reason, 'promise'); if (CHUNK_RE.test(String(e.reason?.message))) autoRepairOnce('chunk-load') })
 auth.refresh()
 startInbox()
 
