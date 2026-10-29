@@ -14,6 +14,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-business-control
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-media-library.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-article-index-admin.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-orders-chat.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-domain-guard.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-seo-engine.php';
 Oxygen_SEO_Engine::boot();
 foreach (['store', 'policy', 'auth', 'promo', 'wa', 'ai', 'rest', 'admin'] as $mutqan_part) { require_once plugin_dir_path(__FILE__) . 'includes/mutqan/class-mutqan-' . $mutqan_part . '.php'; }
