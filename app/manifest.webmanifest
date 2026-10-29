@@ -1,12 +1,39 @@
 {
-  "name": "OXYGEN — متقن",
-  "short_name": "متقن",
+  "name": "أكسجين — مُتقن للصيانة",
+  "short_name": "أكسجين",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0b7a75",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "background_color": "#071a33",
+  "theme_color": "#071a33",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "description": "حجز فنيين وصيانة وحاسبة أسعار ومساعد ذكي",
+  "orientation": "portrait",
+  "categories": [
+    "business",
+    "utilities"
+  ],
+  "shortcuts": [
+    {
+      "name": "المساعد الذكي",
+      "url": "./#/ai"
+    },
+    {
+      "name": "طلباتي",
+      "url": "./#/orders"
+    },
+    {
+      "name": "حاسبة الأسعار",
+      "url": "./#/calculator"
+    }
+  ]
 }

@@ -250,10 +250,19 @@ final class Mutqan_Rest {
     public static function app_dir() { return plugin_dir_path(dirname(dirname(__FILE__))) . 'app/'; }
 
     public static function serve_app() {
+        if (empty($_SERVER['REQUEST_URI']) || (defined('WP_CLI') && WP_CLI) || (defined('DOING_CRON') && DOING_CRON) || (defined('DOING_AJAX') && DOING_AJAX)) { return; }
         $path = isset($_SERVER['REQUEST_URI']) ? (string) wp_parse_url(wp_unslash($_SERVER['REQUEST_URI']), PHP_URL_PATH) : '';
         $base = rtrim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
         $rel = substr($path, strlen($base));
-        if ($rel !== '/app' && $rel !== '/app/' && $rel !== '/app/index.html') { return; }
+        $is_root = ($rel === '' || $rel === '/');
+        if ($is_root) {
+            // Domain front page opens the app (owner can switch it off in the Mutqan settings; ?site=wp bypasses it).
+            if (get_option('mutqan_root_app', '1') === '0') { return; }
+            if (!empty($_GET['site']) || (defined('REST_REQUEST') && REST_REQUEST) || (function_exists('is_admin') && is_admin())) { return; }
+            // Only a clean front-page visit (tracking params allowed) opens the app; any other query (rest_route, cron, preview, search…) is left to WordPress.
+            foreach (array_keys($_GET) as $k) { if (!preg_match('/^(utm_[a-z_]+|fbclid|gclid|ref|source)$/i', (string) $k)) { return; } }
+            if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'HEAD') { return; }
+        } elseif ($rel !== '/app' && $rel !== '/app/' && $rel !== '/app/index.html') { return; }
         if ($rel === '/app') { wp_safe_redirect(home_url('/app/') . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); exit; }
         $file = self::app_dir() . 'index.html';
         nocache_headers();
@@ -268,6 +277,7 @@ final class Mutqan_Rest {
         $html = (string) file_get_contents($file);
         $cfg = wp_json_encode(['api' => esc_url_raw(rest_url(self::NS)), 'app' => home_url('/app/')], JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
         $inject = '<script>window.__MUTQAN__=' . $cfg . ';</script>';
+        if ($is_root) { $inject .= '<link rel="canonical" href="' . esc_url(home_url('/')) . '">'; }
         $html = preg_replace('/<head>/i', '<head>' . $inject, $html, 1);
         echo $html;
         exit;

@@ -9,6 +9,7 @@ final class Mutqan_Admin {
         add_action('admin_menu', [__CLASS__, 'menu'], 58);
         add_action('admin_post_mutqan_save_owner', [__CLASS__, 'save_owner']);
         add_action('admin_post_mutqan_save_ai', [__CLASS__, 'save_ai']);
+        add_action('admin_post_mutqan_save_root', [__CLASS__, 'save_root']);
         add_action('admin_post_mutqan_test_ai', [__CLASS__, 'test_ai']);
     }
 
@@ -35,6 +36,13 @@ final class Mutqan_Admin {
             self::back($e->getMessage(), 'error');
         }
         self::back('تم حفظ حساب المالك. سجّل الدخول من صفحة فريق العمل في التطبيق.');
+    }
+
+    public static function save_root() {
+        if (!current_user_can('manage_options')) { wp_die('غير مصرح.'); }
+        check_admin_referer('mutqan_save_root');
+        update_option('mutqan_root_app', isset($_POST['root_app']) ? '1' : '0', false);
+        self::back('تم حفظ إعداد الصفحة الرئيسية.');
     }
 
     public static function save_ai() {
@@ -111,6 +119,12 @@ final class Mutqan_Admin {
                 <?php submit_button($owner ? 'تحديث حساب المالك' : 'إنشاء حساب المالك'); ?>
             </form>
 
+            <h2>الصفحة الرئيسية للدومين</h2>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="mutqan_save_root"><?php wp_nonce_field('mutqan_save_root'); ?>
+                <p><label><input type="checkbox" name="root_app" value="1" <?php checked(get_option('mutqan_root_app', '1') !== '0'); ?>> فتح التطبيق مباشرة عند زيارة <code><?php echo esc_html(home_url('/')); ?></code> (لعرض قالب ووردبريس بدلًا منه أضف <code>?site=wp</code> للرابط)</label></p>
+                <?php submit_button('حفظ', 'secondary', 'submit', false); ?>
+            </form>
             <h2>٢) مزودو الذكاء الاصطناعي المجانيون</h2>
             <p>يجرّب النظام المزودين بالترتيب، وإذا انتهى الحد المجاني لأحدهم ينتقل للتالي تلقائيًا. لا يوجد مزود مجاني بلا أي حد؛ الجمع بين أكثر من مزود هو ما يعطي سعة أكبر. أسماء النماذج المجانية تتغير، فتأكد منها من لوحة كل مزود.</p>
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" autocomplete="off">
