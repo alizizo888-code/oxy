@@ -242,7 +242,7 @@ final class Mutqan_Rest {
         $ai = Mutqan_AI::any_enabled();
         $wa = false;
         if (class_exists('Oxygen_Orders_Chat')) { $s = Oxygen_Orders_Chat::get(); $wa = $s['wa_token'] !== '' && $s['wa_phone_id'] !== '' && $s['wa_owner'] !== ''; }
-        return ['ai' => ['available' => $ai], 'whatsapp' => ['connected' => $wa], 'ownerReady' => Mutqan_Auth::owner_exists(), 'time' => Mutqan_Store::iso(Mutqan_Store::now())];
+        return ['ai' => ['available' => $ai], 'whatsapp' => ['connected' => $wa], 'ownerReady' => Mutqan_Auth::owner_exists(), 'diag' => json_decode((string) get_option('mutqan_root_diag', 'null'), true), 'rootApp' => get_option('mutqan_root_app', '1'), 'time' => Mutqan_Store::iso(Mutqan_Store::now())];
     }
 
     /* ------------------------------------------------------------------ serving /app/ */
@@ -255,6 +255,7 @@ final class Mutqan_Rest {
         $base = rtrim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
         $rel = substr($path, strlen($base));
         $is_root = ($rel === '' || $rel === '/');
+        if (!empty($_GET['mqdiag']) || $is_root) { update_option('mutqan_root_diag', wp_json_encode(['uri' => $path, 'base' => $base, 'rel' => $rel, 'root' => $is_root, 'q' => array_keys($_GET), 'm' => $_SERVER['REQUEST_METHOD'] ?? '', 't' => gmdate('c')]), false); }
         if ($is_root) {
             // Domain front page opens the app (owner can switch it off in the Mutqan settings; ?site=wp bypasses it).
             if (get_option('mutqan_root_app', '1') === '0') { return; }
