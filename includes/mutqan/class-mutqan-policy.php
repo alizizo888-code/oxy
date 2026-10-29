@@ -248,6 +248,15 @@ final class Mutqan_Policy {
 
     /** Port of acPricing.js acQuote/acFloor: recompute the AC total from the owner's price table and apply max discount. */
     public static function ac_floor($q) {
+        $total = self::ac_total($q);
+        if ($total <= 0) { return 0; }
+        $row = Mutqan_Store::get_raw('pricing', 'ac_calc') ?: [];
+        $md = (isset($row['maxDiscountPct']) && is_numeric($row['maxDiscountPct'])) ? max(0, (float) $row['maxDiscountPct']) : 10.0;
+        return (int) round(round($total) * (1 - $md / 100)) - 1;
+    }
+
+    /** Official AC total (0 = priced after inspection). Same rules as acPricing.js. */
+    public static function ac_total($q) {
         $row = Mutqan_Store::get_raw('pricing', 'ac_calc') ?: [];
         $d = ['split1' => 100, 'split2' => 140, 'split3' => 200, 'win1' => 60, 'win2' => 100, 'win3' => 150, 'winExtra' => 50, 'other1' => 180,
               'innerOff1' => 10, 'innerOff2' => 20, 'innerOff3' => 40, 'w1' => 10, 'w2' => 20, 'w3' => 30, 'vatPct' => 15, 'maxDiscountPct' => 10];
@@ -287,7 +296,7 @@ final class Mutqan_Policy {
         }
         $total = $base + $w;
         if (!empty($q['vat'])) { $total *= 1 + $c['vatPct'] / 100; }
-        return (int) round(round($total) * (1 - $c['maxDiscountPct'] / 100)) - 1;
+        return (float) $total;
     }
 
     /** Reject orders whose agreed or quoted total is below what the owner's rules allow. */

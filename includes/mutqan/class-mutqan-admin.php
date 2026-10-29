@@ -150,6 +150,7 @@ final class Mutqan_Admin {
 
             <h2>٣) واتساب</h2>
             <p>إشعار المالك بكل طلب جديد على واتساب يُضبط من <a href="<?php echo esc_url(admin_url('admin.php?page=oxygen-chat-orders')); ?>">الشات بوت والطلبات</a> (WhatsApp Cloud API).</p>
+            <?php Mutqan_Wabot::render_admin(); ?>
         </div>
         <?php
     }
