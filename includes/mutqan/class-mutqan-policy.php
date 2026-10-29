@@ -1,0 +1,263 @@
+<?php
+if (!defined('ABSPATH')) { exit; }
+
+/**
+ * Who may read / write what. The browser can ask for anything; this class decides.
+ *
+ * Principal: ['id' => string, 'role' => ?string, 'kind' => 'user'|'anon'|'guest', 'powers' => string[]]
+ *   - role: owner | operations | supervisor | technician (null for customers and visitors)
+ *   - powers: subset of read|write|manage granted to the role (owner has everything)
+ */
+final class Mutqan_Policy {
+    const STAFF_ROLES = ['owner', 'operations', 'supervisor', 'technician'];
+    const OWNER_ONLY_AI_KEYS = ['globalPolicy', 'permissions', 'providers', 'costs', 'privacy'];
+
+    /** collection => [read, insert, update, delete]. See can() for each rule's meaning. */
+    private static function rules($coll) {
+        static $R = null;
+        if ($R === null) {
+            $pub = ['public', 'write', 'write', 'write'];
+            $R = [
+                'pricing' => $pub, 'offers' => $pub, 'products' => $pub, 'coverage' => $pub,
+                'warranty_policy' => $pub, 'payment_methods' => $pub, 'wa_numbers' => $pub,
+                'notify_settings' => $pub, 'ai_settings' => $pub,
+                'assignment_settings' => ['staff', 'write', 'write', 'write'],
+                'pricing_internal' => ['read', 'write', 'write', 'write'],
+                'tech_profiles' => ['staff', 'authed', 'creator_or_write', 'write'],
+                'tech_applications' => ['creator_or_read', 'authed', 'write', 'write'],
+                'orders' => ['orders', 'anon_ok', 'orders', 'write'],
+                'customers' => ['creator_or_read', 'authed', 'creator_or_write', 'write'],
+                'handoffs' => ['creator_or_read', 'anon_ok', 'staff_or_creator', 'write'],
+                'notifications' => ['creator_or_read', 'authed', 'target_or_write', 'write'],
+                'warranties' => ['read', 'write', 'write', 'write'],
+                'warranty_claims' => ['creator_or_read', 'authed', 'write', 'write'],
+                'wa_leads' => ['read', 'anon_ok', 'write', 'write'],
+                'ai_logs' => ['read', 'anon_ok', 'write', 'write'],
+                '_ai_usage' => ['read', 'anon_ok', 'write', 'write'],
+                '_ai_audit' => ['read', 'anon_ok', 'write', 'write'],
+                '_push' => ['never', 'never', 'never', 'never'],
+            ];
+        }
+        return $R[$coll] ?? ['creator_or_read', 'authed', 'creator_or_write', 'write'];
+    }
+
+    public static function is_staff($p) { return !empty($p['role']) && in_array($p['role'], self::STAFF_ROLES, true); }
+    public static function has_power($p, $power) {
+        if (($p['role'] ?? null) === 'owner') { return true; }
+        return in_array($power, $p['powers'] ?? [], true);
+    }
+
+    private static function jx($field) {
+        $path = '$.' . $field;
+        return Mutqan_Store::is_sqlite() ? "json_extract(data,'$path')" : "JSON_UNQUOTE(JSON_EXTRACT(data,'$path'))";
+    }
+    private static function jx_null($field) {
+        $e = self::jx($field);
+        return Mutqan_Store::is_sqlite() ? "$e IS NULL" : "($e IS NULL OR $e='null')";
+    }
+
+    /* ------------------------------------------------------------------ read scope (SQL) */
+
+    /** @return array [string where-clause ('' = no restriction, '0' = nothing visible), array params] */
+    /** Internal principal used by server code (push queue). Real ids are 'u-…' / 'anon-…', so nobody can claim it. */
+    private static function is_system($p) { return ($p['id'] ?? '') === 'system'; }
+
+    public static function read_clause($coll, $p) {
+        if (self::is_system($p)) { return ['', []]; }
+        $rule = self::rules($coll)[0];
+        $me = $p['id'];
+        $isUser = ($p['kind'] ?? '') !== 'guest';
+        switch ($rule) {
+            case 'public': return ['', []];
+            case 'staff': return self::is_staff($p) ? ['', []] : ['0', []];
+            case 'read': return self::has_power($p, 'read') ? ['', []] : ['0', []];
+            case 'creator':
+                return $isUser ? ['owner_id=%s', [$me]] : ['0', []];
+            case 'creator_or_read':
+                if (self::has_power($p, 'read')) { return ['', []]; }
+                return $isUser ? ['(owner_id=%s OR visible_to=%s)', [$me, 'user:' . $me]] : ['0', []];
+            case 'orders':
+                if (self::has_power($p, 'read')) { return ['', []]; }
+                if (!$isUser) { return ['0', []]; }
+                if (($p['role'] ?? null) === 'technician') {
+                    return ['(owner_id=%s OR ' . self::jx('technicianId') . '=%s OR ' . self::jx_null('technicianId') . ')', [$me, $me]];
+                }
+                return ['(owner_id=%s OR ' . self::jx('clientId') . '=%s)', [$me, $me]];
+        }
+        return ['0', []];
+    }
+
+    /* ------------------------------------------------------------------ per-document checks */
+
+    public static function can($action, $coll, $p, $row = null, $data = null) {
+        if (self::is_system($p)) { return true; }
+        $rules = self::rules($coll);
+        $rule = $rules[['read' => 0, 'insert' => 1, 'update' => 2, 'delete' => 3][$action]];
+        $me = $p['id'];
+        $kind = $p['kind'] ?? 'guest';
+        $creator = $row && $row['owner_id'] === $me && $kind !== 'guest';
+        switch ($rule) {
+            case 'public': return true;
+            case 'anon_ok': return $kind !== 'guest';
+            case 'authed': return $kind === 'user';
+            case 'staff': return self::is_staff($p);
+            case 'read': return self::has_power($p, 'read');
+            case 'write': return self::has_power($p, 'write');
+            case 'creator_or_read': return $creator || self::has_power($p, 'read');
+            case 'creator_or_write': return $creator || self::has_power($p, 'write');
+            case 'staff_or_creator': return $creator || self::is_staff($p);
+            case 'target_or_write':
+                if (self::has_power($p, 'write')) { return true; }
+                if (!$row) { return false; }
+                return $row['visible_to'] === 'user:' . $me && self::fields_ok($row, $data);
+            case 'orders':
+                if (self::has_power($p, 'write')) { return true; }
+                if ($kind === 'guest') { return false; }
+                if ($creator) { return true; }
+                if (!$row) { return false; }
+                $old = json_decode($row['data'], true) ?: [];
+                if (($p['role'] ?? null) === 'technician') {
+                    $tid = $old['technicianId'] ?? null;
+                    return $tid === null || $tid === $me;
+                }
+                return false;
+        }
+        return false;
+    }
+
+    private static function fields_ok($row, $patch) {
+        if (!is_array($patch) || empty($row['writable_fields'])) { return true; }
+        $allowed = json_decode($row['writable_fields'], true);
+        if (!is_array($allowed)) { return true; }
+        foreach (array_keys($patch) as $k) { if (!in_array($k, $allowed, true)) { return false; } }
+        return true;
+    }
+
+    public static function require_can($action, $coll, $p, $row = null, $data = null) {
+        if (!self::can($action, $coll, $p, $row, $data)) {
+            throw new Mutqan_Error('forbidden', 'غير مسموح لك بهذا الإجراء.', ($p['kind'] ?? 'guest') === 'guest' ? 401 : 403);
+        }
+    }
+
+    /** Non-privileged users may only create their own profile document (id == their user id). */
+    public static function check_insert_id($coll, $id, $p) {
+        if ($coll === 'tech_profiles' && !self::has_power($p, 'write') && $id !== $p['id']) {
+            throw new Mutqan_Error('forbidden', 'غير مسموح لك بهذا الإجراء.', 403);
+        }
+        if ($coll === 'customers' && !self::has_power($p, 'write') && $id !== 'cust-' . $p['id']) {
+            throw new Mutqan_Error('forbidden', 'غير مسموح لك بهذا الإجراء.', 403);
+        }
+    }
+
+    /** Visibility a document is stored with, whatever the browser asked for. */
+    public static function force_visibility($coll, $requested, $p) {
+        $public = ['pricing', 'offers', 'products', 'coverage', 'warranty_policy', 'payment_methods', 'wa_numbers', 'notify_settings', 'ai_settings'];
+        if (in_array($coll, $public, true)) { return 'everyone'; }
+        if ($coll === 'tech_profiles' || $coll === 'assignment_settings') { return 'group'; }
+        if ($coll === 'notifications') {
+            if (self::is_staff($p) && preg_match('/^user:[A-Za-z0-9_.:@-]{1,48}$/', $requested)) { return $requested; }
+            return $requested === 'user:' . $p['id'] ? $requested : 'creator-and-admin';
+        }
+        return 'creator-and-admin';
+    }
+
+    /* ------------------------------------------------------------------ write sanitising */
+
+    public static function sanitize_insert($coll, $data, $p) {
+        if (!is_array($data)) { return $data; }
+        $priv = self::has_power($p, 'write');
+        if ($coll === 'orders' && !$priv) {
+            Mutqan_Limiter::hit('order_insert', 6, 3600);
+            foreach (['technicianId', 'technicianName', 'price', 'paidAt', 'paymentMethod', 'paidRecordedBy', 'escalation_override'] as $k) { unset($data[$k]); }
+            $data['status'] = 'new';
+            $data['paymentStatus'] = 'unpaid';
+            $data['clientId'] = ($p['kind'] ?? '') === 'user' ? $p['id'] : null;
+            self::price_guard($data);
+        }
+        if ($coll === 'tech_applications' && !$priv) {
+            $data['status'] = 'pending';
+            $data['userId'] = $p['id'];
+            unset($data['reviewedAt'], $data['reviewedBy'], $data['reviewNote']);
+        }
+        if ($coll === 'tech_profiles' && !$priv) {
+            $data['userId'] = $p['id'];
+            unset($data['verified'], $data['approved']);
+        }
+        if ($coll === 'customers' && !$priv) { $data['userId'] = $p['id']; }
+        if ($coll === 'handoffs' && !self::is_staff($p)) { Mutqan_Limiter::hit('handoff_insert', 10, 3600); }
+        return $data;
+    }
+
+    public static function sanitize_update($coll, $old, $patch, $p, $row) {
+        $me = $p['id'];
+        if ($coll === 'ai_settings' && ($p['role'] ?? null) !== 'owner') {
+            foreach (self::OWNER_ONLY_AI_KEYS as $k) {
+                if (array_key_exists($k, $old)) { $patch[$k] = $old[$k]; } else { unset($patch[$k]); }
+            }
+        }
+        if ($coll === 'orders' && !self::has_power($p, 'write')) {
+            $deny = ['price', 'agreedPrice', 'priceQuote', 'estimatedPrice', 'negotiated', 'clientId', 'clientName', 'clientPhone', 'handler', 'escalation', 'transferLog', 'source', 'aiConversation'];
+            $creator = $row['owner_id'] === $me;
+            if ($creator && ($p['role'] ?? null) !== 'technician') {
+                $deny = array_merge($deny, ['technicianId', 'technicianName', 'paymentStatus', 'paidAt', 'paymentMethod', 'paidRecordedBy']);
+            }
+            foreach ($deny as $k) { unset($patch[$k]); }
+            if (($p['role'] ?? null) === 'technician' && !$creator) {
+                if (array_key_exists('technicianId', $patch) && $patch['technicianId'] !== null && $patch['technicianId'] !== $me) { unset($patch['technicianId'], $patch['technicianName']); }
+                if (array_key_exists('technicianId', $patch) && $patch['technicianId'] === null && ($old['technicianId'] ?? null) !== $me) { unset($patch['technicianId'], $patch['technicianName']); }
+            }
+            if ($creator && !self::is_staff($p)) {
+                $cancellable = in_array($old['status'] ?? 'new', ['new', 'forced', 'assigned', 'accepted'], true);
+                if (!isset($patch['status']) || $patch['status'] !== 'cancelled' || !$cancellable) { unset($patch['status'], $patch['statusHistory']); }
+            }
+        }
+        if ($coll === 'tech_applications' && !self::has_power($p, 'write')) { unset($patch['status'], $patch['reviewedAt'], $patch['reviewedBy'], $patch['reviewNote'], $patch['userId']); }
+        return $patch;
+    }
+
+    /* ------------------------------------------------------------------ price floor */
+
+    private static $PRICE_BASE = [
+        'ac' => 115, 'electric' => 90, 'plumbing' => 100, 'locks' => 150, 'appliances' => 120, 'satellite' => 130,
+        'paint' => 200, 'tiling' => 250, 'cameras' => 180, 'fridge' => 140, 'cleaning' => 150, 'pest' => 120,
+        'tanks' => 180, 'moving' => 300, 'solar' => 400, 'corporate' => 500, 'general' => 100, 'contracting' => 600,
+    ];
+
+    /** Port of pricing.js computeQuote (without add-ons): the lowest total negotiation may reach. */
+    public static function floor_for($specialtyId, $qty, $urgent) {
+        $base0 = (float) (self::$PRICE_BASE[$specialtyId] ?? 100);
+        $row = Mutqan_Store::get_raw('pricing', $specialtyId) ?: [];
+        $num = function ($v, $fb) { return (is_numeric($v) && $v !== '') ? (float) $v : $fb; };
+        $base = max(0, $num($row['base'] ?? null, $base0));
+        $min = max(0, min($num($row['min'] ?? null, round($base0 * 0.9)), $base));
+        $discount = min(90, max(0, $num($row['discountPct'] ?? null, 10)));
+        $visit = max(0, $num($row['visitFee'] ?? null, 0));
+        $emerg = max(0, $num($row['emergencyPct'] ?? null, 25));
+        $extra = min(100, max(0, $num($row['extraUnitPct'] ?? null, 80)));
+        $ai = Mutqan_Store::get_raw('ai_settings', 'default') ?: [];
+        $globalMax = isset($ai['globalPolicy']['maxDiscountPct']) && is_numeric($ai['globalPolicy']['maxDiscountPct']) ? (float) $ai['globalPolicy']['maxDiscountPct'] : 20.0;
+        $q = max(1, min(50, (int) $qty ?: 1));
+        $units = 1 + ($q - 1) * ($extra / 100);
+        $service = $base * $units;
+        $pct = min($discount, max(0, $globalMax));
+        $serviceFloor = max($min * $units, $service * (1 - $pct / 100));
+        $fixed = $visit + ($urgent ? $service * ($emerg / 100) : 0);
+        $total = round($service + $fixed);
+        return (int) min($total, round($serviceFloor + $fixed));
+    }
+
+    /** Reject orders whose agreed or quoted total is below what the owner's rules allow. */
+    private static function price_guard($data) {
+        $spec = $data['specialtyId'] ?? null;
+        if (!is_string($spec) || $spec === '') { return; }
+        $floor = self::floor_for($spec, $data['qty'] ?? 1, ($data['priority'] ?? '') === 'urgent');
+        $candidates = [];
+        if (isset($data['agreedPrice']) && $data['agreedPrice'] !== null) { $candidates[] = $data['agreedPrice']; }
+        if (isset($data['priceQuote']['total'])) { $candidates[] = $data['priceQuote']['total']; }
+        foreach ($candidates as $v) {
+            if (!is_numeric($v) || (float) $v < $floor - 1) {
+                throw new Mutqan_Error('price_below_floor', 'السعر المرسل أقل من الحد المسموح لهذه الخدمة.', 422);
+            }
+        }
+    }
+}

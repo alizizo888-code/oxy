@@ -353,6 +353,13 @@ final class Oxygen_Orders_Chat {
         return ['ok' => true, 'id' => (int) $id, 'message' => "تم تسجيل طلبك برقم #$id ✅\nراح يتواصل معك فريقنا على الرقم $phone لتأكيد الموعد."];
     }
 
+    /** Public helper for other modules (the Mutqan app): send a plain message to the owner on WhatsApp. */
+    public static function whatsapp_owner($text) {
+        list($ok, $msg) = self::send_whatsapp(self::get(), (string) $text);
+        if (!$ok) { error_log('[oxygen-chat] owner WhatsApp failed: ' . $msg); }
+        return $ok;
+    }
+
     /** @return array [bool ok, string message] */
     private static function send_whatsapp($s, $text) {
         $to = preg_replace('/\D/', '', (string) $s['wa_owner']);

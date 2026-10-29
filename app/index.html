@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Block Google Translate: it rewrites React-owned DOM text nodes, which
+         crashes reconciliation (removeChild on replaced nodes) → white screen.
+         Apps are generated in the builder's own language; a crash is strictly
+         worse than no in-place translation. -->
+    <meta name="google" content="notranslate" />
+    <title>OXYGEN — متقن</title>
+    <meta name="theme-color" content="#0b7a75" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <style>
+      :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+        --sal: env(safe-area-inset-left, 0px);
+        --sar: env(safe-area-inset-right, 0px);
+      }
+      html {
+        min-height: calc(100% + var(--sat));
+        -webkit-tap-highlight-color: transparent;
+        -webkit-overflow-scrolling: touch;
+        touch-action: manipulation;
+      }
+      html, body { overscroll-behavior: none; margin: 0; }
+      body { min-height: 100dvh; overflow: hidden; background: rgb(var(--color-bg, 255 255 255)); -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      input, textarea, [contenteditable] { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
+      /* Platform shell lives on #app-shell so AI-authored `#root { ... }` rules
+         can't override platform positioning. #app-shell > #root is (0,2,0) which
+         beats AI's (0,1,0) #root selectors via specificity. */
+      #app-shell { display: contents; }
+      #app-shell > #root { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+      /* DELETED 2026-07-26 — do not re-add. Same rule, same reason as the
+         phone shell (see preview-template/index.html for the full note); it hit
+         responsive-era apps ~10x harder (9.6% vs 1.0%) because this era's
+         aside+content+nav sibling layout leaves the fixed bar's position among
+         the children arbitrary. docs/_deadtap-shell38-audit-2026-07-26.md */
+      /* RESPONSIVE-ERA SHELL (experiment / ship reference).
+         The phone-era shell clamped #app-shell to a centered 390px bezel at
+         >=480px. This variant removes that clamp entirely: #root fills the
+         viewport at every width and the app's own responsive layout (its
+         sm:/md:/lg: breakpoints) does the work. Safe-area vars stay (they
+         resolve to 0 on desktop, harmless). Nothing else changes. */
+    </style>
+    <script type="module" crossorigin src="/wp-content/plugins/oxygen-ac-automation/app/assets/index-BpVx-FyR.js"></script>
+    <link rel="stylesheet" crossorigin href="/wp-content/plugins/oxygen-ac-automation/app/assets/index-gfulkap-.css">
+  </head>
+  <body>
+    <div id="app-shell"><div id="root"></div></div>
+  </body>
+</html>
