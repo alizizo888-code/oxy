@@ -16,4 +16,5 @@ php promo.php
 php inhouse.php
 php wa.php
 php notif.php
+MQ_DATA="$(mktemp -d)" php passkey.php
 node itest.mjs

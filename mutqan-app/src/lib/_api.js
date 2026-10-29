@@ -31,11 +31,39 @@ let user = null
 try { user = JSON.parse(lsGet(USER_KEY) || 'null') } catch { user = null }
 const listeners = new Set()
 
+// Mirror of the session in IndexedDB: some browsers / installed PWAs wipe localStorage on their own,
+// which looked like "the owner is logged out again". The mirror restores it on the next launch.
+const IDB = 'mutqan_session'
+function idb(mode, fn) {
+  return new Promise((resolve) => {
+    try {
+      const rq = indexedDB.open(IDB, 1)
+      rq.onupgradeneeded = () => rq.result.createObjectStore('s')
+      rq.onerror = () => resolve(null)
+      rq.onsuccess = () => {
+        try {
+          const tx = rq.result.transaction('s', mode); const st = tx.objectStore('s'); const r = fn(st)
+          tx.oncomplete = () => { resolve(r && r.result !== undefined ? r.result : null); rq.result.close() }
+          tx.onerror = () => resolve(null)
+        } catch { resolve(null) }
+      }
+    } catch { resolve(null) }
+  })
+}
+const mirrorSet = (token, u) => idb('readwrite', (st) => (token && u ? st.put({ token, user: u }, 'cur') : st.delete('cur')))
+export async function restoreSession() {
+  if (lsGet(TOKEN_KEY) && user) return false
+  const saved = await idb('readonly', (st) => st.get('cur'))
+  if (saved && saved.token && saved.user && !lsGet(TOKEN_KEY)) { setSession(saved.token, saved.user); return true }
+  return false
+}
+
 export const currentUser = () => user
 export function setSession(token, u) {
   if (token) lsSet(TOKEN_KEY, token); else lsDel(TOKEN_KEY)
   user = u || null
   if (u) lsSet(USER_KEY, JSON.stringify(u)); else lsDel(USER_KEY)
+  mirrorSet(token, u)
   listeners.forEach((fn) => { try { fn(user) } catch { /* listener errors never break auth */ } })
 }
 export function onUser(fn) { listeners.add(fn); return () => listeners.delete(fn) }

@@ -109,7 +109,7 @@ function wp_parse_args($a, $d = []) { return array_merge($d, (array) $a); }
 function register_post_type(...$a) {} function wp_insert_post($a, $e = false) { static $n = 0; return ++$n; } function update_post_meta(...$a) {} function sanitize_textarea_field($s) { return trim(strip_tags((string) $s)); } function wp_strip_all_tags($s) { return strip_tags($s); }
 $P = dirname(__DIR__, 2) . '/oxygen-ac-automation/includes/';
 require $P . 'class-oxygen-orders-chat.php';
-foreach (['store', 'policy', 'auth', 'promo', 'wa', 'ai', 'rest', 'admin'] as $part) { require $P . 'mutqan/class-mutqan-' . $part . '.php'; }
+foreach (['store', 'policy', 'auth', 'passkey', 'promo', 'wa', 'ai', 'rest', 'admin'] as $part) { require $P . 'mutqan/class-mutqan-' . $part . '.php'; }
 Mutqan_Rest::boot();
 do_action('init'); do_action('rest_api_init');
 

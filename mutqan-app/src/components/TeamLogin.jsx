@@ -58,6 +58,7 @@
 import React, { useState, useEffect } from 'react'
 import { team } from '../lib/team'
 import { auth } from '../lib/auth'
+import { passkey } from '../lib/passkey'
 import { onPrimaryColor } from '../lib/_on-primary'
 import { brandIdentity, brandingHidden, onBrandingChange, refreshBranding } from '../lib/_branding'
 import { resolveFaceLang, onFaceLangChange } from '../lib/_lang.js'
@@ -324,6 +325,17 @@ export default function TeamLogin({ appName, mode, code, ownerSignIn = false, on
     }
   }
 
+  async function bioLogin() {
+    if (busy) return
+    setErr(null); setBusy(true)
+    try {
+      const user = await passkey.login()
+      onSignedIn?.({ user, role: user?.role || null })
+    } catch (e) {
+      setErr(e && e.name === 'NotAllowedError' ? 'تم إلغاء التحقق بالبصمة. حاول مرة أخرى أو ادخل بكلمة المرور.' : (e && e.message) || 'تعذر الدخول بالبصمة.')
+    } finally { setBusy(false) }
+  }
+
   async function submitRequest(e) {
     e.preventDefault()
     if (busy) return
@@ -559,6 +571,12 @@ export default function TeamLogin({ appName, mode, code, ownerSignIn = false, on
             </button>
           )}
         </form>
+      )}
+
+      {view === 'signin' && !accepting && passkey.hasDeviceKey() && (
+        <button type="button" onClick={bioLogin} disabled={busy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary/40 bg-primary/5 py-3 text-sm font-bold text-stone-800 transition hover:bg-primary/10 disabled:opacity-60">
+          <span aria-hidden>🔐</span> الدخول بالبصمة / الوجه
+        </button>
       )}
 
       {/* Owner entry — the person who runs the app signs in with their Whacka ID. */}

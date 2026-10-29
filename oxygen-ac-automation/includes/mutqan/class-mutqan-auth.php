@@ -164,6 +164,9 @@ final class Mutqan_Auth {
         return ['token' => self::issue_session($u['id']), 'user' => self::public_user($u)];
     }
 
+    /** Session for an already-verified user (used by passkey sign-in). */
+    public static function login_as($u) { return self::session_result($u); }
+
     private static function drop_sessions($uid) {
         $GLOBALS['wpdb']->delete(Mutqan_Store::table('sessions'), ['user_id' => $uid]);
     }
@@ -283,6 +286,12 @@ final class Mutqan_Auth {
                 return ['member' => $u ? self::member_row($u) : null];
             }
             case 'login': return self::login($in, true);
+            case 'pkLoginOptions': return Mutqan_Passkey::login_options();
+            case 'pkLoginVerify': return Mutqan_Passkey::login_verify($in);
+            case 'pkRegOptions': return Mutqan_Passkey::reg_options($p);
+            case 'pkRegVerify': return Mutqan_Passkey::reg_verify($p, $in);
+            case 'pkList': return Mutqan_Passkey::list_keys($p);
+            case 'pkRemove': return Mutqan_Passkey::remove($p, $in);
             case 'loginRoster': {
                 if (empty(self::team_config()['loginConfig']['memberPicker'])) { return ['members' => []]; }
                 $rows = $wpdb->get_results("SELECT handle, display_name FROM $U WHERE role IS NOT NULL AND status='active' ORDER BY display_name LIMIT 40", ARRAY_A) ?: [];

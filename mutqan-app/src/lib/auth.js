@@ -1,16 +1,18 @@
-import { post, setSession, currentUser, onUser, getToken, getAnonId } from './_api'
+import { post, setSession, currentUser, onUser, getToken, getAnonId, restoreSession } from './_api'
 import { showAuthModal } from './auth-modal'
 
 let refreshed = false
 async function refresh() {
   if (!getToken()) return
   try {
-    const r = await post('/auth', { op: 'me' })
+    let r = await post('/auth', { op: 'me' })
+    // A single empty answer (cache hiccup, cold server) must not log the owner out: confirm once.
+    if (!(r && r.user)) { await new Promise((ok) => setTimeout(ok, 1500)); r = await post('/auth', { op: 'me' }) }
     if (r && r.user) setSession(getToken(), r.user)
     else setSession('', null)
   } catch (e) { /* offline: keep cached user */ }
 }
-if (typeof window !== 'undefined' && !refreshed) { refreshed = true; refresh() }
+if (typeof window !== 'undefined' && !refreshed) { refreshed = true; restoreSession().finally(() => refresh()) }
 
 export const auth = {
   getCurrentUser: () => currentUser(),

@@ -4,6 +4,7 @@ import { LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefc
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
+import { passkey } from '../lib/passkey'
 
 const NAV = {
   owner: [
@@ -110,6 +111,37 @@ function SideMenu({ items, role, bell, unread, open, setOpen }) {
   )
 }
 
+// Owner, after signing in with username + password: offer to bind fingerprint / face for next time.
+function PasskeyOffer() {
+  const [show, setShow] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  useEffect(() => {
+    let alive = true
+    const dismissed = (() => { try { return localStorage.getItem('mq_pk_no') === '1' } catch { return false } })()
+    if (dismissed || passkey.hasDeviceKey()) return
+    passkey.supported().then((ok) => { if (alive && ok) setShow(true) })
+    return () => { alive = false }
+  }, [])
+  if (!show) return null
+  const enable = async () => {
+    setBusy(true); setMsg('')
+    try { await passkey.register(); setShow(false) } catch (e) { setMsg(e && e.name === 'NotAllowedError' ? 'تم الإلغاء.' : (e && e.message) || 'تعذر التفعيل.') } finally { setBusy(false) }
+  }
+  const later = () => { try { localStorage.setItem('mq_pk_no', '1') } catch { /* ignore */ } setShow(false) }
+  return (
+    <div dir="rtl" className="fixed z-40 bottom-3 inset-x-3 md:right-72 md:inset-x-auto md:w-96 rounded-2xl bg-[#0d1220] border border-primary/40 p-3 shadow-2xl">
+      <p className="text-sm font-black text-white">🔐 فعّل الدخول بالبصمة أو الوجه</p>
+      <p className="text-xs text-slate-400 mt-1">سجّلتَ بكلمة المرور مرة واحدة، والمرة الجاية تدخل ببصمتك فقط ولن يُطلب منك اليوزر والباسورد.</p>
+      {msg && <p className="text-xs text-rose-400 mt-1">{msg}</p>}
+      <div className="flex gap-2 mt-2">
+        <button onClick={enable} disabled={busy} className="flex-1 rounded-xl bg-primary text-black text-sm font-black py-2 disabled:opacity-60">{busy ? '…' : 'تفعيل الآن'}</button>
+        <button onClick={later} className="rounded-xl border border-white/15 text-slate-300 text-sm px-3">لاحقاً</button>
+      </div>
+    </div>
+  )
+}
+
 // Side navigation for every staff role (drawer on phones, fixed sidebar on wide screens).
 export default function StaffLayout() {
   const { signedIn, role, loading } = useTeamRole()
@@ -130,6 +162,7 @@ export default function StaffLayout() {
         <Outlet />
         {!hide && <button onClick={() => setOpen(true)} aria-label="القائمة" className="md:hidden fixed z-40 right-3 top-[calc(env(safe-area-inset-top,0px)+0.6rem)] w-9 h-9 rounded-full bg-[#0d1220]/90 border border-white/15 text-white flex items-center justify-center shadow-lg"><Menu size={18} />{(bell + unread) > 0 && <span className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-rose-500" />}</button>}
         {!hide && role === 'owner' && <OwnerSwitcher />}
+        {!hide && role === 'owner' && <PasskeyOffer />}
       </div>
     </div>
   )
