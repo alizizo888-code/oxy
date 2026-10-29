@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+  <head>
+    <script>try{if(localStorage.getItem('mutqan_theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Block Google Translate: it rewrites React-owned DOM text nodes, which
+         crashes reconciliation (removeChild on replaced nodes) → white screen.
+         Apps are generated in the builder's own language; a crash is strictly
+         worse than no in-place translation. -->
+    <meta name="google" content="notranslate" />
+    <script>
+      // Watchdog: if the app has not drawn anything after 12s (stale cache / blocked script), offer a one-tap repair instead of a blank page.
+      (function(){var t=setTimeout(function(){try{var r=document.getElementById('root');if(r&&r.children.length)return;var s=document.getElementById('boot-splash');if(s)s.style.display='none';var d=document.createElement('div');d.dir='rtl';d.style.cssText='position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;background:#071a33;color:#fff;font-family:Tahoma,sans-serif;text-align:center';d.innerHTML='<div style="max-width:320px"><div style="font-size:42px">🛠️</div><h1 style="font-size:19px;margin:8px 0">التطبيق يحتاج إعادة تشغيل سريعة</h1><p style="font-size:13px;opacity:.8;line-height:1.7">اضغط الزر وسيعود كل شيء للعمل — بياناتك محفوظة.</p><button id="mq-fix" style="margin-top:14px;width:100%;padding:13px;border:0;border-radius:14px;background:#38bdf8;color:#04121f;font-weight:900;font-size:14px">إصلاح وإعادة التشغيل</button></div>';document.body.appendChild(d);document.getElementById('mq-fix').onclick=function(){(async function(){try{var g=await navigator.serviceWorker.getRegistrations();for(var i=0;i<g.length;i++)await g[i].unregister()}catch(e){}try{var k=await caches.keys();for(var j=0;j<k.length;j++)await caches.delete(k[j])}catch(e){}var u=new URL(location.href);u.searchParams.set('r',Date.now());location.replace(u.toString())})()}}catch(e){}},12000);window.__mqWatch=t})();
+    </script>
+    <title>متقن MUTQAN — صيانة تكييف وسباكة وكهرباء ومقاولات | مُتقن</title>
+    <meta name="description" content="مُتقن: احجز فني صيانة تكييف وسباكة وكهرباء وأقفال ذكية وغرف تبريد بضمان معتمد، واحسب سعر غسيل وصيانة المكيفات فورًا من التطبيق." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ar_SA" />
+    <meta property="og:title" content="متقن MUTQAN — الصيانة والمقاولات العامة" />
+    <meta property="og:description" content="خدمات صيانة منزلية وتجارية بضمان، أسعار واضحة، ومساعد ذكي يحجز لك الفني." />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"HomeAndConstructionBusiness","name":"متقن MUTQAN للصيانة","description":"صيانة تكييف وسباكة وكهرباء ومقاولات عامة","areaServed":"SA","telephone":"+966549423050","priceRange":"$$"}</script>
+    <meta name="theme-color" content="#071a33" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MUTQAN للصيانة" />
+    <meta name="application-name" content="MUTQAN للصيانة" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <style>
+      :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+        --sal: env(safe-area-inset-left, 0px);
+        --sar: env(safe-area-inset-right, 0px);
+      }
+      html {
+        min-height: calc(100% + var(--sat));
+        -webkit-tap-highlight-color: transparent;
+        -webkit-overflow-scrolling: touch;
+        touch-action: manipulation;
+      }
+      html, body { overscroll-behavior: none; margin: 0; }
+      body { min-height: 100dvh; overflow: hidden; background: rgb(var(--color-bg, 255 255 255)); -webkit-user-select: none; -moz-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      input, textarea, [contenteditable] { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
+      /* Platform shell lives on #app-shell so AI-authored `#root { ... }` rules
+         can't override platform positioning. #app-shell > #root is (0,2,0) which
+         beats AI's (0,1,0) #root selectors via specificity. */
+      #app-shell { display: contents; }
+      #app-shell > #root { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+      /* DELETED 2026-07-26 — do not re-add. Same rule, same reason as the
+         phone shell (see preview-template/index.html for the full note); it hit
+         responsive-era apps ~10x harder (9.6% vs 1.0%) because this era's
+         aside+content+nav sibling layout leaves the fixed bar's position among
+         the children arbitrary. docs/_deadtap-shell38-audit-2026-07-26.md */
+      /* RESPONSIVE-ERA SHELL (experiment / ship reference).
+         The phone-era shell clamped #app-shell to a centered 390px bezel at
+         >=480px. This variant removes that clamp entirely: #root fills the
+         viewport at every width and the app's own responsive layout (its
+         sm:/md:/lg: breakpoints) does the work. Safe-area vars stay (they
+         resolve to 0 on desktop, harmless). Nothing else changes. */
+      #boot-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(circle at 50% 38%,#12427d 0%,#0a2447 48%,#040d1c 100%);transition:opacity .35s ease,transform .35s ease;overflow:hidden}
+      #boot-splash.hide{opacity:0;transform:scale(1.04);pointer-events:none}
+      #boot-splash:before{content:"";position:absolute;inset:0;opacity:.09;background-image:linear-gradient(#7dd3fc 1px,transparent 1px),linear-gradient(90deg,#7dd3fc 1px,transparent 1px);background-size:30px 30px}
+      #boot-splash .orb{position:absolute;width:340px;height:340px;border-radius:50%;background:rgba(56,189,248,.28);filter:blur(80px);top:18%}
+      #boot-splash .mark{position:relative;width:104px;height:104px;border-radius:30px;background:linear-gradient(145deg,#38bdf8,#1d4ed8);display:flex;align-items:center;justify-content:center;box-shadow:0 18px 50px rgba(14,116,224,.55),0 0 0 2px rgba(255,255,255,.22) inset}
+      #boot-splash .mark svg{width:60px;height:60px;animation:bootSpin 7s linear infinite}
+      #boot-splash h1{position:relative;margin:0;font:900 38px/1 Cairo,Tajawal,sans-serif;letter-spacing:.14em;color:#fff;text-shadow:0 4px 24px rgba(56,189,248,.6)}
+      #boot-splash p{position:relative;margin:-10px 0 0;font:700 14px Tajawal,sans-serif;color:#7dd3fc}
+      #boot-splash .bar{position:relative;width:min(70vw,230px);height:5px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+      #boot-splash .bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#38bdf8,#60a5fa,#34d399);animation:bootFill .9s cubic-bezier(.22,1,.36,1) forwards}
+      @keyframes bootFill{to{width:100%}}
+      @keyframes bootSpin{to{transform:rotate(360deg)}}
+    </style>
+    <script type="module" crossorigin src="/wp-content/plugins/oxygen-ac-automation/app/assets/index-Cn6GQyvN.js"></script>
+    <link rel="stylesheet" crossorigin href="/wp-content/plugins/oxygen-ac-automation/app/assets/index-CZLZvCEp.css">
+  </head>
+  <body>
+    <div id="boot-splash" aria-hidden="true"><span class="orb"></span><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="M8.5 12.2l2.5 2.5 4.5-5"/></svg></div><h1>MUTQAN</h1><p>الصيانة والمقاولات العامة · مُتقن</p><div class="bar"><i></i></div></div>
+    <div id="app-shell"><div id="root"></div></div>
+  </body>
+</html>

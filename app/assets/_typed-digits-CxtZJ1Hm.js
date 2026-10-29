@@ -1,0 +1,1 @@
+const r=()=>"#ffffff",e=()=>"ar",n=()=>()=>{},t=o=>String(o??"").replace(/[٠-٩]/g,a=>String(a.charCodeAt(0)-1632)).replace(/[۰-۹]/g,a=>String(a.charCodeAt(0)-1776));export{r as a,t as f,n as o,e as r};

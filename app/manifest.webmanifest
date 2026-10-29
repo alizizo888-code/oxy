@@ -1,0 +1,26 @@
+{
+  "id": "__APP__",
+  "name": "MUTQAN للصيانة",
+  "short_name": "MUTQAN للصيانة",
+  "description": "طلبات الصيانة والإشعارات والمحادثات والمهام في تطبيق واحد",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "__APP__?source=pwa",
+  "scope": "__APP__",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#071a33",
+  "categories": ["business", "utilities"],
+  "icons": [
+    { "src": "__APP__icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "__APP__icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "__APP__icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "طلب جديد", "url": "__APP__#/new" },
+    { "name": "طلباتي", "url": "__APP__#/orders" },
+    { "name": "الإشعارات", "url": "__APP__#/notifications" },
+    { "name": "صندوق الواتساب", "url": "__APP__#/staff/wa-inbox" }
+  ]
+}
