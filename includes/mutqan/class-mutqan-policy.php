@@ -18,7 +18,7 @@ final class Mutqan_Policy {
         if ($R === null) {
             $pub = ['public', 'write', 'write', 'write'];
             $R = [
-                'pricing' => $pub, 'offers' => $pub, 'products' => $pub, 'coverage' => $pub,
+                'pricing' => $pub, 'offers' => $pub, 'ac_media' => $pub, 'products' => $pub, 'coverage' => $pub,
                 'warranty_policy' => $pub, 'payment_methods' => $pub, 'wa_numbers' => $pub,
                 'notify_settings' => $pub, 'ai_settings' => $pub,
                 'assignment_settings' => ['staff', 'write', 'write', 'write'],
@@ -151,7 +151,7 @@ final class Mutqan_Policy {
 
     /** Visibility a document is stored with, whatever the browser asked for. */
     public static function force_visibility($coll, $requested, $p) {
-        $public = ['pricing', 'offers', 'products', 'coverage', 'warranty_policy', 'payment_methods', 'wa_numbers', 'notify_settings', 'ai_settings'];
+        $public = ['pricing', 'offers', 'ac_media', 'products', 'coverage', 'warranty_policy', 'payment_methods', 'wa_numbers', 'notify_settings', 'ai_settings'];
         if (in_array($coll, $public, true)) { return 'everyone'; }
         if ($coll === 'tech_profiles' || $coll === 'assignment_settings') { return 'group'; }
         if ($coll === 'notifications') {
@@ -246,14 +246,63 @@ final class Mutqan_Policy {
         return (int) min($total, round($serviceFloor + $fixed));
     }
 
+    /** Port of acPricing.js acQuote/acFloor: recompute the AC total from the owner's price table and apply max discount. */
+    public static function ac_floor($q) {
+        $row = Mutqan_Store::get_raw('pricing', 'ac_calc') ?: [];
+        $d = ['split1' => 100, 'split2' => 140, 'split3' => 200, 'win1' => 60, 'win2' => 100, 'win3' => 150, 'winExtra' => 50, 'other1' => 180,
+              'innerOff1' => 10, 'innerOff2' => 20, 'innerOff3' => 40, 'w1' => 10, 'w2' => 20, 'w3' => 30, 'vatPct' => 15, 'maxDiscountPct' => 10];
+        $c = [];
+        foreach ($d as $k => $fb) { $c[$k] = (isset($row[$k]) && is_numeric($row[$k])) ? max(0, (float) $row[$k]) : (float) $fb; }
+        $mode = (string) ($q['mode'] ?? 'wash');
+        $type = (string) ($q['type'] ?? 'سبليت');
+        $qty = max(1, min(50, (int) ($q['qty'] ?? 1)));
+        $full = !isset($q['full']) || $q['full'];
+        if ($mode !== 'wash') {
+            $inst = $row['installPrices'][$type] ?? 0;
+            $u = is_numeric($inst) ? (float) $inst : 0;
+            if ($mode !== 'install' || $u <= 0) { return 0; }
+            $base = $u * $qty;
+            $w = 0;
+        } else {
+            $base = null;
+            $offerKey = $q['offerKey'] ?? null;
+            if ($offerKey) {
+                $o = Mutqan_Store::get_raw('offers', (string) $offerKey) ?: [];
+                if (!empty($o['acMode']) && $o['acMode'] === 'wash' && (int) ($o['qty'] ?? 0) === $qty && ($o['acType'] ?? 'سبليت') === $type && ($o['active'] ?? true) !== false && is_numeric($o['price'] ?? null)) { $base = (float) $o['price']; }
+            }
+            if ($base === null) {
+                if ($type === 'سبليت') {
+                    $off = $full ? [0, 0, 0] : [$c['innerOff1'], $c['innerOff2'], $c['innerOff3']];
+                    $p = [$c['split1'] - $off[0], $c['split2'] - $off[1], $c['split3'] - $off[2]];
+                    $base = $qty <= 3 ? $p[$qty - 1] : $p[2] + ($qty - 3) * ($p[2] / 3);
+                } elseif ($type === 'شباك') {
+                    $base = $qty === 1 ? $c['win1'] : ($qty === 2 ? $c['win2'] : $c['win3'] + ($qty - 3) * $c['winExtra']);
+                    if ($qty === 3) { $base = $c['win3']; }
+                } else {
+                    $base = $qty * $c['other1'];
+                }
+            }
+            $wmap = ['شهر' => $c['w1'], 'شهرين' => $c['w2'], '3 شهور' => $c['w3']];
+            $w = $qty * ($wmap[(string) ($q['warranty'] ?? '')] ?? 0);
+        }
+        $total = $base + $w;
+        if (!empty($q['vat'])) { $total *= 1 + $c['vatPct'] / 100; }
+        return (int) round(round($total) * (1 - $c['maxDiscountPct'] / 100)) - 1;
+    }
+
     /** Reject orders whose agreed or quoted total is below what the owner's rules allow. */
     private static function price_guard($data) {
         $spec = $data['specialtyId'] ?? null;
         if (!is_string($spec) || $spec === '') { return; }
-        $floor = self::floor_for($spec, $data['qty'] ?? 1, ($data['priority'] ?? '') === 'urgent');
+        if ($spec === 'ac' && isset($data['acQuote']) && is_array($data['acQuote'])) {
+            $floor = self::ac_floor($data['acQuote']);
+        } else {
+            $floor = self::floor_for($spec, $data['qty'] ?? 1, ($data['priority'] ?? '') === 'urgent');
+        }
         $candidates = [];
         if (isset($data['agreedPrice']) && $data['agreedPrice'] !== null) { $candidates[] = $data['agreedPrice']; }
         if (isset($data['priceQuote']['total'])) { $candidates[] = $data['priceQuote']['total']; }
+        if ($spec === 'ac' && isset($data['acQuote']['total'])) { $candidates[] = $data['acQuote']['total']; }
         foreach ($candidates as $v) {
             if (!is_numeric($v) || (float) $v < $floor - 1) {
                 throw new Mutqan_Error('price_below_floor', 'السعر المرسل أقل من الحد المسموح لهذه الخدمة.', 422);
