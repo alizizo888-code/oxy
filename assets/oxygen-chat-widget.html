@@ -1,0 +1,84 @@
+<!-- Oxygen customer chat widget. Injected before </body> by Oxygen_Orders_Chat::inject_widget().
+     Edit this single file to change the look or behavior of the chat. -->
+<div id="oxc-root" dir="rtl" hidden>
+<style>
+#oxc-root{--oxc-main:#0369a1;--oxc-dark:#075985;--oxc-soft:#e0f2fe;font-family:Tahoma,Arial,sans-serif}
+#oxc-root *{box-sizing:border-box}
+#oxc-fab{position:fixed;left:16px;bottom:96px;z-index:99990;width:58px;height:58px;border:0;border-radius:50%;background:var(--oxc-main);color:#fff;font-size:26px;cursor:pointer;box-shadow:0 8px 24px #0369a155}
+#oxc-panel{position:fixed;z-index:99991;left:0;right:0;bottom:0;height:88dvh;display:none;flex-direction:column;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -10px 40px #0f172a40;overflow:hidden}
+#oxc-panel.open{display:flex}
+@media(min-width:640px){#oxc-panel{left:16px;right:auto;bottom:16px;width:380px;height:600px;border-radius:22px}}
+#oxc-head{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--oxc-main);color:#fff}
+#oxc-head strong{flex:1;font-size:16px}
+#oxc-head button{background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+#oxc-msgs{flex:1;overflow-y:auto;padding:14px;background:#f8fafc;display:flex;flex-direction:column;gap:8px}
+.oxc-m{max-width:85%;padding:10px 13px;border-radius:16px;font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.oxc-m.bot{align-self:flex-start;background:#fff;border:1px solid #dbeafe;color:#0f172a;border-bottom-right-radius:4px}
+.oxc-m.me{align-self:flex-end;background:var(--oxc-main);color:#fff;border-bottom-left-radius:4px}
+.oxc-m.note{align-self:center;background:var(--oxc-soft);color:var(--oxc-dark);font-size:13px}
+#oxc-chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0;background:#f8fafc}
+#oxc-chips button{border:1px solid #bae6fd;background:#fff;color:var(--oxc-dark);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+#oxc-form{display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #e2e8f0}
+#oxc-input{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:14px;padding:10px 12px;font-size:16px;font-family:inherit}
+#oxc-form button{border:0;border-radius:14px;padding:0 14px;font-size:18px;cursor:pointer;background:var(--oxc-soft);color:var(--oxc-dark)}
+#oxc-send{background:var(--oxc-main)!important;color:#fff!important}
+#oxc-form button:disabled,#oxc-input:disabled{opacity:.5;cursor:not-allowed}
+</style>
+<button id="oxc-fab" type="button" aria-label="محادثة مع أكسجين">💬</button>
+<section id="oxc-panel" role="dialog" aria-label="محادثة العملاء">
+  <div id="oxc-head"><strong id="oxc-title"></strong><button id="oxc-close" type="button" aria-label="إغلاق">×</button></div>
+  <div id="oxc-msgs" aria-live="polite"></div>
+  <div id="oxc-chips"></div>
+  <form id="oxc-form" autocomplete="off">
+    <button id="oxc-loc" type="button" title="مشاركة موقعي" aria-label="مشاركة موقعي">📍</button>
+    <input id="oxc-input" type="text" maxlength="500" placeholder="اكتب رسالتك..." aria-label="رسالتك">
+    <button id="oxc-send" type="submit" aria-label="إرسال">➤</button>
+  </form>
+</section>
+<script>
+(function(){
+  var C=/*OXC_CONFIG*/{};
+  if(!C.endpoint){return;}
+  var root=document.getElementById('oxc-root'),fab=document.getElementById('oxc-fab'),panel=document.getElementById('oxc-panel'),
+      msgs=document.getElementById('oxc-msgs'),form=document.getElementById('oxc-form'),input=document.getElementById('oxc-input'),
+      send=document.getElementById('oxc-send'),locBtn=document.getElementById('oxc-loc'),chips=document.getElementById('oxc-chips');
+  var KEY='oxc_history_v1',history=[],loc=null,busy=false,finished=false;
+  document.getElementById('oxc-title').textContent=C.botName||'مساعد أكسجين';
+  root.hidden=false;
+
+  function store(){try{sessionStorage.setItem(KEY,JSON.stringify(history.slice(-20)));}catch(e){}}
+  function restore(){try{var h=JSON.parse(sessionStorage.getItem(KEY)||'[]');if(Array.isArray(h))history=h.filter(function(m){return m&&typeof m.content==='string'&&(m.role==='user'||m.role==='assistant');});}catch(e){}}
+  function add(cls,text){var d=document.createElement('div');d.className='oxc-m '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d;}
+  function setBusy(b){busy=b;input.disabled=b||finished;send.disabled=b||finished;}
+  function greet(){add('bot','أهلًا بك في أكسجين للصيانة والتبريد 👋\nتبي غسيل مكيف ولا صيانة؟ قل لي وش تحتاج وأرتب لك الطلب.');
+    ['غسيل مكيف سبليت','صيانة مكيف','تركيب أو نقل مكيف'].forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent=t;b.onclick=function(){ask(t);};chips.appendChild(b);});}
+
+  function ask(text){
+    text=(text||'').trim();if(!text||busy||finished)return;
+    chips.style.display='none';
+    add('me',text);history.push({role:'user',content:text});store();input.value='';setBusy(true);
+    var typing=add('bot','...');
+    var body={messages:history};if(loc){body.lat=loc.lat;body.lng=loc.lng;}
+    fetch(C.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json().catch(function(){return {};});})
+      .then(function(d){
+        typing.textContent=d.reply||'حصل خلل بسيط، جرّب مرة ثانية.';
+        if(d.reply){history.push({role:'assistant',content:d.reply});store();}
+        if(d.done){finished=true;try{sessionStorage.removeItem(KEY);}catch(e){}add('note','تم تسجيل الطلب. تقدر تغلق المحادثة.');}
+      })
+      .catch(function(){typing.textContent='تعذر الاتصال. تأكد من الإنترنت وجرّب مرة ثانية.';})
+      .then(function(){setBusy(false);if(!finished)input.focus();msgs.scrollTop=msgs.scrollHeight;});
+  }
+
+  fab.onclick=function(){panel.classList.add('open');fab.style.display='none';if(!msgs.children.length){restore();if(history.length){history.forEach(function(m){add(m.role==='user'?'me':'bot',m.content);});chips.style.display='none';}else{greet();}}setTimeout(function(){input.focus();},50);};
+  document.getElementById('oxc-close').onclick=function(){panel.classList.remove('open');fab.style.display='';};
+  form.onsubmit=function(e){e.preventDefault();ask(input.value);};
+  locBtn.onclick=function(){
+    if(!navigator.geolocation){add('note','المتصفح لا يدعم تحديد الموقع، اكتب الحي والشارع.');return;}
+    locBtn.disabled=true;
+    navigator.geolocation.getCurrentPosition(function(p){loc={lat:p.coords.latitude,lng:p.coords.longitude};locBtn.disabled=false;add('note','تم تحديد موقعك ✓');},
+      function(){locBtn.disabled=false;add('note','ما قدرنا نحدد موقعك. اكتب الحي والشارع بدلًا من ذلك.');},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+  };
+})();
+</script>
+</div>

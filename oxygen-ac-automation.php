@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) { exit; }
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-business-control.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-media-library.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-article-index-admin.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-oxygen-orders-chat.php';
 final class Oxygen_AC_Automation {
  const OPT='oxygen_ac_automation_settings'; const CRON='oxygen_ac_daily_job'; private static $instance=null;
  public static function instance(){if(self::$instance===null)self::$instance=new self();return self::$instance;}
