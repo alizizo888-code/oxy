@@ -1,3 +1,4 @@
+import IncomingCalls from './IncomingCalls'
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Clock, LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, UserPlus, Smartphone, Home, ShoppingBag, Palette } from 'lucide-react'
@@ -181,6 +182,7 @@ export default function StaffLayout() {
         {!hide && role === 'owner' && <OwnerSwitcher />}
         {!hide && <StaffThemeButton light={light} toggle={toggleLight} shift={role === 'owner'} />}
         {!hide && role === 'owner' && <PasskeyOffer />}
+        {signedIn && <IncomingCalls />}
       </div>
     </div>
   )

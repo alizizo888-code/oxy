@@ -6,6 +6,7 @@ import { team } from '../lib/team'
 import { useSession } from '../hooks/useSession'
 import { useWaNumbers, pickNumber, deptMeta } from '../hooks/useWaNumbers'
 import { useContact } from '../hooks/useContact'
+import CustomerHotline, { useCustomerCall } from './CustomerHotline'
 
 // Three floating actions on the customer/visitor side:
 // MUTQAN AI chat · human contact on WhatsApp · direct phone call.
@@ -15,6 +16,7 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
   const { session } = useSession()
   const { numbers } = useWaNumbers()
   const contact = useContact()
+  const hot = useCustomerCall()
   const gidRef = useRef(null)
   const [toast, setToast] = useState('')
   useEffect(() => { team.groupId().then((g) => { gidRef.current = g }).catch(() => {}) }, [])
@@ -58,6 +60,7 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
         {(contact.wa || enabled.length > 0) && <button onClick={whatsapp} aria-label="تواصل مع موظف على واتساب" className={`${btn} bg-gradient-to-br from-emerald-400 to-green-600 shadow-emerald-400/50`}>
           <MessageCircle size={21} />
         </button>}
+        <CustomerHotline hook={hot} className={`${btn} bg-gradient-to-br from-violet-500 to-indigo-700 shadow-violet-400/50`} />
         {(contact.phone || enabled.length > 0) && <button onClick={call} aria-label="اتصال مباشر" className={`${btn} bg-gradient-to-br from-rose-400 to-pink-600 shadow-rose-400/50`}>
           <Phone size={19} />
         </button>}

@@ -30,6 +30,7 @@ final class Mutqan_Policy {
                 'orders' => ['orders', 'anon_ok', 'orders', 'write'],
                 'customers' => ['creator_or_read', 'authed', 'creator_or_write', 'write'],
                 'handoffs' => ['creator_or_read', 'anon_ok', 'staff_or_creator', 'write'],
+                'calls' => ['creator_or_read', 'anon_ok', 'staff_or_creator', 'write'],
                 'notifications' => ['creator_or_read', 'authed', 'target_or_write', 'write'],
                 'warranties' => ['read', 'write', 'write', 'write'],
                 'warranty_claims' => ['creator_or_read', 'authed', 'write', 'write'],
@@ -228,6 +229,7 @@ final class Mutqan_Policy {
         }
         if ($coll === 'customers' && !$priv) { $data['userId'] = $p['id']; }
         if ($coll === 'handoffs' && !self::is_staff($p)) { Mutqan_Limiter::hit('handoff_insert', 10, 3600); }
+        if ($coll === 'calls' && !self::is_staff($p)) { Mutqan_Limiter::hit('call_insert', 8, 3600); }
         return $data;
     }
 

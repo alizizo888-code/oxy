@@ -9,6 +9,7 @@ import { SPECIALTIES } from '../constants'
 import { useAdLanding } from '../lib/adLanding'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useContact } from '../hooks/useContact'
+import { useHotlineConfig } from '../hooks/useHotline'
 
 const inp = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary'
 
@@ -21,6 +22,14 @@ export default function BusinessSettings() {
   const [f, setF] = useState({ seller: '', vat: '', address: '' })
   const ad = useAdLanding()
   const cur = useContact()
+  const hot = useHotlineConfig()
+  const [tn, setTn] = useState({ url: '', user: '', pass: '' })
+  const [hm, setHm] = useState('')
+  useEffect(() => { setTn({ url: hot.turn?.url || '', user: hot.turn?.user || '', pass: hot.turn?.pass || '' }) }, [hot.turn?.url, hot.turn?.user, hot.turn?.pass])
+  const saveHot = async (patch) => {
+    setHm('')
+    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'hotline', enabled: hot.enabled, turnUrl: tn.url.trim(), turnUser: tn.user.trim(), turnPass: tn.pass.trim(), ...patch, updatedAt: new Date().toISOString() }, 'hotline', { groupId: gid, writableBy: 'admins' }); setHm('تم الحفظ ✓') } catch { setHm('تعذر الحفظ') }
+  }
   const [c, setC] = useState({ wa: '', phone: '' })
   const [cm, setCm] = useState('')
   useEffect(() => { setC({ wa: cur.wa, phone: cur.phone }) }, [cur.wa, cur.phone])
@@ -69,6 +78,16 @@ export default function BusinessSettings() {
           <button onClick={saveContact} className="rounded-xl bg-emerald-500 text-black font-black py-2.5 text-sm">حفظ الأرقام</button>
           {cm && <p className="text-xs font-bold text-amber-300">{cm}</p>}
           <p className="text-[11px] text-slate-500">الأزرار تظهر فقط عند وجود الرقم، وزر الطلب والرئيسية يظهران دائمًا.</p>
+        </section>
+        <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
+          <p className="font-black text-sm">🎧 الخط الساخن (مكالمة صوتية داخل التطبيق)</p>
+          <p className="text-[11px] text-slate-400 leading-relaxed">يضغط العميل زر السماعة فيرنّ التطبيق عند مشرف العمليات ويتحدثان صوتيًا مجانًا بدون رقم هاتف. الصوت مباشر بين الجهازين، ولا يوجد تسجيل.</p>
+          <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={hot.enabled} onChange={(e) => saveHot({ enabled: e.target.checked })} /> تفعيل الخط الساخن للعملاء</label>
+          <p className="text-[11px] text-slate-500">اختياري — خادم TURN مجاني لتحسين الاتصال على شبكات الجوال المقيّدة (مثل Open Relay من metered.ca). اتركه فارغًا لاستخدام STUN فقط.</p>
+          <input className={inp} dir="ltr" placeholder="turn:example.com:443?transport=tcp" value={tn.url} onChange={(e) => setTn({ ...tn, url: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2"><input className={inp} dir="ltr" placeholder="user" value={tn.user} onChange={(e) => setTn({ ...tn, user: e.target.value })} /><input className={inp} dir="ltr" placeholder="credential" value={tn.pass} onChange={(e) => setTn({ ...tn, pass: e.target.value })} /></div>
+          <button onClick={() => saveHot({})} className="rounded-xl bg-emerald-500 text-black font-black py-2.5 text-sm">حفظ إعدادات الخط الساخن</button>
+          {hm && <p className="text-xs font-bold text-amber-300">{hm}</p>}
         </section>
         <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
           <p className="font-black text-sm">📣 روابط الإعلانات الممولة (تجربة)</p>
