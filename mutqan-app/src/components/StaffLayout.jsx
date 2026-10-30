@@ -79,6 +79,7 @@ const MANAGE = [
   ['/staff/tech-requests', 'طلبات الفنيين', UserPlus],
   ['/staff/payment-methods', 'طرق الدفع', Wallet],
   ['/staff/business', 'إعدادات المنشأة والفاتورة', ShieldCheck],
+  ['/staff/security', 'الأمان والدخول بالبصمة', ShieldCheck],
 ]
 
 function SideMenu({ items, role, bell, unread, open, setOpen }) {
@@ -124,7 +125,7 @@ function PasskeyOffer() {
   const [msg, setMsg] = useState('')
   useEffect(() => {
     let alive = true
-    const dismissed = (() => { try { return localStorage.getItem('mq_pk_no') === '1' } catch { return false } })()
+    const dismissed = (() => { try { const v = Number(localStorage.getItem('mq_pk_no')); return v > 1 && Date.now() - v < 86400000 } catch { return false } })()   // snooze one day, then ask again
     if (dismissed || passkey.hasDeviceKey()) return
     passkey.supported().then((ok) => { if (alive && ok) setShow(true) })
     return () => { alive = false }
@@ -134,7 +135,7 @@ function PasskeyOffer() {
     setBusy(true); setMsg('')
     try { await passkey.register(); setShow(false) } catch (e) { setMsg(e && e.name === 'NotAllowedError' ? 'تم الإلغاء.' : (e && e.message) || 'تعذر التفعيل.') } finally { setBusy(false) }
   }
-  const later = () => { try { localStorage.setItem('mq_pk_no', '1') } catch { /* ignore */ } setShow(false) }
+  const later = () => { try { localStorage.setItem('mq_pk_no', String(Date.now())) } catch { /* ignore */ } setShow(false) }
   return (
     <div dir="rtl" className="fixed z-40 bottom-3 inset-x-3 md:right-72 md:inset-x-auto md:w-96 rounded-2xl bg-[#0d1220] border border-primary/40 p-3 shadow-2xl">
       <p className="text-sm font-black text-white">🔐 فعّل الدخول بالبصمة أو الوجه</p>

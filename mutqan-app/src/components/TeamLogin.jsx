@@ -325,6 +325,9 @@ export default function TeamLogin({ appName, mode, code, ownerSignIn = false, on
     }
   }
 
+  const [pkOk, setPkOk] = useState(false)
+  useEffect(() => { passkey.supported().then(setPkOk) }, [])
+
   async function bioLogin() {
     if (busy) return
     setErr(null); setBusy(true)
@@ -332,7 +335,7 @@ export default function TeamLogin({ appName, mode, code, ownerSignIn = false, on
       const user = await passkey.login()
       onSignedIn?.({ user, role: user?.role || null })
     } catch (e) {
-      setErr(e && e.name === 'NotAllowedError' ? 'تم إلغاء التحقق بالبصمة. حاول مرة أخرى أو ادخل بكلمة المرور.' : (e && e.message) || 'تعذر الدخول بالبصمة.')
+      setErr(e && e.name === 'NotAllowedError' ? 'تم إلغاء التحقق بالبصمة. حاول مرة أخرى أو ادخل بكلمة المرور.' : e && e.code === 'no_passkey' ? 'لم تُفعَّل البصمة بعد. ادخل بكلمة المرور ثم فعّلها من «الأمان والدخول».' : (e && e.message) || 'تعذر الدخول بالبصمة.')
     } finally { setBusy(false) }
   }
 
@@ -573,7 +576,7 @@ export default function TeamLogin({ appName, mode, code, ownerSignIn = false, on
         </form>
       )}
 
-      {view === 'signin' && !accepting && passkey.hasDeviceKey() && (
+      {view === 'signin' && !accepting && (passkey.hasDeviceKey() || pkOk) && (
         <button type="button" onClick={bioLogin} disabled={busy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border-2 border-primary/40 bg-primary/5 py-3 text-sm font-bold text-stone-800 transition hover:bg-primary/10 disabled:opacity-60">
           <span aria-hidden>🔐</span> الدخول بالبصمة / الوجه
         </button>

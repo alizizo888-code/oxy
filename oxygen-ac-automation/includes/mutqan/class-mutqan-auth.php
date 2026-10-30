@@ -26,7 +26,8 @@ final class Mutqan_Limiter {
  * Sessions are random 256-bit tokens, stored only as SHA-256 hashes.
  */
 final class Mutqan_Auth {
-    const SESSION_DAYS = 30;
+    const SESSION_DAYS = 90;   // rolling: every app launch (auth/me) pushes it out again
+    private static $tok = '';
     const ROLES = ['operations', 'supervisor', 'technician'];   // assignable by the team (owner is created in WP admin)
     const POWERS = ['read', 'write', 'manage'];
     const DEFAULT_POWERS = ['operations' => ['read', 'write', 'manage'], 'supervisor' => ['read', 'write'], 'technician' => []];
@@ -43,7 +44,7 @@ final class Mutqan_Auth {
             global $wpdb;
             $s = Mutqan_Store::table('sessions'); $u = Mutqan_Store::table('users');
             $row = $wpdb->get_row($wpdb->prepare("SELECT u.* FROM $s s JOIN $u u ON u.id = s.user_id WHERE s.token_hash=%s AND s.expires_at > %s AND u.status='active'", hash('sha256', $token), Mutqan_Store::now()), ARRAY_A);
-            if ($row) { return self::$memo = self::principal_from_user($row); }
+            if ($row) { self::$tok = hash('sha256', $token); return self::$memo = self::principal_from_user($row); }
         }
         $anon = $request ? (string) $request->get_header('x-mutqan-anon') : '';
         if ($anon !== '' && preg_match('/^[A-Za-z0-9-]{8,64}$/', $anon)) {
@@ -210,6 +211,10 @@ final class Mutqan_Auth {
     public static function me($p) {
         if (($p['kind'] ?? '') !== 'user') { return ['user' => null]; }
         $u = self::find_by_id($p['id']);
+        if ($u && self::$tok !== '') {   // sliding session: keep people signed in as long as they keep using the app
+            $keep = gmdate('Y-m-d H:i:s', time() + self::SESSION_DAYS * 86400);
+            $GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare('UPDATE ' . Mutqan_Store::table('sessions') . ' SET expires_at=%s WHERE token_hash=%s AND expires_at < %s', $keep, self::$tok, gmdate('Y-m-d H:i:s', time() + (self::SESSION_DAYS - 15) * 86400)));
+        }
         return ['user' => $u ? self::public_user($u) : null];
     }
 

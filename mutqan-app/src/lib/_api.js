@@ -50,11 +50,20 @@ function idb(mode, fn) {
     } catch { resolve(null) }
   })
 }
+// Second mirror: a long-lived cookie (survives when the browser clears localStorage/IndexedDB but keeps cookies).
+const CK = 'mq_sess'
+const ckSet = (token) => { try { document.cookie = token ? `${CK}=${token}; Max-Age=${90 * 86400}; Path=/; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}` : `${CK}=; Max-Age=0; Path=/` } catch { /* ignore */ } }
+const ckGet = () => { try { const m = document.cookie.match(new RegExp('(?:^|; )' + CK + '=([a-f0-9]{64})')); return m ? m[1] : '' } catch { return '' } }
+// Ask the browser not to evict this site's storage (installed PWAs are otherwise cleared under pressure).
+try { navigator.storage?.persist?.() } catch { /* ignore */ }
 const mirrorSet = (token, u) => idb('readwrite', (st) => (token && u ? st.put({ token, user: u }, 'cur') : st.delete('cur')))
 export async function restoreSession() {
   if (lsGet(TOKEN_KEY) && user) return false
   const saved = await idb('readonly', (st) => st.get('cur'))
   if (saved && saved.token && saved.user && !lsGet(TOKEN_KEY)) { setSession(saved.token, saved.user); return true }
+  // Everything local was wiped but the cookie survived: restore the token; the user object is re-fetched by auth.refresh().
+  const ck = ckGet()
+  if (ck && !lsGet(TOKEN_KEY)) { lsSet(TOKEN_KEY, ck); return true }
   return false
 }
 
@@ -63,7 +72,7 @@ export function setSession(token, u) {
   if (token) lsSet(TOKEN_KEY, token); else lsDel(TOKEN_KEY)
   user = u || null
   if (u) lsSet(USER_KEY, JSON.stringify(u)); else lsDel(USER_KEY)
-  mirrorSet(token, u)
+  mirrorSet(token, u); ckSet(token)
   listeners.forEach((fn) => { try { fn(user) } catch { /* listener errors never break auth */ } })
 }
 export function onUser(fn) { listeners.add(fn); return () => listeners.delete(fn) }
@@ -79,6 +88,26 @@ export function headers(extra) {
   return h
 }
 
+let verifying = null
+// Signed out only when the server says "no user" twice in a row; network errors keep the session.
+function verifySession() {
+  if (verifying) return verifying
+  verifying = (async () => {
+    const t = getToken(); if (!t) return
+    for (let i = 0; i < 2; i++) {
+      try {
+        const r = await fetch(API_BASE + '/auth', { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ op: 'me' }), credentials: 'omit' })
+        const j = await r.json()
+        if (j && j.data && j.data.user) { setSession(t, j.data.user); return }
+        if (!(r.ok && j && j.data)) return        // server error — not proof of sign-out
+      } catch { return }                           // offline — keep session
+      await new Promise((ok) => setTimeout(ok, 1200))
+    }
+    setSession('', null)
+  })().finally(() => { verifying = null })
+  return verifying
+}
+
 async function send(path, init, timeoutMs = 25000) {
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), timeoutMs)
@@ -90,7 +119,8 @@ async function send(path, init, timeoutMs = 25000) {
   try { json = await res.json() } catch { /* non-JSON error page */ }
   if (!res.ok || !json || json.error) {
     const e = json && json.error
-    if (res.status === 401 && getToken() && (!e || e.code === 'unauthorized')) { setSession('', null) } // expired session
+    // Never drop the session on a single 401 (cache hiccup, cold server): confirm it with /auth me first.
+    if (res.status === 401 && getToken() && (!e || e.code === 'unauthorized') && !path.startsWith('/auth')) { await verifySession() }
     throw new ApiError((e && e.message) || 'حدث خطأ غير متوقع.', (e && e.code) || 'HTTP_' + res.status, res.status)
   }
   return json.data
