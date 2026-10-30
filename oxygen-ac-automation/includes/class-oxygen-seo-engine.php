@@ -264,9 +264,15 @@ class Oxygen_SEO_Engine {
 
     /* ---------- settings / log ---------- */
     public static function settings() {
-        $d = ['enabled' => 1, 'status' => 'publish', 'new_per_day' => 10, 'seo_per_day' => 10, 'district_per_day' => 10, 'random_per_day' => 10, 'refresh_per_day' => 4, 'min_age_days' => 7, 'wa' => ''];
+        $d = ['enabled' => 1, 'status' => 'publish', 'new_per_day' => 60, 'seo_per_day' => 60, 'district_per_day' => 60, 'random_per_day' => 10, 'refresh_per_day' => 60, 'min_age_days' => 7, 'wa' => ''];
         $s = get_option(self::OPT, []);
-        return array_merge($d, is_array($s) ? $s : []);
+        $s = is_array($s) ? $s : [];
+        // One-time rate upgrade on every site: 60 new / 60 SEO-variant / 60 district / 60 refreshes per day.
+        if (get_option('oxygen_rate_v60') !== '1') {
+            $s['new_per_day'] = 60; $s['seo_per_day'] = 60; $s['district_per_day'] = 60; $s['refresh_per_day'] = 60;
+            update_option(self::OPT, $s, false); update_option('oxygen_rate_v60', '1', false);
+        }
+        return array_merge($d, $s);
     }
     public static function log($action, $post_id, $title, $extra = []) {
         $log = get_option(self::LOG, []);
@@ -475,7 +481,7 @@ class Oxygen_SEO_Engine {
         foreach ($streams as $st) {
             list($act, $quota, $fn) = $st;
             $allowed = min($quota, (int) ceil($quota * ($hour + 1) / 24));
-            for ($i = 0; $i < 3 && self::today_count($act) < $allowed; $i++) { if (!$fn()) { break; } }
+            for ($i = 0; $i < 6 && self::today_count($act) < $allowed; $i++) { if (!$fn()) { break; } }
         }
     }
 
@@ -556,11 +562,11 @@ class Oxygen_SEO_Engine {
         $s = self::settings();
         $s['enabled'] = !empty($_POST['enabled']) ? 1 : 0;
         $s['status'] = (($_POST['status'] ?? '') === 'draft') ? 'draft' : 'publish';
-        $s['new_per_day'] = max(0, min(40, (int) ($_POST['new_per_day'] ?? 10)));
-        $s['seo_per_day'] = max(0, min(40, (int) ($_POST['seo_per_day'] ?? 10)));
-        $s['district_per_day'] = max(0, min(40, (int) ($_POST['district_per_day'] ?? 10)));
-        $s['random_per_day'] = max(0, min(40, (int) ($_POST['random_per_day'] ?? 10)));
-        $s['refresh_per_day'] = max(0, min(24, (int) ($_POST['refresh_per_day'] ?? 4)));
+        $s['new_per_day'] = max(0, min(120, (int) ($_POST['new_per_day'] ?? 10)));
+        $s['seo_per_day'] = max(0, min(120, (int) ($_POST['seo_per_day'] ?? 10)));
+        $s['district_per_day'] = max(0, min(120, (int) ($_POST['district_per_day'] ?? 10)));
+        $s['random_per_day'] = max(0, min(120, (int) ($_POST['random_per_day'] ?? 10)));
+        $s['refresh_per_day'] = max(0, min(120, (int) ($_POST['refresh_per_day'] ?? 4)));
         $s['min_age_days'] = max(0, min(365, (int) ($_POST['min_age_days'] ?? 7)));
         $s['wa'] = preg_replace('/\D/', '', (string) ($_POST['wa'] ?? ''));
         update_option(self::OPT, $s, false);
@@ -612,11 +618,11 @@ class Oxygen_SEO_Engine {
         wp_nonce_field('oxy_seo_save');
         echo '<table class="form-table"><tr><th>تشغيل المحرك</th><td><label><input type="checkbox" name="enabled" value="1" ' . checked(!empty($s['enabled']), true, false) . '> مفعّل</label></td></tr>';
         echo '<tr><th>حالة المقال الجديد</th><td><select name="status"><option value="publish" ' . selected($s['status'], 'publish', false) . '>نشر مباشر</option><option value="draft" ' . selected($s['status'], 'draft', false) . '>مسودة للمراجعة قبل النشر</option></select></td></tr>';
-        echo '<tr><th>مقالات جديدة / يوم</th><td><input type="number" name="new_per_day" value="' . (int) $s['new_per_day'] . '" min="0" max="40"></td></tr>';
-        echo '<tr><th>نفس الخدمة بعنوان وكلمات SEO مختلفة / يوم</th><td><input type="number" name="seo_per_day" value="' . (int) $s['seo_per_day'] . '" min="0" max="40"></td></tr>';
-        echo '<tr><th>نفس الخدمة بحي مختلف في مكة / يوم</th><td><input type="number" name="district_per_day" value="' . (int) $s['district_per_day'] . '" min="0" max="40"></td></tr>';
-        echo '<tr><th>تحديث مقالات قديمة عشوائياً / يوم</th><td><input type="number" name="random_per_day" value="' . (int) $s['random_per_day'] . '" min="0" max="40"></td></tr>';
-        echo '<tr><th>تحديثات / يوم</th><td><input type="number" name="refresh_per_day" value="' . (int) $s['refresh_per_day'] . '" min="0" max="24"></td></tr>';
+        echo '<tr><th>مقالات جديدة / يوم</th><td><input type="number" name="new_per_day" value="' . (int) $s['new_per_day'] . '" min="0" max="120"></td></tr>';
+        echo '<tr><th>نفس الخدمة بعنوان وكلمات SEO مختلفة / يوم</th><td><input type="number" name="seo_per_day" value="' . (int) $s['seo_per_day'] . '" min="0" max="120"></td></tr>';
+        echo '<tr><th>نفس الخدمة بحي مختلف في مكة / يوم</th><td><input type="number" name="district_per_day" value="' . (int) $s['district_per_day'] . '" min="0" max="120"></td></tr>';
+        echo '<tr><th>تحديث مقالات قديمة عشوائياً / يوم</th><td><input type="number" name="random_per_day" value="' . (int) $s['random_per_day'] . '" min="0" max="120"></td></tr>';
+        echo '<tr><th>تحديثات / يوم</th><td><input type="number" name="refresh_per_day" value="' . (int) $s['refresh_per_day'] . '" min="0" max="120"></td></tr>';
         echo '<tr><th>أقل عمر قبل التحديث (أيام)</th><td><input type="number" name="min_age_days" value="' . (int) $s['min_age_days'] . '" min="0" max="365"></td></tr>';
         echo '<tr><th>رقم واتساب للمقالات</th><td><input type="text" name="wa" value="' . esc_attr($s['wa']) . '" placeholder="9665xxxxxxxx"></td></tr></table>';
         submit_button('حفظ الإعدادات');
