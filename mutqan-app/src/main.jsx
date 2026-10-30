@@ -7,6 +7,7 @@ import { initPerf } from './lib/perf'
 import { logError, autoRepairOnce, CHUNK_RE } from './lib/recover'
 window.addEventListener('vite:preloadError', (e) => { e.preventDefault(); autoRepairOnce('preload') })
 import './index.css'
+import './skin.css'
 import { auth } from './lib/auth'
 import { startInbox } from './lib/push'
 import { registerServiceWorker } from './lib/install'

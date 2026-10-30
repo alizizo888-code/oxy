@@ -35,8 +35,8 @@ export default function Contact() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-24 bg-[#eef4fb]" dir="rtl">
-      <header className="sticky top-0 z-20 bg-[#eef4fb]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
+    <div className="h-full overflow-y-auto pb-24 bg-[#eff7f5]" dir="rtl">
+      <header className="sticky top-0 z-20 bg-[#eff7f5]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-4xl mx-auto w-full px-4 py-4 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white border border-sky-100 shadow-sm flex items-center justify-center"><ChevronRight size={18} className="text-slate-600" /></button>
           <div className="flex-1">

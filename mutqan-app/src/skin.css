@@ -1,0 +1,7 @@
+/* MUTQAN skin — loaded after index.css. The OXYGEN build replaces this file with brand/oxygen/skin.css (empty). */
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+:root { --color-bg: 239 247 245; --color-primary: 14 143 136; --color-secondary: 15 61 94; }
+* { font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif; }
+.font-display { font-family: 'Almarai', 'Cairo', sans-serif; letter-spacing: 0; }
+body { background-image: radial-gradient(rgba(14,143,136,.07) 1px, transparent 1px); background-size: 18px 18px; }
+.leaflet-container { background: #e1f1ee !important; }

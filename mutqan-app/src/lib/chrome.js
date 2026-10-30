@@ -1,6 +1,6 @@
 // Make the browser/phone bars (status bar, address bar, bottom gesture area) take the app's own colour,
 // so the page looks edge-to-edge like a native app without forcing fullscreen on customers.
-const LIGHT = '#eef4fb'
+const LIGHT = '#eff7f5'
 const DARK = '#0b1220'
 export function syncChrome() {
   try {

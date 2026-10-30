@@ -42,7 +42,7 @@ export default function Articles() {
   const tabs = [['new', 'الأحدث'], ['upd', 'المحدَّثة'], ['old', 'الأقدم']]
   return (
     <div className="h-full overflow-y-auto pb-32 md:pb-10" dir="rtl">
-      <header className="sticky top-0 z-20 bg-[#eaf3fc]/90 backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-20 bg-[#e8f5f2]/90 backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate(-1)} aria-label="رجوع" className="w-9 h-9 rounded-full bg-white border border-sky-100 shadow-sm flex items-center justify-center"><ChevronRight size={18} /></button>
           <div className="flex-1"><h1 className="font-display font-black text-base text-slate-900 flex items-center gap-2"><Newspaper size={18} className="text-sky-600" />المقالات</h1><p className="text-[11px] text-slate-500">{items ? `${items.length} مقال منشور` : 'جارِ التحميل…'}</p></div>

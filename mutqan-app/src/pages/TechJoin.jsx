@@ -106,7 +106,7 @@ export default function TechJoin() {
   const isTech = role === 'technician'
 
   return (
-    <div className="h-full overflow-y-auto pb-16 bg-gradient-to-b from-amber-50 via-[#f4f8fc] to-[#eaf3fc]" dir="rtl">
+    <div className="h-full overflow-y-auto pb-16 bg-gradient-to-b from-amber-50 via-[#f4f8fc] to-[#e8f5f2]" dir="rtl">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-amber-100 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-2xl mx-auto w-full px-4 py-4 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">

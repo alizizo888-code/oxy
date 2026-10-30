@@ -645,7 +645,7 @@ export default function AiChat() {
   const activeOrders = (orders || []).filter((o) => ACTIVE_STATUSES.includes(o.status))
 
   return (
-    <div className="h-full flex flex-col bg-[#eef4fb]" dir="rtl">
+    <div className="h-full flex flex-col bg-[#eff7f5]" dir="rtl">
       <header className="shrink-0 bg-white/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-3xl mx-auto w-full px-4 py-3 flex items-center gap-2.5">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white border border-sky-100 shadow-sm flex items-center justify-center active:scale-95 transition-transform shrink-0">
@@ -911,7 +911,7 @@ export default function AiChat() {
         initial={{ name: customer.name, phone: customer.phone }}
       />
 
-      <div className="shrink-0 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)] bg-gradient-to-t from-[#eef4fb] to-[#eef4fb]/70">
+      <div className="shrink-0 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.6rem)] bg-gradient-to-t from-[#eff7f5] to-[#eff7f5]/70">
         <div className="max-w-3xl mx-auto w-full">
           {error && <p className="text-rose-600 text-[11px] font-bold text-center mb-1.5">{error}</p>}
           {recording ? (

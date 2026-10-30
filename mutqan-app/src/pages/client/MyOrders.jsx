@@ -22,7 +22,7 @@ export default function MyOrders() {
 
   return (
     <div className="h-full overflow-y-auto pb-32 md:pb-10" dir="rtl">
-      <header className="sticky top-0 z-20 bg-[#eaf3fc]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-20 bg-[#e8f5f2]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-3xl mx-auto w-full px-4 py-4">
           <h1 className="font-display text-lg font-black text-slate-900">طلباتي</h1>
           <p className="text-[11px] text-slate-500">تابع حالة طلباتك لحظة بلحظة</p>

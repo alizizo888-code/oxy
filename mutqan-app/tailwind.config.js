@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import skin from './theme.js'
+
 export default {
   content: [
     "./index.html",
@@ -6,7 +8,9 @@ export default {
   ],
   theme: {
     extend: {
+      borderRadius: skin.borderRadius,
       colors: {
+        ...skin.colors,
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
       },

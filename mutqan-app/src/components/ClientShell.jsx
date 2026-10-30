@@ -79,7 +79,7 @@ export default function ClientShell() {
                 {({ isActive }) => (
                   <>
                     <span
-                      className={`-mt-7 w-14 h-14 rounded-full flex items-center justify-center text-white border-4 border-[#eef4fb] shadow-lg shadow-sky-500/40 transition-transform active:scale-95 ${
+                      className={`-mt-7 w-14 h-14 rounded-full flex items-center justify-center text-white border-4 border-[#eff7f5] shadow-lg shadow-sky-500/40 transition-transform active:scale-95 ${
                         isActive ? 'bg-gradient-to-br from-sky-400 to-blue-600' : 'bg-gradient-to-br from-sky-300 to-blue-500'
                       }`}
                     >

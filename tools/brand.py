@@ -14,10 +14,14 @@ if BRAND != 'oxygen': sys.exit('only the oxygen overlay is defined (mutqan is th
 SCOPE_DIRS = ['mutqan-app/src', 'oxygen-ac-automation/includes/mutqan', 'tests/bot', 'tests/mutqan']
 SCOPE_FILES = ['mutqan-app/index.html', 'mutqan-app/public/manifest.webmanifest']
 SKIP = {'tests/mutqan/seo.php'}      # asserts BOTH brands, must stay as written
-EXT = ('.js', '.jsx', '.php', '.json', '.mjs', '.html', '.webmanifest')
+EXT = ('.css', '.js', '.jsx', '.php', '.json', '.mjs', '.html', '.webmanifest')
 KEEP = ['MUTQAN AI']          # internal prompt persona name, never shown to customers
 
+REV = [('#eff7f5', '#eef4fb'), ('#e8f5f2', '#eaf3fc'), ('background:#12a39a;color:#04121f', 'background:#38bdf8;color:#04121f'), ('background:#0a2a42', 'background:#071a33')]   # Mutqan skin colours -> original Oxygen look
+SKIN = {'theme.js': 'mutqan-app/theme.js', 'skin.css': 'mutqan-app/src/skin.css'}
+
 def rewrite(s):
+    for a, b in REV: s = s.replace(a, b)
     for i, k in enumerate(KEEP): s = s.replace(k, f'\0{i}\0')
     s = re.sub(r'(?<![A-Za-z0-9_])MUTQAN(?![A-Za-z0-9_])', 'OXYGEN', s)   # visible brand word only, never identifiers (__MUTQAN__, MUTQAN_CFG)
     s = s.replace('متقن', 'أكسجين')      # plain متقن (a damma-marked «مُتقن» does not match and stays as the second name)
@@ -41,6 +45,8 @@ ov = os.path.join(ROOT, 'brand', BRAND)
 pub = os.path.join(ROOT, 'mutqan-app/public')
 for f in os.listdir(ov):
     if f == 'splash.html': continue
+    if f in SKIN:
+        shutil.copyfile(os.path.join(ov, f), os.path.join(ROOT, SKIN[f])); continue
     shutil.copyfile(os.path.join(ov, f), os.path.join(pub, f))
 old = os.path.join(pub, 'logo-mutqan.png')
 if os.path.exists(old): os.remove(old)

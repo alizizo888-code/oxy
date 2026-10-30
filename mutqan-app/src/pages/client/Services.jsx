@@ -8,7 +8,7 @@ export default function Services() {
   const navigate = useNavigate()
   return (
     <div className="h-full overflow-y-auto pb-32 md:pb-10" dir="rtl">
-      <header className="sticky top-0 z-20 bg-[#eaf3fc]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-20 bg-[#e8f5f2]/85 backdrop-blur-xl border-b border-sky-100/60 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-3xl mx-auto w-full px-4 py-4 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white border border-black/5 shadow-sm flex items-center justify-center active:scale-[0.95] transition-transform">
             <ChevronRight size={18} className="text-slate-600" />

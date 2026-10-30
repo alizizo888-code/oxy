@@ -120,7 +120,7 @@ export default function Home() {
       <span className="snowflake pointer-events-none fixed top-16 left-12 text-sky-300/40 text-xs z-0 select-none" style={{ animationDelay: '1.6s' }}>❄</span>
       <span className="snowflake pointer-events-none fixed top-40 left-1/3 text-sky-300/30 text-[10px] z-0 select-none" style={{ animationDelay: '3.2s' }}>❄</span>
 
-      <header className="sticky top-0 z-20 bg-[#eaf3fc]/85 backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-20 bg-[#e8f5f2]/85 backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-3xl mx-auto w-full px-4 py-2.5 flex items-center gap-2">
           <button onClick={() => navigate('/account')} className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-300/50 active:scale-95 transition-transform shrink-0">
             <User size={18} />
