@@ -32,7 +32,10 @@ D_MQ1=$(c "$MQ_DIST" alizeidan/mutqan1 "mutqan1: $MSG")
 D_MQP=$(c "$MQ_DIST" alizeidan/plugin-dist-mutqan "plugin-dist-mutqan: $MSG")
 echo "pub-oxygen $P_OXY | oxygen-dist $D_OXY | mutqan1 $D_MQ1 | plugin-dist-mutqan $D_MQP"
 if [ "${1:-}" = "--push" ]; then
-  git push -q alizeidan "$D_OXY:refs/heads/oxygen-dist" "$D_MQ1:refs/heads/mutqan1" "$D_MQP:refs/heads/plugin-dist-mutqan" pub-mutqan:refs/heads/mutqan pub-oxygen:refs/heads/main pub-oxygen:refs/heads/oxygen
+  git fetch -q alizeidan 2>/dev/null || true
+  git push -q alizeidan "$D_OXY:refs/heads/oxygen-dist" "$D_MQ1:refs/heads/mutqan1" "$D_MQP:refs/heads/plugin-dist-mutqan" pub-mutqan:refs/heads/mutqan pub-oxygen:refs/heads/oxygen
+  # main is also written by the content bot: merge it first, never block the other pushes on it
+  git merge-base --is-ancestor alizeidan/main pub-oxygen 2>/dev/null && git push -q alizeidan pub-oxygen:refs/heads/main || echo "main: bot commits not merged yet (skipped)"
   git push -q mx pub-mutqan:refs/heads/mutqan pub-oxygen:refs/heads/oxygen
   echo pushed
 fi
