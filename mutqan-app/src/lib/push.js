@@ -1,3 +1,4 @@
+import { nativeNotify, nativeAskPermission } from './nativeNotify'
 import { post, currentUser, onUser } from './_api'
 
 // In-app notifications without a push server: every signed-in device polls /push inbox every few
@@ -60,6 +61,7 @@ async function poll() {
         if (supported() && Notification.permission === 'granted') {
           showSystem(rm)
         }
+        nativeNotify(rm)
       }
     }
     since = now
@@ -69,6 +71,7 @@ async function poll() {
 
 export function startInbox() {
   if (timer) return
+  nativeAskPermission()
   timer = setInterval(poll, 4000)
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') poll() })
   onUser(() => { since = 0; poll() })

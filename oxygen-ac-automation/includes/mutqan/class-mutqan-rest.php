@@ -16,7 +16,7 @@ final class Mutqan_Rest {
         add_action('rest_api_init', function () {
             add_filter('rest_pre_serve_request', function ($served) {
                 $o = isset($_SERVER['HTTP_ORIGIN']) ? (string) $_SERVER['HTTP_ORIGIN'] : '';
-                if ($o !== '' && preg_match('#^https://([a-z0-9-]+\.)?oxygen11\.com$#i', $o)) {
+                if ($o !== '' && preg_match('#^(https://([a-z0-9-]+\.)?oxygen11\.com|https://localhost|capacitor://localhost|http://localhost)$#i', $o)) { // + the native app shell origins
                     header('Access-Control-Allow-Origin: ' . $o);
                     header('Vary: Origin');
                     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Mutqan-Token, X-Mutqan-Anon, X-WP-Nonce');

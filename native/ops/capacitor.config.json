@@ -2,7 +2,22 @@
   "appId": "com.oxygen11.ops",
   "appName": "مشرف العمليات",
   "webDir": "www",
-  "server": { "url": "https://oxygen11.com/app/ops", "cleartext": false, "allowNavigation": ["oxygen11.com", "*.oxygen11.com", "wa.me", "api.whatsapp.com"], "errorPath": "offline.html" },
-  "android": { "allowMixedContent": false, "backgroundColor": "#0b1220" },
-  "backgroundColor": "#0b1220"
+  "backgroundColor": "#0b1220",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": [
+      "oxygen11.com",
+      "*.oxygen11.com"
+    ]
+  },
+  "android": {
+    "backgroundColor": "#0b1220",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#0ea5e9"
+    }
+  }
 }
