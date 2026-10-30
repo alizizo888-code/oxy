@@ -78,6 +78,7 @@ const MANAGE = [
   ['/staff/warranties', 'الضمانات', ShieldCheck],
   ['/staff/tech-requests', 'طلبات الفنيين', UserPlus],
   ['/staff/payment-methods', 'طرق الدفع', Wallet],
+  ['/staff/business', 'إعدادات المنشأة والفاتورة', ShieldCheck],
 ]
 
 function SideMenu({ items, role, bell, unread, open, setOpen }) {

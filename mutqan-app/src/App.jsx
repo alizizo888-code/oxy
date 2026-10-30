@@ -40,6 +40,7 @@ const InstallApp = lazyRetry(() => import('./pages/InstallApp'))
 import StaffLayout from './components/StaffLayout'
 import PushToaster from './components/PushToaster'
 import { ThemeBoot } from './lib/appTheme'
+const BusinessSettings = lazyRetry(() => import('./pages/BusinessSettings'))
 const ThemeSettings = lazyRetry(() => import('./pages/ThemeSettings'))
 const Warranties = lazyRetry(() => import('./pages/Warranties'))
 const TechJoin = lazyRetry(() => import('./pages/TechJoin'))
@@ -91,6 +92,7 @@ export default function App() {
         <Route path="/staff/ac" element={<AcAdmin />} />
         <Route path="/staff/used-ac" element={<UsedAcAdmin />} />
         <Route path="/staff/schedule" element={<ScheduleAdmin />} />
+        <Route path="/staff/business" element={<BusinessSettings />} />
         <Route path="/staff/theme" element={<ThemeSettings staff />} />
         <Route path="/staff/pay-links" element={<PayLinks />} />
         <Route path="/staff/ai-command" element={<AiCommandCenter />} />
