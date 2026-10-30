@@ -5,6 +5,8 @@ import { useLiveShared } from '../lib/useLive'
 import { db } from '../lib/db'
 import { team } from '../lib/team'
 import { validVat } from '../lib/zatca'
+import { SPECIALTIES } from '../constants'
+import { useAdLanding } from '../lib/adLanding'
 import { useTeamRole } from '../hooks/useTeamRole'
 
 const inp = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary'
@@ -16,6 +18,11 @@ export default function BusinessSettings() {
   const { data } = useLiveShared('pricing', { limit: 100 })
   const info = useMemo(() => (data || []).find((r) => (r.serviceId || r.id) === 'tax_info') || {}, [data])
   const [f, setF] = useState({ seller: '', vat: '', address: '' })
+  const ad = useAdLanding()
+  const [copied, setCopied] = useState('')
+  const setAd = async (on) => { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'ad_landing', enabled: !!on, updatedAt: new Date().toISOString() }, 'ad_landing', { groupId: gid, writableBy: 'admins' }) }
+  const base = typeof location !== 'undefined' ? location.origin + location.pathname : ''
+  const copy = (u) => { try { navigator.clipboard.writeText(u) } catch { /* ignore */ } setCopied(u); setTimeout(() => setCopied(''), 1800) }
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   useEffect(() => { setF({ seller: info.seller || '', vat: info.vat || '', address: info.address || '' }) }, [info.seller, info.vat, info.address])
@@ -44,6 +51,17 @@ export default function BusinessSettings() {
         <label className="grid gap-1 text-xs font-bold text-slate-300">العنوان (اختياري)<input className={inp} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></label>
         <button onClick={save} disabled={busy} className="rounded-xl bg-emerald-500 text-black font-black py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />}حفظ</button>
         {msg && <p className="text-xs font-bold text-amber-300">{msg}</p>}
+        <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
+          <p className="font-black text-sm">📣 روابط الإعلانات الممولة (تجربة)</p>
+          <p className="text-[11px] text-slate-400 leading-relaxed">كل تخصص له رابط خاص للإعلان. عند الفتح يدخل العميل الرئيسية أولًا ثم ينتقل تلقائيًا لصفحة التخصص، وفي صفحة التخصص زر «الرئيسية» ثابت بالأسفل.</p>
+          <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={ad.enabled} onChange={(e) => setAd(e.target.checked)} /> تفعيل الدخول عبر الرئيسية أولًا {ad.enabled ? '' : '(متوقف: الرابط يفتح التخصص مباشرة)'}</label>
+          <div className="grid gap-1.5 max-h-72 overflow-y-auto">
+            {SPECIALTIES.map((sp) => { const u = `${base}#/s/${sp.id}`; return (
+              <button key={sp.id} onClick={() => copy(u)} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-right text-xs">
+                <span>{sp.icon}</span><span className="font-bold">{sp.label}</span><span className="mr-auto text-[10px] text-slate-500 truncate max-w-[55%]" dir="ltr">{u}</span><span className="text-sky-300">{copied === u ? 'نُسخ ✓' : 'نسخ'}</span>
+              </button>) })}
+          </div>
+        </section>
         <p className="text-[11px] text-slate-500 leading-relaxed">يُستخدم في الفاتورة الضريبية المبسّطة (رمز QR المرحلة الأولى). الاعتماد الإلكتروني للمرحلة الثانية غير مفعّل.</p>
       </div>
     </div>

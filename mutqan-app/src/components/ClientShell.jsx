@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Home, ClipboardList, Calculator, LayoutGrid, User, Wrench, Percent, ShoppingBag, Snowflake, Sparkles } from 'lucide-react'
 import FloatingContact from './FloatingContact'
+import { AdForward } from './AdLanding'
 
 // ترتيب التبويبات كما في الواجهة المعتمدة (من اليمين لليسار): طلباتي، حاسب الأسعار، الرئيسية، المزيد، حسابي
 const TABS = [
@@ -26,6 +27,7 @@ const SIDE_LINKS = [
 export default function ClientShell() {
   return (
     <div className="h-full flex" dir="rtl">
+      <AdForward />
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-60 shrink-0 flex-col bg-white border-e border-sky-100 p-4 gap-1">
         <div className="flex items-center gap-2 px-2 py-3 mb-2">

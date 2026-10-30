@@ -40,6 +40,7 @@ const InstallApp = lazyRetry(() => import('./pages/InstallApp'))
 import StaffLayout from './components/StaffLayout'
 import PushToaster from './components/PushToaster'
 import { ThemeBoot } from './lib/appTheme'
+import { AdEntry } from './components/AdLanding'
 const BusinessSettings = lazyRetry(() => import('./pages/BusinessSettings'))
 const SecuritySettings = lazyRetry(() => import('./pages/SecuritySettings'))
 const ThemeSettings = lazyRetry(() => import('./pages/ThemeSettings'))
@@ -70,6 +71,7 @@ export default function App() {
         {/* تدفق الطلب وتفاصيله — شاشات مركّزة بدون شريط تبويب */}
         <Route path="/ai" element={<AiChat />} />
         <Route path="/staff/notify-settings" element={<NotifySettings />} />
+        <Route path="/s/:spec" element={<AdEntry />} />
         <Route path="/theme" element={<ThemeSettings />} />
         <Route path="/new" element={<NewOrder />} />
         <Route path="/install" element={<InstallApp />} />
