@@ -358,7 +358,8 @@ final class Mutqan_Rest {
     public static function app_dir() { return plugin_dir_path(dirname(dirname(__FILE__))) . 'app/'; }
 
     private static function serve_pwa_file($name) {
-        $file = self::app_dir() . $name;
+        $ops = ($name === 'ops.webmanifest');
+        $file = self::app_dir() . ($ops ? 'manifest.webmanifest' : $name);
         if (!is_readable($file)) { status_header(404); exit; }
         $types = ['js' => 'application/javascript; charset=utf-8', 'webmanifest' => 'application/manifest+json; charset=utf-8', 'png' => 'image/png', 'svg' => 'image/svg+xml'];
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
@@ -366,6 +367,18 @@ final class Mutqan_Rest {
         $app_path = (string) wp_parse_url(home_url('/app/'), PHP_URL_PATH);
         if ($ext === 'js') { $body = str_replace('__BUILD__', (string) (int) @filemtime(self::app_dir() . 'index.html'), $body); }
         if ($ext === 'webmanifest') { $body = str_replace('__APP__', $app_path, $body); }
+        if ($ops) {
+            // Separate installable "operations supervisor" app: own id/name, opens straight on the operations room.
+            $m = json_decode($body, true);
+            if (is_array($m)) {
+                $b = class_exists('Oxygen_SEO_Engine') ? Oxygen_SEO_Engine::brand() : 'متقن';
+                $m['id'] = $app_path . 'ops'; $m['name'] = 'مشرف العمليات — ' . $b; $m['short_name'] = 'مشرف العمليات';
+                $m['description'] = 'غرفة العمليات: الطلبات والإشعارات والواتساب والخط الساخن';
+                $m['start_url'] = $app_path . 'ops#/staff/operations';
+                $m['shortcuts'] = [['name' => 'غرفة العمليات', 'url' => $app_path . 'ops#/staff/operations'], ['name' => 'صندوق الواتساب', 'url' => $app_path . 'ops#/staff/wa-inbox'], ['name' => 'الإشعارات', 'url' => $app_path . 'ops#/notifications']];
+                $body = wp_json_encode($m, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+        }
         header('Content-Type: ' . $types[$ext]);
         header('X-Content-Type-Options: nosniff');
         if ($ext === 'js') { header('Service-Worker-Allowed: ' . $app_path); header('Cache-Control: no-cache'); }
@@ -381,7 +394,7 @@ final class Mutqan_Rest {
         $base = rtrim((string) wp_parse_url(home_url('/'), PHP_URL_PATH), '/');
         $rel = substr($path, strlen($base));
         // PWA files must live under /app/ so the service worker's scope covers the app (plugin dir paths would not).
-        if (preg_match('#^/app/(sw\.js|manifest\.webmanifest|icon-192\.png|icon-512\.png|icon-maskable-512\.png|apple-touch-icon\.png|icon\.svg)$#', $rel, $m)) { self::serve_pwa_file($m[1]); }
+        if (preg_match('#^/app/(sw\.js|manifest\.webmanifest|ops\.webmanifest|icon-192\.png|icon-512\.png|icon-maskable-512\.png|apple-touch-icon\.png|icon\.svg)$#', $rel, $m)) { self::serve_pwa_file($m[1]); }
         if (preg_match('#^/pay/([A-Za-z0-9]{8})/?$#', $rel, $pm) && (!isset($_SERVER['REQUEST_METHOD']) || in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true))) { Mutqan_Shop::pay_page($pm[1]); }
         if (preg_match('#^/v/([A-Za-z0-9-]{8,16})/?$#', $rel, $vm) && (!isset($_SERVER['REQUEST_METHOD']) || in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true))) { Mutqan_Shop::seal_page(strtoupper(substr($vm[1], 0, 8)) . substr($vm[1], 8)); }
         $is_root = ($rel === '' || $rel === '/');
@@ -392,7 +405,9 @@ final class Mutqan_Rest {
             // Only a clean front-page visit (tracking params allowed) opens the app; any other query (rest_route, cron, preview, search…) is left to WordPress.
             foreach (array_keys($_GET) as $k) { if (!preg_match('/^(utm_[a-z_]+|fbclid|gclid|ref|source|v|pwa)$/i', (string) $k)) { return; } }
             if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'HEAD') { return; }
-        } elseif ($rel !== '/app' && $rel !== '/app/' && $rel !== '/app/index.html') { return; }
+        } elseif ($rel === '/app/ops/') { wp_safe_redirect(home_url('/app/ops')); exit; }
+        elseif ($rel !== '/app' && $rel !== '/app/' && $rel !== '/app/index.html' && $rel !== '/app/ops') { return; }
+        $is_ops = ($rel === '/app/ops');
         if ($rel === '/app') { wp_safe_redirect(home_url('/app/') . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== '' ? '?' . $_SERVER['QUERY_STRING'] : '')); exit; }
         $file = self::app_dir() . 'index.html';
         nocache_headers();
@@ -413,6 +428,7 @@ final class Mutqan_Rest {
         if ($is_root && class_exists('Oxygen_Home_Page')) {
             try { $seo = Oxygen_Home_Page::seo_block(); $html = str_replace('<div id="root"></div>', '<div id="root">' . $seo['html'] . '</div>', $html); $inject .= $seo['ld']; } catch (Throwable $e) { /* optional */ }
         }
+        if ($is_ops) { $html = str_replace($app_path . 'manifest.webmanifest', $app_path . 'ops.webmanifest', $html); }
         $html = preg_replace('/<head>/i', '<head>' . $inject, $html, 1);
         echo $html;
         exit;
