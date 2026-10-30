@@ -183,3 +183,14 @@ html.bg-paused *, html.bg-paused *::before, html.bg-paused *::after { animation-
 .dhikr-track { display: inline-flex; white-space: nowrap; animation: dhikrScroll 16s linear infinite; will-change: transform; }
 .dhikr-flash { animation: dhikrFlash 1.5s linear 3; }
 @media (prefers-reduced-motion: reduce) { .dhikr-track { animation-duration: 60s; } .dhikr-flash { animation-iteration-count: 1; } }
+
+/* Staff light mode: staff screens are dark by design; invert them (and restore photos / maps) for a lighter screen. */
+html.staff-light { background: #e9eef5; }
+html.staff-light #root { filter: invert(0.92) hue-rotate(180deg); }
+html.staff-light #root img,
+html.staff-light #root video,
+html.staff-light #root canvas,
+html.staff-light #root .leaflet-container,
+html.staff-light #root [data-keep-colors],
+html.staff-light #root [style*="background-image"] { filter: invert(1) hue-rotate(180deg); }
+html.staff-light #root [data-keep-colors] :is(img, video, canvas, [style*="background-image"]) { filter: none; }

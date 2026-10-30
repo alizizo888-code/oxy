@@ -130,17 +130,32 @@ final class Mutqan_Rest {
     public static function admin_alert($title, $body, $url, $event, $priority = 'high', $orderId = null) {
         $sys = ['id' => 'system', 'role' => 'owner', 'powers' => ['read', 'write', 'manage'], 'kind' => 'user'];
         try {
-            Mutqan_Store::insert('_push', ['target' => ['admins' => true], 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'sound' => 'bell', 'priority' => $priority, 'event' => $event, 'from' => 'system'], null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys);
-            Mutqan_Store::insert('notifications', ['userId' => null, 'audience' => 'ops', 'event' => $event, 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 300), 'url' => $url, 'orderId' => $orderId, 'priority' => $priority, 'read' => false, 'at' => gmdate('c')], null, ['visibleTo' => 'creator-and-admin', 'writableBy' => 'admins', 'expiresAt' => gmdate('c', time() + 60 * 86400)], $sys);
+            Mutqan_Store::insert('_push', ['target' => ['admins' => true], 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 700), 'url' => $url, 'sound' => 'bell', 'priority' => $priority, 'event' => $event, 'from' => 'system'], null, ['expiresAt' => gmdate('c', time() + 7 * 86400)], $sys);
+            Mutqan_Store::insert('notifications', ['userId' => null, 'audience' => 'ops', 'event' => $event, 'title' => mb_substr($title, 0, 120), 'body' => mb_substr($body, 0, 700), 'url' => $url, 'orderId' => $orderId, 'priority' => $priority, 'read' => false, 'at' => gmdate('c')], null, ['visibleTo' => 'creator-and-admin', 'writableBy' => 'admins', 'expiresAt' => gmdate('c', time() + 60 * 86400)], $sys);
         } catch (Throwable $e) { error_log('[mutqan] admin_alert: ' . $e->getMessage()); }
     }
 
     /** Top priority: every new order alerts the whole admin team immediately, server-side (cannot be skipped by the client). */
     private static function alert_new_order($doc) {
         $urgent = (($doc['priority'] ?? '') === 'urgent');
-        $bits = array_filter([(string) ($doc['clientName'] ?? ''), mb_substr((string) ($doc['address'] ?? ''), 0, 40), !empty($doc['inhouse']) ? 'تنفيذ داخلي' : '']);
         $ops = (($doc['routing'] ?? '') === 'operations');
-        self::admin_alert(($urgent ? '🚨 طلب عاجل جديد' : ($ops ? '📋 طلب بانتظار التوزيع' : '🆕 طلب جديد')) . (!empty($doc['specialtyId']) ? ' — ' . $doc['specialtyId'] : ''), implode(' · ', $bits) ?: 'طلب خدمة جديد بانتظار المعالجة', '#/staff/order/' . $doc['id'], 'new_order', 'high', $doc['id']);
+        // The full order, built from what the SERVER stored (the customer cannot change it): service, price, time, phone, address, map pin, verification link.
+        $price = $doc['agreedPrice'] ?? ($doc['priceQuote']['total'] ?? ($doc['price'] ?? null));
+        $lines = array_filter([
+            !empty($doc['specialtyId']) ? 'الخدمة: ' . $doc['specialtyId'] : '',
+            $price ? 'السعر: ' . $price . ' ر.س' : '',
+            !empty($doc['preferredTime']) ? 'الموعد: ' . $doc['preferredTime'] : '',
+            !empty($doc['clientName']) ? 'الاسم: ' . $doc['clientName'] : '',
+            !empty($doc['clientPhone']) ? 'الجوال: ' . $doc['clientPhone'] : '',
+            !empty($doc['address']) ? 'العنوان: ' . mb_substr((string) $doc['address'], 0, 80) : '',
+            (isset($doc['lat'], $doc['lng']) && is_numeric($doc['lat']) && is_numeric($doc['lng'])) ? 'الموقع: https://maps.google.com/?q=' . $doc['lat'] . ',' . $doc['lng'] : '',
+            !empty($doc['inhouse']) ? 'تنفيذ داخلي' : '',
+        ]);
+        try {
+            $seal = Mutqan_Shop::seal_for_order($doc, $price);
+            if ($seal) { $lines[] = 'توثيق: ' . $seal; }
+        } catch (Throwable $e) { error_log('[mutqan] seal_for_order: ' . $e->getMessage()); }
+        self::admin_alert(($urgent ? '🚨 طلب عاجل جديد' : ($ops ? '📋 طلب بانتظار التوزيع' : '🆕 طلب جديد')) . (!empty($doc['specialtyId']) ? ' — ' . $doc['specialtyId'] : ''), implode("\n", $lines) ?: 'طلب خدمة جديد بانتظار المعالجة', '#/staff/order/' . $doc['id'], 'new_order', 'high', $doc['id']);
     }
 
     private static function alert_tech_application($doc) {

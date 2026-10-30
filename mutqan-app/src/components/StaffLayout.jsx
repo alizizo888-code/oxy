@@ -5,6 +5,7 @@ import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
 import { passkey } from '../lib/passkey'
+import { useStaffTheme } from '../lib/theme'
 
 const NAV = {
   owner: [
@@ -146,10 +147,20 @@ function PasskeyOffer() {
 }
 
 // Side navigation for every staff role (drawer on phones, fixed sidebar on wide screens).
+function StaffThemeButton({ light, toggle, shift }) {
+  return (
+    <button onClick={toggle} data-keep-colors aria-label={light ? 'الوضع الداكن' : 'تفتيح الشاشة'} title={light ? 'الوضع الداكن' : 'تفتيح الشاشة'}
+      className={`fixed z-40 ${shift ? 'left-14' : 'left-3'} top-[calc(env(safe-area-inset-top,0px)+0.6rem)] w-9 h-9 rounded-full bg-white/15 border border-white/25 backdrop-blur flex items-center justify-center text-base active:scale-95`}>
+      {light ? '🌙' : '☀️'}
+    </button>
+  )
+}
+
 export default function StaffLayout() {
   const { signedIn, role, loading } = useTeamRole()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const [light, toggleLight] = useStaffTheme()
   const items = signedIn ? NAV[role] : null
   const showWa = !!items?.some((i) => i[4] === 'wa')
   const { data: threads } = useLiveShared('wa_threads', { order: '-lastAt', limit: showWa ? 200 : 1 })
@@ -165,6 +176,7 @@ export default function StaffLayout() {
         <Outlet />
         {!hide && <button onClick={() => setOpen(true)} aria-label="القائمة" className="md:hidden fixed z-40 right-3 top-[calc(env(safe-area-inset-top,0px)+0.6rem)] w-9 h-9 rounded-full bg-[#0d1220]/90 border border-white/15 text-white flex items-center justify-center shadow-lg"><Menu size={18} />{(bell + unread) > 0 && <span className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-rose-500" />}</button>}
         {!hide && role === 'owner' && <OwnerSwitcher />}
+        {!hide && <StaffThemeButton light={light} toggle={toggleLight} shift={role === 'owner'} />}
         {!hide && role === 'owner' && <PasskeyOffer />}
       </div>
     </div>

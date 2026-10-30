@@ -11,7 +11,7 @@ const specLabel = (id) => SPECIALTIES.find((s) => s.id === id)?.label || 'خدم
 // Assignment actions shared by the operations room and the technician radar.
 // All notifications to technicians use the loud "bell" sound (vibration on by default).
 export function useAssignment({ profiles, settings, orders }) {
-  const linkTech = useCallback(async (order, tech) => {
+  const linkTech = useCallback(async (order, tech, by = 'auto') => {
     await db.updateShared('orders', order.id, {
       technicianId: tech.userId,
       technicianName: tech.displayName || tech.name || 'فني',
@@ -19,8 +19,8 @@ export function useAssignment({ profiles, settings, orders }) {
       forced: false,
       status: 'assigned',
       handler: 'technician',
-      transferLog: [...(order.transferLog || []), { from: order.handler || 'operations', to: 'technician', at: new Date().toISOString(), by: 'auto', note: tech.displayName || '' }],
-      statusHistory: [...(order.statusHistory || []), { status: 'assigned', at: new Date().toISOString(), by: 'auto' }],
+      transferLog: [...(order.transferLog || []), { from: order.handler || 'operations', to: 'technician', at: new Date().toISOString(), by: by, note: tech.displayName || '' }],
+      statusHistory: [...(order.statusHistory || []), { status: 'assigned', at: new Date().toISOString(), by }],
     })
     notify('assigned', { ...order, technicianId: tech.userId, technicianName: tech.displayName || tech.name || 'فني', status: 'assigned' }).catch(() => {})
   }, [])

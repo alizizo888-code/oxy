@@ -97,6 +97,17 @@ final class Mutqan_Shop {
         $chk = self::seal_chk($code, $f);
         return ['code' => $code, 'url' => home_url('/v/' . $code . '-' . $chk)];
     }
+    /** Server-side seal for a freshly stored order: the owner's alert carries the same verification link the customer's message has. */
+    public static function seal_for_order($doc, $price) {
+        $f = ['service' => mb_substr(wp_strip_all_tags((string) ($doc['specialtyLabel'] ?? $doc['specialtyId'] ?? '')), 0, 120), 'price' => max(0, (int) round((float) $price)),
+            'time' => mb_substr(wp_strip_all_tags((string) ($doc['preferredTime'] ?? '')), 0, 80), 'address' => mb_substr(wp_strip_all_tags((string) ($doc['address'] ?? '')), 0, 200), 'ref' => substr((string) ($doc['id'] ?? ''), -5)];
+        if ($f['service'] === '') { return ''; }
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; $code = '';
+        for ($i = 0; $i < 8; $i++) { $code .= $alphabet[random_int(0, strlen($alphabet) - 1)]; }
+        $f['at'] = Mutqan_Store::iso(Mutqan_Store::now());
+        Mutqan_Store::upsert('order_seals', $f, $code, ['groupId' => 'admins', 'writableBy' => 'admins'], self::sys());
+        return home_url('/v/' . $code . '-' . self::seal_chk($code, $f));
+    }
     /** @return array [status(verified|invalid|missing), fields|null] */
     public static function seal_check($token) {
         if (!preg_match('/^([A-Z0-9]{8})(?:-([a-f0-9]{6}))?$/', (string) $token, $m)) { return ['missing', null]; }
