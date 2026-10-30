@@ -9,6 +9,7 @@ final class Oxygen_Article_Boost {
     public static function boot() {
         add_filter('the_content', [__CLASS__, 'content'], 30);
         add_action('wp_footer', [__CLASS__, 'floating'], 50);
+        add_action('wp_head', [__CLASS__, 'mobile_template'], 99);
     }
 
     private static function brand() { return class_exists('Oxygen_SEO_Engine') ? Oxygen_SEO_Engine::brand() : get_bloginfo('name'); }
@@ -58,6 +59,33 @@ final class Oxygen_Article_Boost {
         $d['imgs'] = array_slice(array_values(array_unique(array_filter($d['imgs'], function ($u) { return preg_match('#^(https?:)?//|^/#', $u); }))), 0, 16);
         set_transient($k, $d, 10 * MINUTE_IN_SECONDS);
         return $d;
+    }
+
+    /** Mobile-first article template: one readable column, big type, full-width call-to-action buttons, scrollable tables. Applies to every single post. */
+    public static function mobile_template() {
+        if (!is_singular('post')) { return; }
+        echo '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' . "\n";
+        echo '<style id="oxy-article-tpl">'
+            . 'body.single-post{overflow-x:hidden;padding-bottom:84px}'
+            . 'body.single-post #secondary,body.single-post .sidebar,body.single-post .widget-area,body.single-post aside.sidebar{display:none!important}'
+            . 'body.single-post #primary,body.single-post .content-area,body.single-post main,body.single-post .site-main{width:100%!important;max-width:760px!important;margin-left:auto!important;margin-right:auto!important;float:none!important}'
+            . 'body.single-post article,body.single-post .entry-content,body.single-post .post-content{max-width:100%!important;padding-left:16px!important;padding-right:16px!important;box-sizing:border-box}'
+            . 'body.single-post .entry-content{direction:rtl;text-align:right;font-size:17px;line-height:1.95;color:#1e293b;overflow-wrap:anywhere;word-break:normal}'
+            . 'body.single-post .entry-title,body.single-post h1.entry-title,body.single-post .post-title{font-size:clamp(22px,6vw,34px)!important;line-height:1.5!important;font-weight:800;text-align:right;margin:14px 0 8px}'
+            . '.entry-content h2{font-size:clamp(19px,5vw,25px);line-height:1.6;font-weight:800;color:#075985;margin:30px 0 10px;padding-right:12px;border-right:5px solid #0ea5e9}'
+            . '.entry-content h3{font-size:clamp(17px,4.4vw,20px);line-height:1.6;font-weight:700;color:#0f172a;margin:20px 0 6px}'
+            . '.entry-content p{margin:0 0 14px}.entry-content ul,.entry-content ol{margin:0 0 16px;padding-right:22px;padding-left:0}.entry-content li{margin-bottom:8px}'
+            . '.entry-content img,.entry-content video,.entry-content iframe{max-width:100%!important;height:auto;border-radius:12px}'
+            . '.entry-content table{display:block;overflow-x:auto;max-width:100%;border-collapse:collapse}.entry-content td,.entry-content th{padding:8px 10px;border:1px solid #e2e8f0}'
+            . '.entry-content a{color:#0369a1;text-decoration:underline;text-underline-offset:3px}'
+            . '.entry-content .oxy-seo-cta{display:flex;flex-direction:column;gap:10px;margin:18px 0;padding:0;font-size:0}'
+            . '.entry-content .oxy-seo-cta a{display:block;text-align:center;text-decoration:none;font-weight:800;font-size:17px;padding:14px 16px;border-radius:14px;background:#0ea5e9;color:#fff}'
+            . '.entry-content .oxy-seo-cta a+a,.entry-content .oxy-seo-cta a:nth-of-type(2){background:#25d366}'
+            . '.entry-content .oxy-mainsite{position:static}.entry-content .oxy-mainsite-cta{font-size:15px}'
+            . '.entry-content .oxy-seo-updated{font-size:14px}'
+            . '@media(min-width:700px){.entry-content .oxy-seo-cta{flex-direction:row}.entry-content .oxy-seo-cta a{flex:1}body.single-post .entry-content{font-size:18px}}'
+            . '@media(max-width:480px){body.single-post .site-header,body.single-post header.site-header{position:static!important}}'
+            . '</style>' . "\n";
     }
 
     private static function css() {
@@ -136,7 +164,7 @@ final class Oxygen_Article_Boost {
             while (($p = stripos($c, '<h2', $p)) !== false) { if (++$n === 3) { break; } $p += 3; }
             $c = ($n === 3 && $p !== false) ? substr($c, 0, $p) . $gal . substr($c, $p) : $c . $gal;
         }
-        return $c . $last . self::js();
+        return '<div class="oxy-art">' . $c . $last . '</div>' . self::js();
     }
 
     private static function js() {
