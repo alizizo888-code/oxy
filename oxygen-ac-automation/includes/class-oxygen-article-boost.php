@@ -22,7 +22,7 @@ final class Oxygen_Article_Boost {
     private static function app_url() { return plugins_url('app/index.html', dirname(__DIR__) . '/oxygen-ac-automation.php') . '#/'; }
 
     /** WhatsApp / phone: article settings → business control → first enabled number of the app. */
-    private static function contact() {
+    public static function contact() {
         static $c = null; if ($c !== null) { return $c; }
         $wa = ''; $phone = '';
         if (class_exists('Oxygen_SEO_Engine')) { $s = Oxygen_SEO_Engine::settings(); $wa = preg_replace('/\D/', '', (string) ($s['wa'] ?? '')); }
