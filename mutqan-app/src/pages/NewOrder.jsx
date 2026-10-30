@@ -209,7 +209,6 @@ export default function NewOrder() {
 
   return (
     <div className="h-full overflow-y-auto pb-48 md:pb-16" dir="rtl">
-      {fromAd && <button onClick={() => navigate('/', { replace: true })} className="fixed z-40 bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-primary text-white font-black text-sm px-6 py-3 shadow-xl shadow-primary/30 active:scale-95 transition-transform">🏠 الرئيسية — كل الخدمات والعروض</button>}
       {specialtyId && <SpecialtyFx key={specialtyId} id={specialtyId} count={18} fixed light className="!opacity-70" />}
       <header className="sticky top-0 z-20 bg-[#f5f7f5]/90 backdrop-blur border-b border-black/5 pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-2xl mx-auto w-full px-4 py-4 flex items-center gap-3">
