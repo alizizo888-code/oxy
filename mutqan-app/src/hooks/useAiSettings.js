@@ -7,6 +7,26 @@ import { DEFAULT_PERMISSIONS } from '../aiAdapter'
 
 // Central MUTQAN AI settings — one shared row the whole app reads; only team
 // admins (owner + operations supervisor) can change it.
+// Ready-made knowledge base (used while the owner has not saved their own). No prices/warranty days here on purpose:
+// those come only from the pricing engine and the warranty policy, so the bot can never contradict them.
+export const DEFAULT_KB = [
+  { cat: 'services', q: 'ما الخدمات المتوفرة؟', a: 'صيانة وتكييف، كهرباء، سباكة، أقفال ذكية، أجهزة منزلية، ساتلايت ودش، دهان وديكور، تبليط وترميم، كاميرات ومراقبة، تبريد (ثلاجات ومبردات)، تنظيف وتعقيم، مكافحة حشرات، خزانات مياه، نقل أثاث، طاقة شمسية، خدمات شركات، صيانة عامة ومقاولات.' },
+  { cat: 'services', q: 'ماذا تشمل صيانة التكييف؟', a: 'غسيل المكيف، فك وتركيب، تعبئة وشحن الفريون، وإصلاح أعطال التبريد والتسريب. يحدد الفني السعر النهائي بعد الفحص إن اختلفت الحالة عن الوصف.' },
+  { cat: 'areas', q: 'في أي مدن تعملون؟', a: 'نخدم مكة المكرمة وجدة. إن كان حيّك خارج التغطية المعروضة فسنؤكد لك عبر الموظف قبل اعتماد الطلب.' },
+  { cat: 'procedures', q: 'كيف أطلب خدمة؟', a: 'اكتب لي الخدمة والمشكلة وموقعك والوقت المناسب، وأجهّز لك الطلب لتؤكده بضغطة زر، ثم تتابع حالته من التطبيق.' },
+  { cat: 'procedures', q: 'كيف أتابع طلبي؟', a: 'من صفحة «طلباتي» في التطبيق تظهر حالة الطلب ووصول الفني. لا أقدّر وقت الوصول من عندي؛ أقرأ لك ما يظهره التتبع فقط.' },
+  { cat: 'procedures', q: 'هل يمكن إلغاء الطلب أو تغيير الموعد؟', a: 'نعم قبل وصول الفني. اكتب لي طلب التعديل وأرفعه للموظف إن احتاج موافقة.' },
+  { cat: 'prices', q: 'كم السعر؟', a: 'السعر يأتي من محرك الأسعار الرسمي حسب الخدمة والكمية. إن كانت الحالة تحتاج فحصًا فالفني يؤكد السعر النهائي قبل التنفيذ ولا يُنفَّذ شيء دون موافقتك.' },
+  { cat: 'payment', q: 'كيف أدفع؟', a: 'الطرق المتاحة تظهر لك في الطلب وفي رابط الدفع الذي يرسله الفريق. لا ترسل بيانات بطاقتك داخل المحادثة.' },
+  { cat: 'payment', q: 'هل أحصل على فاتورة؟', a: 'نعم، تصدر فاتورة ضريبية مبسّطة برمز QR بعد التنفيذ وتبقى متاحة في صفحة الطلب.' },
+  { cat: 'warranty', q: 'هل توجد ضمانات؟', a: 'نعم وفق سياسة الضمان المعتمدة لكل خدمة. أقرأ لك مدة الضمان وحالته من سجل طلبك فقط، وإن لم يظهر لك فسأحوّلك للموظف للتحقق.' },
+  { cat: 'policies', q: 'كيف أقدّم شكوى أو مشكلة بعد التنفيذ؟', a: 'اكتبها هنا وسأحوّلها للموظف المختص مع رقم الطلب ليتواصل معك. المشكلات المتعلقة بالضمان والاسترداد يقررها الموظف.' },
+  { cat: 'instructions', q: 'ماذا أفعل عند ماس كهربائي أو تسريب غاز أو انفجار ماسورة؟', a: 'سلامتك أولًا: افصل القاطع الرئيسي في حالة الكهرباء، أغلق المحبس في حالة الماء أو الغاز، وابتعد عن المكان، ثم اطلب الخدمة العاجلة. في الخطر الشديد اتصل بالدفاع المدني 998.' },
+  { cat: 'instructions', q: 'ماذا أجهّز قبل وصول الفني؟', a: 'تأكد أن الموقع مفتوح ومتاح، وأبعد الأغراض حول الجهاز، وكن متاحًا على رقمك للتواصل عند الوصول.' },
+  { cat: 'faq', q: 'هل أستطيع التحدث مع موظف؟', a: 'بالتأكيد. اطلب موظفًا وسأحوّل المحادثة له مع ملخص حتى لا تعيد كلامك.' },
+]
+export const DEFAULT_PRIVACY_NOTICE = 'نستخدم محادثتك وبيانات طلباتك لخدمتك فقط، ولا نشاركها مع عملاء آخرين. المحادثات الصوتية تُعالَج بموافقتك، وتُحذف السجلات بعد مدة الاحتفاظ المحددة.'
+
 export const DEFAULT_AI_SETTINGS = {
   enabled: true,
   tone: 'friendly',
@@ -14,7 +34,7 @@ export const DEFAULT_AI_SETTINGS = {
   defaultVoice: 'ghizlane',
   autoSpeakDefault: false,
   greeting: '',
-  faq: [],
+  faq: DEFAULT_KB,
   pricing: { showBreakdown: true },
   negotiation: DEFAULT_NEGOTIATION,
   registration: { passkeyEnabled: true },
@@ -49,7 +69,7 @@ export const DEFAULT_AI_SETTINGS = {
   permissions: DEFAULT_PERMISSIONS,
   // Owner-only global policy: caps every service regardless of per-service rules
   globalPolicy: { maxDiscountPct: 20, voiceEnabled: true, negotiationAllowed: true },
-  privacy: { voiceConsentRequired: true, retentionDays: 90, notice: '' },
+  privacy: { voiceConsentRequired: true, retentionDays: 90, notice: DEFAULT_PRIVACY_NOTICE },
   costs: { currency: 'USD', per1kTokens: 0, perVoiceMinute: 0, perTtsKChars: 0 },
 }
 
@@ -68,7 +88,8 @@ export function mergeAiSettings(row) {
     ...(r.negotiation || {}),
     stages: { ...DEFAULT_NEGOTIATION.stages, ...(r.negotiation?.stages || {}) },
   }
-  out.faq = Array.isArray(r.faq) ? r.faq : []
+  out.faq = Array.isArray(r.faq) && r.faq.length ? r.faq : DEFAULT_KB
+  if (!out.privacy.notice) out.privacy.notice = DEFAULT_PRIVACY_NOTICE
   return out
 }
 
