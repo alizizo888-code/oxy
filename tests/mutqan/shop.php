@@ -71,4 +71,18 @@ $ld = $S::handle(['op' => 'load'], ['kind' => 'guest']);
 $t('load returns booked times only', isset($ld['times']) && count($ld['times']) >= 1 && strpos(json_encode($ld), 'clientName') === false);
 Mutqan_Store::insert('schedule_cfg', ['openFrom' => '09:00'], 'main', [], $sys);
 $t('schedule_cfg is public-readable', count(Mutqan_Store::select('schedule_cfg', [], [], $guest)) === 1);
+// payment links
+$pc = $S::handle(['op' => 'pay_create', 'amount' => 350, 'desc' => 'غسيل 3 مكيفات', 'orderId' => 'rt1'], $ops);
+$t('pay link created with short url', preg_match('#/pay/[A-Z0-9]{8}$#', $pc['url']) === 1);
+$bad = false; try { $S::handle(['op' => 'pay_create', 'amount' => 0], $ops); } catch (Mutqan_Error $e) { $bad = true; }
+$t('pay link rejects zero amount', $bad);
+$deny = false; try { $S::handle(['op' => 'pay_create', 'amount' => 10], $anon); } catch (Mutqan_Error $e) { $deny = $e->status === 403; }
+$t('customer cannot create pay links', $deny);
+$S::handle(['op' => 'pay_claim', 'code' => $pc['code'], 'name' => 'علي', 'ref' => 'TX123', 'method' => 'transfer'], $anon);
+$t('claim stored but NOT marked paid', (Mutqan_Store::get_raw('pay_links', $pc['code'])['status'] ?? '') === 'claimed' && (Mutqan_Store::get_raw('orders', 'rt1')['paymentStatus'] ?? '') !== 'paid');
+$deny = false; try { $S::handle(['op' => 'pay_mark', 'code' => $pc['code']], $anon); } catch (Mutqan_Error $e) { $deny = true; }
+$t('customer cannot mark paid', $deny);
+$S::handle(['op' => 'pay_mark', 'code' => $pc['code']], $ops);
+$t('team marks paid and the order follows', (Mutqan_Store::get_raw('pay_links', $pc['code'])['status'] ?? '') === 'paid' && (Mutqan_Store::get_raw('orders', 'rt1')['paymentStatus'] ?? '') === 'paid');
+$t('pay_links not readable by guest', empty(Mutqan_Store::select('pay_links', [], [], $guest)));
 exit($ok ? 0 : 1);

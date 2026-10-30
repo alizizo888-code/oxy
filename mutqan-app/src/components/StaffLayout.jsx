@@ -68,6 +68,7 @@ const MANAGE = [
   ['/staff/ac', 'خدمات المكيفات', Snowflake],
   ['/staff/used-ac', 'متجر المستعمل', ShoppingBag],
   ['/staff/schedule', 'نظام المواعيد', Clock],
+  ['/staff/pay-links', 'روابط الدفع', Wallet],
   ['/staff/ai-command', 'مركز قيادة الذكاء', Bot],
   ['/staff/ai-settings', 'إعدادات البوت', Settings2],
   ['/staff/ai-owner', 'تحكم المالك بالبوت', Bot],

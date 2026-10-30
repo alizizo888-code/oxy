@@ -367,6 +367,7 @@ final class Mutqan_Rest {
         $rel = substr($path, strlen($base));
         // PWA files must live under /app/ so the service worker's scope covers the app (plugin dir paths would not).
         if (preg_match('#^/app/(sw\.js|manifest\.webmanifest|icon-192\.png|icon-512\.png|icon-maskable-512\.png|apple-touch-icon\.png|icon\.svg)$#', $rel, $m)) { self::serve_pwa_file($m[1]); }
+        if (preg_match('#^/pay/([A-Za-z0-9]{8})/?$#', $rel, $pm) && (!isset($_SERVER['REQUEST_METHOD']) || in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true))) { Mutqan_Shop::pay_page($pm[1]); }
         if (preg_match('#^/v/([A-Za-z0-9-]{8,16})/?$#', $rel, $vm) && (!isset($_SERVER['REQUEST_METHOD']) || in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true))) { Mutqan_Shop::seal_page(strtoupper(substr($vm[1], 0, 8)) . substr($vm[1], 8)); }
         $is_root = ($rel === '' || $rel === '/');
         if ($is_root) {

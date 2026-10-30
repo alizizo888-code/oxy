@@ -27,6 +27,7 @@ const AcAdmin = lazyRetry(() => import('./pages/AcAdmin'))
 const UsedAcAdmin = lazyRetry(() => import('./pages/UsedAcAdmin'))
 const Articles = lazyRetry(() => import('./pages/client/Articles'))
 const ScheduleAdmin = lazyRetry(() => import('./pages/ScheduleAdmin'))
+const PayLinks = lazyRetry(() => import('./pages/PayLinks'))
 const AiCommandCenter = lazyRetry(() => import('./pages/AiCommandCenter'))
 const PaymentMethods = lazyRetry(() => import('./pages/PaymentMethods'))
 const AiOwnerControl = lazyRetry(() => import('./pages/AiOwnerControl'))
@@ -86,6 +87,7 @@ export default function App() {
         <Route path="/staff/ac" element={<AcAdmin />} />
         <Route path="/staff/used-ac" element={<UsedAcAdmin />} />
         <Route path="/staff/schedule" element={<ScheduleAdmin />} />
+        <Route path="/staff/pay-links" element={<PayLinks />} />
         <Route path="/staff/ai-command" element={<AiCommandCenter />} />
         <Route path="/staff/payment-methods" element={<PaymentMethods />} />
         <Route path="/staff/ai-owner" element={<AiOwnerControl />} />
