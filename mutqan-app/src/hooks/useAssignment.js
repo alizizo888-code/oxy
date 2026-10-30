@@ -41,15 +41,21 @@ export function useAssignment({ profiles, settings, orders }) {
     } catch {}
   }, [])
 
+  // «فني الموقع»: handles orders in in-house mode, and is the fallback when nobody else is open / available.
+  const siteTech = (profiles || []).find((t) => t.userId && t.userId === settings?.siteTechId && t.active !== false) || null
+  const assignToSite = useCallback(async (order) => { if (!siteTech) return null; await linkTech(order, siteTech, 'site'); return siteTech }, [siteTech, linkTech])
+
   const autoAssignOrder = useCallback(async (order, gid) => {
-    const tech = pickTechnician(order, profiles, orders, {
+    const pool = siteTech ? (profiles || []).filter((t) => t.userId !== siteTech.userId) : profiles
+    const tech = pickTechnician(order, pool, orders, {
       strategy: settings?.strategy || 'smart',
       distanceFn: maps.distance,
     })
-    if (tech) await linkTech(order, tech)
-    else await forceOrder(order, gid)
-    return tech
-  }, [profiles, orders, settings, linkTech, forceOrder])
+    if (tech) { await linkTech(order, tech); return tech }
+    if (siteTech && settings?.siteFallback !== false) { await linkTech(order, siteTech, 'site-fallback'); return siteTech }
+    await forceOrder(order, gid)
+    return null
+  }, [profiles, orders, settings, siteTech, linkTech, forceOrder])
 
-  return { linkTech, forceOrder, autoAssignOrder }
+  return { linkTech, forceOrder, autoAssignOrder, assignToSite, siteTech }
 }

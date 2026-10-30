@@ -39,7 +39,7 @@ export default function OperationsRoom() {
   const { role, isOwner, loading: roleLoading } = useTeamRole()
   const { profiles, settings, updateSettings } = useTechProfiles()
   const { data: orders, loading: ordersLoading } = useLiveShared('orders', { order: '-createdAt', limit: 300 })
-  const { autoAssignOrder, linkTech } = useAssignment({ profiles, settings, orders })
+  const { autoAssignOrder, linkTech, assignToSite, siteTech } = useAssignment({ profiles, settings, orders })
   const { data: crmRows } = useLiveShared('customer_profiles', { limit: 800 })
   const [tab, setTab] = useState('map')
   const [assignOrder, setAssignOrder] = useState(null)
@@ -132,9 +132,21 @@ export default function OperationsRoom() {
     }
   }, [orders, profiles])
 
+  // In-house mode + a site technician: every new in-house order goes straight to him.
+  const siteRef = useRef(new Set())
+  useEffect(() => {
+    if (!inhouseOn || !siteTech || ordersLoading) return
+    for (const o of orders) {
+      if (!o.inhouse || o.technicianId || o.status !== 'new' || siteRef.current.has(o.id)) continue
+      siteRef.current.add(o.id)
+      assignToSite(o).catch(() => siteRef.current.delete(o.id))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inhouseOn, siteTech?.userId, orders, ordersLoading])
+
   async function autoOne(o) {
     setBusyId(o.id)
-    try { const t = await autoAssignOrder(o, gid); setNotice(t ? `أُسندت إلى ${t.displayName || 'فني'}` : 'لا فني مناسب — أُرسلت كمهمة إجبارية') } finally { setBusyId('') }
+    try { const t = await autoAssignOrder(o, gid); setNotice(t ? `أُسندت إلى ${t.displayName || 'فني'}${t.userId === siteTech?.userId ? ' (فني الموقع)' : ''}` : 'لا فني مناسب — أُرسلت كمهمة إجبارية') } finally { setBusyId('') }
   }
 
   // Auto-distribution: while mode is آلي, any unassigned order gets assigned on sight.
@@ -292,6 +304,15 @@ export default function OperationsRoom() {
             <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">الطلبات العاجلة تُوزَّع أولًا. ثم يُختار الفني حسب: الأقرب (موقعه المباشر)، المتصل الآن أونلاين، المتفرغ حاليًا، التخصص، عدد ما أنجزه، التقييم، وضغط العمل — مع الالتزام بالسعة اليومية. غير المتصلين يُختارون فقط إذا لم يتوفر أونلاين.</p>
           )}
 
+          <div className="mt-4 rounded-xl bg-sky-500/[0.07] border border-sky-400/25 p-3 grid gap-2">
+            <p className="text-xs font-black text-sky-200">🏗️ فني الموقع</p>
+            <select value={settings?.siteTechId || ''} onChange={(e) => updateSettings({ siteTechId: e.target.value })} className="bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="">— بدون —</option>
+              {profiles.map((t) => <option key={t.userId} value={t.userId} className="text-black">{t.displayName || 'فني'}</option>)}
+            </select>
+            <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={settings?.siteFallback !== false} onChange={(e) => updateSettings({ siteFallback: e.target.checked })} /> عند عدم وجود فنيين متاحين (أو كلهم مغلقون) تُرسل الطلبات إليه بدل الإسناد الإجباري</label>
+            <p className="text-[10px] text-slate-500">وعند تفعيل «هندمة الأعمال» تُحوَّل كل الطلبات الجديدة إليه تلقائيًا. لا يدخل في التوزيع العادي ولا تحدّه السعة اليومية.{inhouseOn && !siteTech ? ' ⚠️ الوضع مفعّل ولا يوجد فني موقع محدد.' : ''}</p>
+          </div>
           <button
             onClick={runAuto}
             disabled={running || unassigned.length === 0}
@@ -374,7 +395,7 @@ export default function OperationsRoom() {
         {(inhouseOn || inhouseList.length > 0) && (
           <section>
             <h2 className="text-sky-300 font-bold text-sm mb-1">تنفيذ داخلي ({inhouseList.length})</h2>
-            <p className="text-[11px] text-slate-500 mb-3">{inhouseOn ? 'الوضع مفعّل: الطلبات الجديدة تُنفَّذ بواسطة الشركة، بدون إسناد، وغير محتسبة في الرصيد أو النسبة أو الدفع.' : 'طلبات قيد التنفيذ الداخلي.'}</p>
+            <p className="text-[11px] text-slate-500 mb-3">{inhouseOn ? `الوضع مفعّل: الطلبات الجديدة تُنفَّذ بواسطة الشركة${siteTech ? ` عبر فني الموقع (${siteTech.displayName || 'فني'})` : ' — حدّد «فني الموقع» لإسنادها تلقائيًا'}، وغير محتسبة في الرصيد أو النسبة أو الدفع.` : 'طلبات قيد التنفيذ الداخلي.'}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {inhouseList.map((o) => (
                 <OrderCard key={o.id} order={o} showClient dark onClick={() => navigate(`/staff/order/${o.id}`)} />
