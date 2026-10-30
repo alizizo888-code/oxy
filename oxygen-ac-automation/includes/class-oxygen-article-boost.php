@@ -113,8 +113,8 @@ final class Oxygen_Article_Boost {
             . '.oxb-fab a,.oxb-fab button{width:52px;height:52px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;color:#fff!important;box-shadow:0 6px 18px rgba(0,0,0,.28);cursor:pointer;text-decoration:none!important;transition:transform .15s}'
             . '.oxb-fab a:active,.oxb-fab button:active{transform:scale(.92)}'
             . '.oxb-main{background:var(--c);width:56px!important;height:56px!important}.oxb-wa{background:#25d366}.oxb-call{background:#0369a1}.oxb-app{background:#f59e0b}'
-            . '.oxb-menu{display:none;flex-direction:column;gap:10px}.oxb-fab.open .oxb-menu{display:flex}'
-            . '.oxb-lbl{position:absolute;left:62px;background:#0f172a;color:#fff;font-size:12px;border-radius:8px;padding:3px 9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}'
+            . '.oxb-menu{display:flex;flex-direction:column;gap:10px}.oxb-wa{width:60px!important;height:60px!important}'
+            . '.oxb-lbl{position:absolute;left:62px;background:#0f172a;color:#fff;font-size:12px;border-radius:8px;padding:3px 9px;white-space:nowrap;opacity:1;pointer-events:none;transition:opacity .15s}'
             . '.oxb-menu>div{position:relative}.oxb-menu>div:hover .oxb-lbl{opacity:1}'
             . '.oxb-home{position:fixed;z-index:99989;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;background:#0f172a;color:#fff!important;text-decoration:none!important;font-weight:800;font-size:15px;border-radius:99px;padding:12px 26px;box-shadow:0 8px 22px rgba(0,0,0,.35);direction:rtl}'
             . '@media(max-width:520px){.oxb-t{font-size:16px}.oxb-fab{left:8px}}'
@@ -192,7 +192,7 @@ final class Oxygen_Article_Boost {
         if ($c['phone']) { $menu .= '<div><a class="oxb-call" href="tel:' . esc_attr($c['phone']) . '" aria-label="اتصال هاتفي">' . $ic['call'] . '</a><span class="oxb-lbl">اتصال هاتفي</span></div>'; }
         $home = class_exists('Oxygen_Domain_Guard') ? esc_url(Oxygen_Domain_Guard::main_url()) : esc_url(home_url('/'));
         echo self::css();
-        echo '<div class="oxb-fab open" id="oxb-fab"><div class="oxb-menu">' . $menu . '</div><button type="button" class="oxb-main" aria-label="تواصل معنا" onclick="document.getElementById(\'oxb-fab\').classList.toggle(\'open\')">' . $ic['chat'] . '</button></div>';
+        echo '<div class="oxb-fab open" id="oxb-fab"><div class="oxb-menu">' . $menu . '</div></div>';
         echo '<a class="oxb-home" href="' . $home . '">🏠 الرئيسية</a>';
         echo self::js();
     }
