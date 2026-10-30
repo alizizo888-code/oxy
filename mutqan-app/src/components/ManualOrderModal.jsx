@@ -8,8 +8,8 @@ import AppointmentPicker from './AppointmentPicker'
 const inp = 'w-full bg-white border-2 border-sky-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-sky-500'
 
 // Operations supervisor: turn a WhatsApp / phone request into a real order in the distribution queue.
-export default function ManualOrderModal({ onClose, onCreated, by }) {
-  const [f, setF] = useState({ name: '', phone: '', specialtyId: 'ac', description: '', address: '', price: '' })
+export default function ManualOrderModal({ onClose, onCreated, by, initial }) {
+  const [f, setF] = useState({ name: '', phone: '', specialtyId: 'ac', description: '', address: '', price: '', ...(initial || {}) })
   const [appt, setAppt] = useState({ label: '', at: null })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -29,8 +29,8 @@ export default function ManualOrderModal({ onClose, onCreated, by }) {
         specialtyId: f.specialtyId, description: f.description.trim(), serviceDetails: f.description.trim() || null,
         preferredTime: appt.label || null, appointmentAt: appt.at || null, address: f.address.trim(),
         ...(price > 0 ? { agreedPrice: price } : {}),
-        priority: 'normal', status: 'new', statusHistory: [{ status: 'new', at: now, by: by || 'operations' }],
-        source: 'whatsapp_manual', routing: 'operations',
+        priority: initial?.priority === 'urgent' ? 'urgent' : 'normal', status: 'new', statusHistory: [{ status: 'new', at: now, by: by || 'operations' }],
+        source: 'whatsapp_manual', routing: 'operations', ...(initial?.waThreadId ? { waThreadId: initial.waThreadId } : {}),
       }, undefined, { groupId: gid, visibleTo: 'creator-and-admin' })
       onCreated?.(order)
       onClose()

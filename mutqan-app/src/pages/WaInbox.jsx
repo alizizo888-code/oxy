@@ -6,7 +6,9 @@ import { db } from '../lib/db'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { waApi, useWaSessions, DEFAULT_BOT, saveBot } from '../hooks/useWa'
 import { auth } from '../lib/auth'
-import { StickyNote, Zap, CheckCircle2, Tag, Clock } from 'lucide-react'
+import { StickyNote, Zap, CheckCircle2, Tag, Clock, Siren, Wrench, ClipboardPlus, Phone, MapPin } from 'lucide-react'
+import ManualOrderModal from '../components/ManualOrderModal'
+import { STATUS_META } from '../constants'
 
 const STATUS = {
   open: ['متصل', 'bg-emerald-500/20 text-emerald-300'],
@@ -17,6 +19,10 @@ const STATUS = {
   logged_out: ['تم تسجيل الخروج', 'bg-rose-500/20 text-rose-300'],
   stopped: ['متوقف', 'bg-slate-500/20 text-slate-300'],
 }
+// Emergency detection (free, keyword based) so urgent chats float to the top.
+const SOS_RE = /طوار[ئي]|عاجل|ضروري|حريق|شرار|ماس كهرب|ماس|تسريب|يقطر|غرق|فاض|انفجار|دخان|رائحة حرق|مولع|تماس/
+export const isSos = (t) => (t.labels || []).includes('طوارئ') || (t.lastDir === 'in' && t.status !== 'done' && SOS_RE.test(t.lastText || ''))
+const isRouted = (t) => (t.labels || []).includes('محوّلة لفني')
 const stat = (s) => STATUS[s] || STATUS.stopped
 const inputCls = 'w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary'
 const hhmm = (iso) => { try { return new Date(iso).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) } catch { return '' } }
@@ -43,6 +49,7 @@ export default function WaInbox() {
             <h1 className="font-display text-lg font-black text-white">صندوق الواتساب الموحّد</h1>
           </div>
         </div>
+        <Kpis threads={threads || []} sessions={sess.sessions} />
         <div className="max-w-6xl mx-auto w-full px-4 flex gap-1.5 pb-2">
           {[['inbox', 'المحادثات', MessageCircle, unread], ['numbers', 'الأرقام', QrCode, 0], ['bot', 'البوت', Bot, 0]].map(([id, label, Icon, n]) => (
             <button key={id} onClick={() => setTab(id)} className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black border ${tab === id ? 'bg-primary/20 border-primary text-primary' : 'bg-white/5 border-white/10 text-slate-300'}`}>
@@ -61,6 +68,28 @@ export default function WaInbox() {
   )
 }
 
+function Kpis({ threads, sessions }) {
+  const k = useMemo(() => {
+    const open = threads.filter((t) => t.status !== 'done')
+    const waiting = open.filter((t) => t.lastDir === 'in')
+    const mins = waiting.map((t) => Math.max(0, (Date.now() - new Date(t.lastAt).getTime()) / 60000))
+    const avg = mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : 0
+    const today = threads.filter((t) => new Date(t.lastAt).toDateString() === new Date().toDateString()).length
+    return { open: open.length, sos: threads.filter(isSos).length, waiting: waiting.length, avg, today, on: sessions.filter((s) => s.status === 'open').length, all: sessions.length }
+  }, [threads, sessions])
+  const Box = ({ n, l, cls = 'text-white' }) => <div className="shrink-0 min-w-[84px] rounded-xl bg-white/5 border border-white/10 px-3 py-1.5 text-center"><p className={`text-base font-black leading-tight ${cls}`}>{n}</p><p className="text-[10px] text-slate-500">{l}</p></div>
+  return (
+    <div className="max-w-6xl mx-auto w-full px-4 pb-2 flex gap-2 overflow-x-auto">
+      <Box n={`${k.on}/${k.all}`} l="أرقام متصلة" cls={k.on === k.all && k.all ? 'text-emerald-300' : 'text-amber-300'} />
+      <Box n={k.open} l="محادثات مفتوحة" />
+      <Box n={k.waiting} l="بانتظار ردّنا" cls={k.waiting ? 'text-amber-300' : 'text-white'} />
+      <Box n={k.sos} l="طوارئ SOS" cls={k.sos ? 'text-rose-400' : 'text-white'} />
+      <Box n={k.avg ? `${k.avg}د` : '—'} l="متوسط الانتظار" />
+      <Box n={k.today} l="نشطة اليوم" />
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ inbox */
 function Inbox({ sessions, threads, goNumbers }) {
   const navigate = useNavigate()
@@ -74,13 +103,13 @@ function Inbox({ sessions, threads, goNumbers }) {
   const label = (id) => sessions.find((s) => s.id === id)?.label || id
   const list = useMemo(() => threads.filter((t) => (acct === 'all' || t.accountId === acct)
     && (!q || `${t.name || ''} ${t.phone}`.includes(q))
-    && (view === 'all' || (view === 'unread' && t.unread > 0) || (view === 'mine' && t.assignee?.id === me) || (view === 'open' && t.status !== 'done') || (view === 'done' && t.status === 'done'))), [threads, acct, q, view, me])
+    && (view === 'all' || (view === 'unread' && t.unread > 0) || (view === 'mine' && t.assignee?.id === me) || (view === 'open' && t.status !== 'done') || (view === 'done' && t.status === 'done') || (view === 'sos' && isSos(t)) || (view === 'routed' && isRouted(t)))).sort((a, b) => (isSos(b) - isSos(a))), [threads, acct, q, view, me])
   const counts = useMemo(() => ({ unread: threads.filter((t) => t.unread > 0).length, open: threads.filter((t) => t.status !== 'done').length }), [threads])
   const waitMin = (t) => (t.lastDir === 'in' && t.status !== 'done' ? Math.floor((Date.now() - new Date(t.lastAt).getTime()) / 60000) : 0)
   const th = threads.find((t) => t.id === sel)
 
   return (
-    <div className="h-full max-w-6xl mx-auto w-full flex">
+    <div className="h-full max-w-7xl mx-auto w-full flex">
       <aside className={`${th ? 'hidden md:flex' : 'flex'} w-full md:w-[340px] shrink-0 flex-col border-l border-white/10 min-h-0`}>
         <div className="p-3 flex flex-col gap-2 shrink-0">
           <div className="relative">
@@ -88,7 +117,7 @@ function Inbox({ sessions, threads, goNumbers }) {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث بالاسم أو الرقم" className={`${inputCls} pr-9`} />
           </div>
           <div className="flex gap-1.5 overflow-x-auto">
-            {[['all', 'الكل'], ['unread', `غير مقروء (${counts.unread})`], ['mine', 'محادثاتي'], ['open', `مفتوحة (${counts.open})`], ['done', 'منتهية']].map(([id, l]) => <Chip key={id} on={view === id} onClick={() => setView(id)}>{l}</Chip>)}
+            {[['all', 'الكل'], ['unread', `غير مقروء (${counts.unread})`], ['mine', 'محادثاتي'], ['open', `مفتوحة (${counts.open})`], ['sos', `🚨 طوارئ (${threads.filter(isSos).length})`], ['routed', 'محوّلة لفني'], ['done', 'منتهية']].map(([id, l]) => <Chip key={id} on={view === id} onClick={() => setView(id)}>{l}</Chip>)}
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             <Chip on={acct === 'all'} onClick={() => setAcct('all')}>كل الأرقام</Chip>
@@ -105,7 +134,7 @@ function Inbox({ sessions, threads, goNumbers }) {
             <button key={t.id} onClick={() => { setSel(t.id); if (t.unread) db.updateShared('wa_threads', t.id, { unread: 0 }).catch(() => {}) }} className={`w-full text-right px-4 py-3 border-b border-white/5 flex gap-3 items-center ${sel === t.id ? 'bg-white/[0.07]' : 'hover:bg-white/[0.03]'}`}>
               <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0"><UserRound size={18} className="text-slate-400" /></div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2"><p className="text-sm font-bold text-white truncate flex-1">{t.name || t.phone}</p><span className="text-[10px] text-slate-500">{hhmm(t.lastAt)}</span></div>
+                <div className="flex items-center gap-2"><p className="text-sm font-bold text-white truncate flex-1">{isSos(t) && <span className="text-rose-400 font-black text-[10px] bg-rose-500/15 rounded px-1 ml-1">SOS</span>}{t.name || t.phone}</p><span className="text-[10px] text-slate-500">{hhmm(t.lastAt)}</span></div>
                 <p className="text-[11px] text-slate-400 truncate">{t.lastDir === 'out' ? '↩ ' : ''}{t.lastText}</p>
                 <p className="text-[10px] text-slate-600 mt-0.5 flex items-center gap-1.5 flex-wrap">{label(t.accountId)}{t.assignee?.name && <span className="text-sky-400">· {t.assignee.name}</span>}{(t.labels || []).slice(0, 2).map((l) => <span key={l} className="bg-white/10 text-slate-300 rounded px-1">{l}</span>)}{t.status === 'done' && <span className="text-emerald-400">· منتهية</span>}{waitMin(t) >= 10 && <span className={`flex items-center gap-0.5 font-bold ${waitMin(t) >= 30 ? 'text-rose-400' : 'text-amber-400'}`}><Clock size={9} />{waitMin(t) >= 60 ? `${Math.floor(waitMin(t) / 60)}س` : `${waitMin(t)}د`} بلا رد</span>}</p>
               </div>
@@ -160,9 +189,17 @@ function Conversation({ th, me, acctLabel, online, onBack, navigate }) {
   }
   const toggleBot = () => db.updateShared('wa_threads', th.id, { bot: { ...(th.bot || {}), pausedUntil: paused ? 0 : Math.floor(Date.now() / 1000) + 12 * 3600 } }).catch(() => {})
 
+  const [orderModal, setOrderModal] = useState(false)
+  const lastIn = [...(msgs || [])].reverse().find((m) => m.dir === 'in' && m.text)?.text || ''
+  async function afterOrder(order) {
+    patch({ labels: [...new Set([...(th.labels || []), 'محوّلة لفني'])], status: 'open' })
+    db.insertShared('wa_msgs', { threadId: th.id, accountId: th.accountId, phone: th.phone, dir: 'note', text: `تم إنشاء طلب #${String(order?.id || '').slice(-4)} وإرساله للتوزيع على الفنيين.`, kind: 'note', at: new Date().toISOString(), via: 'staff', by: me?.displayName || me?.name || '' }, undefined, { visibleTo: 'creator-and-admin', writableBy: 'admins' }).catch(() => {})
+    if (online) waApi('send', { accountId: th.accountId, to: th.phone, text: `أهلًا ${th.name || ''} 👋\nتم استلام طلبك رقم #${String(order?.id || '').slice(-4)} وجارٍ إسناده لأقرب فني متاح، وسنوافيك بموعد الوصول قريبًا.` }).catch(() => {})
+  }
   let lastDay = ''
   return (
-    <>
+    <div className="flex h-full min-h-0 w-full">
+    <div className="flex-1 min-w-0 flex flex-col min-h-0">
       <div className="shrink-0 px-4 py-3 border-b border-white/10 flex items-center gap-3">
         <button onClick={onBack} className="md:hidden w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><ArrowRight size={16} className="text-slate-300" /></button>
         <div className="min-w-0 flex-1">
@@ -215,7 +252,40 @@ function Conversation({ th, me, acctLabel, online, onBack, navigate }) {
         </div>
         <p className="text-[10px] text-slate-600 mt-1.5">{noteMode ? 'وضع الملاحظة الداخلية: لن يراها العميل.' : 'الرد من هنا يوقف البوت في هذه المحادثة 12 ساعة. الإرسال يتم بفاصل عشوائي قصير لحماية الرقم.'}</p>
       </div>
-    </>
+    </div>
+    <CrmPanel th={th} orders={orders || []} navigate={navigate} sos={isSos(th)} onCreate={() => setOrderModal(true)} />
+    {orderModal && <ManualOrderModal by="operations" initial={{ name: th.name || '', phone: th.phone.slice(-9).replace(/^/, '0'), description: lastIn.slice(0, 300), priority: isSos(th) ? 'urgent' : 'normal', waThreadId: th.id }} onClose={() => setOrderModal(false)} onCreated={afterOrder} />}
+    </div>
+  )
+}
+
+// Customer / CRM side panel (wide screens): who is this, their orders, and one-tap "turn this chat into an order".
+function CrmPanel({ th, orders, navigate, sos, onCreate }) {
+  const tail = th.phone.slice(-9)
+  const list = orders.filter((o) => String(o.clientPhone || '').replace(/\D/g, '').endsWith(tail))
+  const done = list.filter((o) => ['completed', 'closed'].includes(o.status)).length
+  const active = list.find((o) => !['completed', 'closed', 'cancelled'].includes(o.status))
+  return (
+    <aside className="hidden xl:flex w-[300px] shrink-0 border-r border-white/10 flex-col gap-3 p-3 overflow-y-auto">
+      <p className="text-xs font-black text-white flex items-center gap-1.5"><UserRound size={14} className="text-primary" /> بطاقة العميل</p>
+      {sos && <div className="rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-[11px] font-bold p-2.5 flex gap-2"><Siren size={14} className="shrink-0 mt-0.5" /> رسالة طوارئ محتملة — حوّلها لطلب عاجل وسيُوزَّع أولًا.</div>}
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-xs text-slate-300 grid gap-1.5">
+        <p className="font-black text-white text-sm">{th.name || 'عميل واتساب'}</p>
+        <a href={`tel:+${th.phone}`} className="flex items-center gap-1.5" dir="ltr"><Phone size={12} /> +{th.phone}</a>
+        {active?.address && <p className="flex items-center gap-1.5"><MapPin size={12} /> {active.address}</p>}
+        <p className="text-slate-500">{list.length ? `${list.length} طلب سابق · ${done} مكتمل` : 'عميل جديد — لا طلبات سابقة'}</p>
+      </div>
+      <button onClick={onCreate} className="rounded-xl bg-emerald-500 text-black font-black text-sm py-3 flex items-center justify-center gap-2 active:scale-95"><ClipboardPlus size={16} /> تحويل المحادثة إلى طلب</button>
+      <p className="text-[10px] text-slate-500 -mt-1">يُنشأ الطلب بآخر رسالة للعميل، يدخل قائمة التوزيع (آلي/يدوي)، وتصله رسالة تأكيد تلقائية.</p>
+      {list.length > 0 && <p className="text-xs font-black text-white mt-1 flex items-center gap-1.5"><Wrench size={13} className="text-primary" /> سجل الطلبات</p>}
+      {list.slice(0, 6).map((o) => (
+        <button key={o.id} onClick={() => navigate(`/staff/order/${o.id}`)} className="text-right rounded-xl bg-white/5 border border-white/10 p-2.5 text-[11px]">
+          <p className="font-bold text-white flex items-center gap-2">#{String(o.id).slice(-4)}<span className="mr-auto text-[10px] text-sky-300">{STATUS_META?.[o.status]?.label || o.status}</span></p>
+          <p className="text-slate-400 truncate">{o.description || o.serviceDetails || '—'}</p>
+          {o.technicianName && <p className="text-emerald-300/80">🧰 {o.technicianName}</p>}
+        </button>
+      ))}
+    </aside>
   )
 }
 
