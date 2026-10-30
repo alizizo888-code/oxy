@@ -28,6 +28,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: android-actions/setup-android@v3
       - name: Prepare Capacitor project
         working-directory: native/${{ matrix.app }}
         run: |
@@ -48,7 +49,9 @@ jobs:
           done
       - name: Build APK
         working-directory: native/${{ matrix.app }}/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace > build.log 2>&1 || { grep -E 'error|Error|FAILED|wrong|not found|What went' build.log | head -8 | while IFS= read -r l; do echo "::error::${l:0:250}"; done; exit 1; }
       - name: Name the file
         run: |
           mkdir -p out
