@@ -418,6 +418,15 @@ class Oxygen_SEO_Engine {
     }
     /** Keyword system: tags + focus keyword/description for Yoast and Rank Math (so the posts behave like hand-written WordPress posts). */
     /** One category per service (+ «أدلة إرشادية» for official guides) so the site is organised and crawlable by topic. */
+    /** Search keywords for every specialty: service, service + each city, service + «أفضل/أرخص/عاجل» intents. */
+    public static function all_keywords() {
+        $out = [];
+        foreach ((array) self::data('services') as $sv) {
+            $n = $sv['n'] ?? ''; if ($n === '') { continue; }
+            foreach ([$n, $n . ' مكة', $n . ' جدة', $n . ' في مكة المكرمة', $n . ' في جدة', 'افضل ' . $n, $n . ' عاجل', $n . ' قريب مني', 'شركة ' . $n, 'فني ' . $n, 'اسعار ' . $n] as $k) { $out[] = $k; }
+        }
+        return array_values(array_unique($out));
+    }
     private static function categorize($id, $name, $track) {
         $names = array_values(array_filter([$name, $track === 'official' ? 'أدلة إرشادية' : '']));
         if (!$names) { return; }
