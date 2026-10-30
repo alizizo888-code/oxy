@@ -16,14 +16,31 @@ import OrderCard from '../components/OrderCard'
 import { useOpsMode } from '../hooks/useOpsMode'
 import { useOrderRouting } from '../hooks/useOrderRouting'
 import ManualOrderModal from '../components/ManualOrderModal'
+import AssignModal from '../components/ops/AssignModal'
+import OpsMap from '../components/ops/OpsMap'
+import IntakeBoard from '../components/ops/IntakeBoard'
+import DispatchBoard from '../components/ops/DispatchBoard'
+import { DONE, RUNNING, isToday, isUnassigned } from '../components/ops/helpers'
 import { serviceScopeLabel, specialtyLabel } from '../constants'
+
+const TABS = [
+  ['map', '🗺️ الخريطة الميدانية', () => 0],
+  ['intake', '📥 استقبال الطلبات', (k, u) => u.length],
+  ['board', '📋 لوحة التوجيه', () => 0],
+  ['techs', '🧰 الفنيون', () => 0],
+  ['alerts', '🔔 محادثات وتنبيهات', (k, u, a, h) => a.length + h.length],
+]
 
 export default function OperationsRoom() {
   const navigate = useNavigate()
   const { role, isOwner, loading: roleLoading } = useTeamRole()
   const { profiles, settings, updateSettings } = useTechProfiles()
   const { data: orders, loading: ordersLoading } = useLiveShared('orders', { order: '-createdAt', limit: 300 })
-  const { autoAssignOrder } = useAssignment({ profiles, settings, orders })
+  const { autoAssignOrder, linkTech } = useAssignment({ profiles, settings, orders })
+  const { data: crmRows } = useLiveShared('customer_profiles', { limit: 800 })
+  const [tab, setTab] = useState('map')
+  const [assignOrder, setAssignOrder] = useState(null)
+  const [busyId, setBusyId] = useState('')
   const { data: handoffs } = useLiveShared('handoffs', { filters: { status: { in: ['open', 'claimed'] } }, order: '-createdAt', limit: 50 })
   const { settings: aiSettings } = useAiSettings()
   const { data: coverageRows } = useLiveShared('coverage', { limit: 1 })
@@ -99,6 +116,22 @@ export default function OperationsRoom() {
     [orders],
   )
 
+  const kpi = useMemo(() => {
+    const live = orders.filter((o) => !o.inhouse)
+    return {
+      running: live.filter((o) => RUNNING.includes(o.status)).length,
+      assigned: live.filter((o) => ['assigned', 'forced'].includes(o.status)).length,
+      done: orders.filter((o) => DONE.includes(o.status) && isToday(o.completedAt || o.updatedAt)).length,
+      failed: orders.filter((o) => (o.status === 'cancelled' && isToday(o.updatedAt)) || (o.escalation && !DONE.includes(o.status) && o.status !== 'cancelled')).length,
+      techOn: profiles.filter((t) => isTechAvailable(t, orders)).length,
+    }
+  }, [orders, profiles])
+
+  async function autoOne(o) {
+    setBusyId(o.id)
+    try { const t = await autoAssignOrder(o, gid); setNotice(t ? `أُسندت إلى ${t.displayName || 'فني'}` : 'لا فني مناسب — أُرسلت كمهمة إجبارية') } finally { setBusyId('') }
+  }
+
   // Auto-distribution: while mode is آلي, any unassigned order gets assigned on sight.
   const autoRunningRef = useRef(false)
   useEffect(() => {
@@ -153,31 +186,16 @@ export default function OperationsRoom() {
   return (
     <div className="h-full overflow-y-auto pb-24 bg-[#090c14]" dir="rtl">
       <header className="sticky top-0 z-20 bg-[#090c14]/90 backdrop-blur border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
-        <div className="max-w-4xl mx-auto w-full px-4 py-4 flex items-center gap-3">
+        <div className="max-w-6xl mx-auto w-full px-4 py-3 flex items-center gap-2 overflow-x-auto pl-24">
           <button onClick={() => navigate('/staff')} className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center">
             <ChevronRight size={18} className="text-slate-300" />
           </button>
-          <div className="flex-1 min-w-0">
+          <div className="shrink-0 min-w-[140px]">
             <p className="text-[11px] text-primary font-bold tracking-widest">غرفة العمليات</p>
             <h1 className="font-display text-lg font-black text-white truncate">مركز توزيع الطلبات</h1>
           </div>
           {(isOwner || routing.opsCreate) && (
             <button onClick={() => setManualOpen(true)} className="shrink-0 flex items-center gap-1.5 bg-emerald-500 text-black rounded-xl px-3 py-2 text-[11px] font-black">➕ <span>طلب من واتساب</span></button>
-          )}
-          {isOwner && (
-            <>
-              <button onClick={() => routing.setMode(routing.mode === 'operations' ? 'whatsapp' : 'operations').catch(() => {})} className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black border ${routing.mode === 'operations' ? 'bg-amber-400 text-black border-amber-200' : 'bg-white/5 border-white/10 text-slate-200'}`}>
-                📋 توجيه الطلبات: {routing.mode === 'operations' ? 'لمشرف العمليات' : 'للواتساب'}
-              </button>
-              <button onClick={() => routing.setOpsCreate(!routing.opsCreate).catch(() => {})} className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black border ${routing.opsCreate ? 'bg-emerald-400 text-black border-emerald-200' : 'bg-white/5 border-white/10 text-slate-200'}`}>
-                ➕ إنشاء طلبات يدوية: {routing.opsCreate ? 'مفعّل' : 'متوقف'}
-              </button>
-            </>
-          )}
-          {isOwner && (
-            <button onClick={() => setInhouse(!inhouseOn).catch(() => {})} className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-black border ${inhouseOn ? 'bg-sky-500 text-black border-sky-300' : 'bg-white/5 border-white/10 text-slate-200'}`}>
-              🏗️ هندمة الأعمال: {inhouseOn ? 'مفعّلة' : 'متوقفة'}
-            </button>
           )}
           <button onClick={() => navigate('/staff/tech-requests')} className="relative shrink-0 flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 rounded-xl px-3 py-2 text-[11px] font-bold text-white">
             <HardHat size={14} className="text-amber-300" /> <span className="hidden sm:inline">طلبات الفنيين</span>
@@ -206,64 +224,22 @@ export default function OperationsRoom() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto w-full px-4 pt-5 flex flex-col gap-5">
-        {/* Human handoff inbox from MUTQAN AI */}
-        <section className="bg-amber-500/[0.06] border border-amber-500/25 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Headset size={16} className="text-amber-400" />
-            <h2 className="text-white font-bold text-sm">محادثات محوّلة من MUTQAN AI ({handoffs.length})</h2>
-          </div>
-          {handoffs.length === 0 ? (
-            <p className="text-slate-500 text-xs text-center py-3">لا توجد محادثات بانتظار موظف</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {handoffs.map((h) => (
-                <button
-                  key={h.id}
-                  onClick={() => navigate(`/staff/handoff/${h.id}`)}
-                  className="text-right bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-white font-bold text-sm truncate">{h.customerName}</p>
-                    <span className={`text-[10px] font-black shrink-0 ${h.status === 'open' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {h.status === 'open' ? 'بانتظار موظف' : `مع ${h.agentName || 'موظف'}`}
-                    </span>
-                  </div>
-                  {h.reason && h.reason !== 'human' && (
-                    <span className={`inline-block mt-1 text-[10px] font-black rounded-md px-1.5 py-0.5 ${h.priority === 'high' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-slate-300'}`}>
-                      {h.priority === 'high' ? '⚠️ ' : ''}{escalationLabel(h.reason)}
-                    </span>
-                  )}
-                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{h.summary}</p>
-                  {h.service && <p className="text-[10px] text-primary mt-1 font-bold">{specialtyLabel(h.service)}</p>}
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="max-w-6xl mx-auto w-full px-4 pt-5 flex flex-col gap-5">
+        {/* KPI strip */}
+        <section className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          {[
+            ['بانتظار الإسناد', unassigned.length, unassigned.length ? 'text-rose-300' : 'text-slate-300'],
+            ['جارية', kpi.running, 'text-amber-300'],
+            ['مُسندة', kpi.assigned, 'text-sky-300'],
+            ['تمت اليوم', kpi.done, 'text-emerald-300'],
+            ['لم تتم', kpi.failed, kpi.failed ? 'text-rose-300' : 'text-slate-300'],
+            ['فنيون متاحون', `${kpi.techOn}/${profiles.length}`, 'text-emerald-300'],
+          ].map(([l, v, c]) => (
+            <div key={l} className="rounded-xl bg-white/[0.04] border border-white/10 py-2.5 text-center"><p className={`text-xl font-black font-display ${c}`}>{v}</p><p className="text-[10px] text-slate-400 font-bold">{l}</p></div>
+          ))}
         </section>
 
-        {/* Follow-up & escalation alerts */}
-        {alerts.length > 0 && (
-          <section className="bg-rose-500/[0.06] border border-rose-500/25 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle size={16} className="text-rose-400" />
-              <h2 className="text-white font-bold text-sm">تصعيدات وتنبيهات المتابعة ({alerts.length})</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {alerts.map((o) => (
-                <button key={o.id} onClick={() => navigate(`/staff/order/${o.id}`)} className="text-right bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-white font-bold text-sm truncate">{specialtyLabel(o.specialtyId)} · {o.clientName}</p>
-                    <span className="text-[10px] font-black text-rose-300 shrink-0">{escalationLabel(o.escalation.reason)}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">الجهة: {handlerLabel(o.escalation.level)}{o.technicianName ? ` · الفني: ${o.technicianName}` : ''}</p>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Mode + strategy controls */}
+        {/* Dispatch mode: manual / automatic */}
         <section className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-4">
             <SlidersHorizontal size={16} className="text-primary" />
@@ -322,6 +298,40 @@ export default function OperationsRoom() {
           {notice && <p className="text-emerald-400 text-xs font-bold text-center mt-2">{notice}</p>}
         </section>
 
+
+        {isOwner && (
+          <section className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3"><Radar size={16} className="text-primary" /><h2 className="text-white font-bold text-sm">استقبال الطلبات (المالك)</h2></div>
+            <div className="flex gap-2 flex-wrap">
+
+              <button onClick={() => routing.setMode(routing.mode === 'operations' ? 'whatsapp' : 'operations').catch(() => {})} className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black border ${routing.mode === 'operations' ? 'bg-amber-400 text-black border-amber-200' : 'bg-white/5 border-white/10 text-slate-200'}`}>
+                📋 توجيه الطلبات: {routing.mode === 'operations' ? 'لمشرف العمليات' : 'للواتساب'}
+              </button>
+              <button onClick={() => routing.setOpsCreate(!routing.opsCreate).catch(() => {})} className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-black border ${routing.opsCreate ? 'bg-emerald-400 text-black border-emerald-200' : 'bg-white/5 border-white/10 text-slate-200'}`}>
+                ➕ إنشاء طلبات يدوية: {routing.opsCreate ? 'مفعّل' : 'متوقف'}
+              </button>
+            <button onClick={() => setInhouse(!inhouseOn).catch(() => {})} className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-black border ${inhouseOn ? 'bg-sky-500 text-black border-sky-300' : 'bg-white/5 border-white/10 text-slate-200'}`}>
+              🏗️ هندمة الأعمال: {inhouseOn ? 'مفعّلة' : 'متوقفة'}
+            </button>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">«لمشرف العمليات»: الطلب يدخل غرفة العمليات مباشرة دون واتساب. «للواتساب»: يكمل العميل على واتساب. الطلبات اليدوية: تسمح لمشرف العمليات بتحويل محادثات الواتساب إلى طلبات.</p>
+          </section>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto sticky top-[68px] z-10 bg-[#090c14]/95 backdrop-blur py-1.5">
+          {TABS.map(([id, label, n]) => (
+            <button key={id} onClick={() => setTab(id)} className={`shrink-0 rounded-xl px-4 py-2 text-xs font-black border ${tab === id ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-slate-300'}`}>
+              {label}{n(kpi, unassigned, alerts, handoffs) ? <span className="mr-1.5 inline-block min-w-[18px] rounded-full bg-rose-500 text-white text-[10px] px-1">{n(kpi, unassigned, alerts, handoffs)}</span> : null}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'map' && <OpsMap orders={orders} profiles={profiles} crm={crmRows} onAssign={setAssignOrder} onAuto={autoOne} onOpenOrder={(o) => navigate(`/staff/order/${o.id}`)} />}
+        {tab === 'intake' && <IntakeBoard orders={orders} mode={mode} busyId={busyId} onAssign={setAssignOrder} onAuto={autoOne} onOpen={(o) => navigate(`/staff/order/${o.id}`)} onLocate={() => setTab('map')} />}
+        {tab === 'board' && <DispatchBoard orders={orders} onOpen={(o) => navigate(`/staff/order/${o.id}`)} onReassign={setAssignOrder} />}
+        {tab === 'techs' && (
+          <>
         {/* Technician board */}
         <section className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-4">
@@ -365,24 +375,70 @@ export default function OperationsRoom() {
           </section>
         )}
 
-        {/* Unassigned queue */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-white font-bold text-sm">قيد الإسناد ({unassigned.length})</h2>
+          </>
+        )}
+        {tab === 'alerts' && (
+          <>
+        {/* Human handoff inbox from MUTQAN AI */}
+        <section className="bg-amber-500/[0.06] border border-amber-500/25 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Headset size={16} className="text-amber-400" />
+            <h2 className="text-white font-bold text-sm">محادثات محوّلة من MUTQAN AI ({handoffs.length})</h2>
           </div>
-          {ordersLoading ? (
-            <p className="text-slate-500 text-sm text-center py-8">جارِ التحميل…</p>
-          ) : unassigned.length === 0 ? (
-            <p className="text-slate-500 text-sm text-center py-8">لا توجد طلبات بانتظار الإسناد</p>
+          {handoffs.length === 0 ? (
+            <p className="text-slate-500 text-xs text-center py-3">لا توجد محادثات بانتظار موظف</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {unassigned.map((o) => (
-                <OrderCard key={o.id} order={o} showClient dark onClick={() => navigate(`/staff/order/${o.id}`)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {handoffs.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => navigate(`/staff/handoff/${h.id}`)}
+                  className="text-right bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-white font-bold text-sm truncate">{h.customerName}</p>
+                    <span className={`text-[10px] font-black shrink-0 ${h.status === 'open' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {h.status === 'open' ? 'بانتظار موظف' : `مع ${h.agentName || 'موظف'}`}
+                    </span>
+                  </div>
+                  {h.reason && h.reason !== 'human' && (
+                    <span className={`inline-block mt-1 text-[10px] font-black rounded-md px-1.5 py-0.5 ${h.priority === 'high' ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-slate-300'}`}>
+                      {h.priority === 'high' ? '⚠️ ' : ''}{escalationLabel(h.reason)}
+                    </span>
+                  )}
+                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{h.summary}</p>
+                  {h.service && <p className="text-[10px] text-primary mt-1 font-bold">{specialtyLabel(h.service)}</p>}
+                </button>
               ))}
             </div>
           )}
         </section>
+
+        {/* Follow-up & escalation alerts */}
+        {alerts.length > 0 && (
+          <section className="bg-rose-500/[0.06] border border-rose-500/25 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={16} className="text-rose-400" />
+              <h2 className="text-white font-bold text-sm">تصعيدات وتنبيهات المتابعة ({alerts.length})</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {alerts.map((o) => (
+                <button key={o.id} onClick={() => navigate(`/staff/order/${o.id}`)} className="text-right bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-white font-bold text-sm truncate">{specialtyLabel(o.specialtyId)} · {o.clientName}</p>
+                    <span className="text-[10px] font-black text-rose-300 shrink-0">{escalationLabel(o.escalation.reason)}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">الجهة: {handlerLabel(o.escalation.level)}{o.technicianName ? ` · الفني: ${o.technicianName}` : ''}</p>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+          </>
+        )}
       </div>
+      {assignOrder && <AssignModal order={assignOrder} profiles={profiles} orders={orders} onAssign={(o, t) => linkTech(o, t, 'operations')} onClose={() => setAssignOrder(null)} />}
       {manualOpen && <ManualOrderModal by={role} onClose={() => setManualOpen(false)} />}
     </div>
   )
