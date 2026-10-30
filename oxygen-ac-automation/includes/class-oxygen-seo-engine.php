@@ -264,7 +264,7 @@ class Oxygen_SEO_Engine {
 
     /* ---------- settings / log ---------- */
     public static function settings() {
-        $d = ['enabled' => 1, 'status' => 'publish', 'new_per_day' => 60, 'seo_per_day' => 60, 'district_per_day' => 60, 'random_per_day' => 10, 'refresh_per_day' => 60, 'min_age_days' => 7, 'wa' => ''];
+        $d = ['enabled' => 1, 'status' => 'publish', 'new_per_day' => 60, 'seo_per_day' => 60, 'district_per_day' => 60, 'random_per_day' => 60, 'refresh_per_day' => 60, 'min_age_days' => 7, 'wa' => ''];
         $s = get_option(self::OPT, []);
         $s = is_array($s) ? $s : [];
         // One-time rate upgrade on every site: 60 new / 60 SEO-variant / 60 district / 60 refreshes per day.
@@ -272,6 +272,7 @@ class Oxygen_SEO_Engine {
             $s['new_per_day'] = 60; $s['seo_per_day'] = 60; $s['district_per_day'] = 60; $s['refresh_per_day'] = 60;
             update_option(self::OPT, $s, false); update_option('oxygen_rate_v60', '1', false);
         }
+        if (get_option('oxygen_rate_v60b') !== '1') { $s['random_per_day'] = 60; update_option(self::OPT, $s, false); update_option('oxygen_rate_v60b', '1', false); }
         return array_merge($d, $s);
     }
     public static function log($action, $post_id, $title, $extra = []) {
