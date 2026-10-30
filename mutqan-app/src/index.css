@@ -194,3 +194,13 @@ html.staff-light #root .leaflet-container,
 html.staff-light #root [data-keep-colors],
 html.staff-light #root [style*="background-image"] { filter: invert(1) hue-rotate(180deg); }
 html.staff-light #root [data-keep-colors] :is(img, video, canvas, [style*="background-image"]) { filter: none; }
+
+/* Winter theme: icy backdrop + slow snowfall behind the app (reference design). Only when data-palette="winter". */
+html[data-palette="winter"] body { background: linear-gradient(180deg, #e8f4ff 0%, #f4faff 45%, #e6f1fb 100%); }
+html[data-palette="winter"] body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .55;
+  background-image: radial-gradient(3px 3px at 20px 30px, #fff 50%, transparent 52%), radial-gradient(2px 2px at 90px 120px, #fff 50%, transparent 52%), radial-gradient(4px 4px at 160px 60px, #cfe8ff 50%, transparent 52%), radial-gradient(2px 2px at 230px 170px, #fff 50%, transparent 52%);
+  background-size: 260px 220px; animation: mq-snow 22s linear infinite;
+}
+@keyframes mq-snow { to { background-position: 0 220px; } }
+@media (prefers-reduced-motion: reduce) { html[data-palette="winter"] body::before { animation: none; } }

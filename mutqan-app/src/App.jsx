@@ -39,6 +39,8 @@ const WaInbox = lazyRetry(() => import('./pages/WaInbox'))
 const InstallApp = lazyRetry(() => import('./pages/InstallApp'))
 import StaffLayout from './components/StaffLayout'
 import PushToaster from './components/PushToaster'
+import { ThemeBoot } from './lib/appTheme'
+const ThemeSettings = lazyRetry(() => import('./pages/ThemeSettings'))
 const Warranties = lazyRetry(() => import('./pages/Warranties'))
 const TechJoin = lazyRetry(() => import('./pages/TechJoin'))
 const TechRequests = lazyRetry(() => import('./pages/TechRequests'))
@@ -47,6 +49,7 @@ export default function App() {
   return (
     <HashRouter>
       <PushToaster />
+      <ThemeBoot />
       <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm" dir="rtl">جارِ التحميل…</div>}>
       <Routes>
         {/* واجهة الزائر = واجهة العميل: يستقبل الزوار مباشرة على الرئيسية */}
@@ -65,6 +68,7 @@ export default function App() {
         {/* تدفق الطلب وتفاصيله — شاشات مركّزة بدون شريط تبويب */}
         <Route path="/ai" element={<AiChat />} />
         <Route path="/staff/notify-settings" element={<NotifySettings />} />
+        <Route path="/theme" element={<ThemeSettings />} />
         <Route path="/new" element={<NewOrder />} />
         <Route path="/install" element={<InstallApp />} />
         <Route path="/privacy" element={<Privacy />} />
@@ -87,6 +91,7 @@ export default function App() {
         <Route path="/staff/ac" element={<AcAdmin />} />
         <Route path="/staff/used-ac" element={<UsedAcAdmin />} />
         <Route path="/staff/schedule" element={<ScheduleAdmin />} />
+        <Route path="/staff/theme" element={<ThemeSettings staff />} />
         <Route path="/staff/pay-links" element={<PayLinks />} />
         <Route path="/staff/ai-command" element={<AiCommandCenter />} />
         <Route path="/staff/payment-methods" element={<PaymentMethods />} />

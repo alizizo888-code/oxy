@@ -9,6 +9,7 @@ import { db } from '../lib/db'
 import { team } from '../lib/team'
 import { push } from '../lib/push'
 import MapView from '../components/MapView'
+import ServiceDocs from '../components/ServiceDocs'
 import StatusBadge from '../components/StatusBadge'
 import StatusTimeline from '../components/StatusTimeline'
 import RatingStars from '../components/RatingStars'
@@ -35,6 +36,8 @@ export default function ClientOrderDetail() {
     // eslint-disable-next-line
   }, [order?.id])
   const [ratingVal, setRatingVal] = useState(5)
+  const [rdet, setRdet] = useState({})
+  const [rtags, setRtags] = useState([])
   const [comment, setComment] = useState('')
   const [methods, setMethods] = useState(null)
   const [paying, setPaying] = useState(false)
@@ -94,6 +97,8 @@ export default function ClientOrderDetail() {
     try {
       await db.updateShared('orders', order.id, {
         rating: ratingVal,
+        ratingDetails: rdet,
+        ratingTags: rtags,
         ratingComment: comment,
         ratedAt: new Date().toISOString(),
         status: 'closed',
@@ -153,6 +158,12 @@ export default function ClientOrderDetail() {
         {showTechMap && (
           <Card>
             <p className="text-xs font-bold text-secondary mb-2 flex items-center gap-1.5"><Wrench size={13} /> موقع الفني الآن</p>
+            {Number(order.technicianDistanceM) > 0 && (
+              <div className="mb-2 flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-2.5">
+                <div className="flex-1"><p className="text-[11px] font-bold text-slate-500">وقت الوصول التقديري</p><p className="font-display font-black text-primary text-xl">≈ {Math.max(1, Math.round((order.technicianDistanceM / 1000) / 25 * 60))} دقيقة</p></div>
+                <p className="text-[11px] font-bold text-slate-500">{order.technicianDistanceM < 1000 ? `${order.technicianDistanceM} م` : `${(order.technicianDistanceM / 1000).toFixed(1)} كم`} متبقية</p>
+              </div>
+            )}
             <div className="rounded-xl overflow-hidden border border-black/5">
               <MapView
                 center={[order.technicianLocation.lat, order.technicianLocation.lng]}
@@ -192,6 +203,8 @@ export default function ClientOrderDetail() {
             <p className="text-sm text-slate-700">{order.address}</p>
           </Card>
         )}
+
+        {!order.inhouse && ['completed', 'closed'].includes(order.status) && <ServiceDocs order={order} canEdit={false} dark={false} />}
 
         {!order.inhouse && (order.status === 'completed' || order.status === 'closed') && (
           <Card>
@@ -253,8 +266,21 @@ export default function ClientOrderDetail() {
 
         {order.status === 'completed' && !order.rating && (
           <Card>
-            <p className="text-xs font-bold text-slate-500 mb-3">قيّم الخدمة</p>
-            <RatingStars value={ratingVal} onChange={setRatingVal} size={26} />
+            <p className="text-xs font-bold text-slate-500 mb-3">كيف كانت تجربتك مع الخدمة؟</p>
+            <RatingStars value={ratingVal} onChange={setRatingVal} size={30} />
+            <p className="mt-2 text-[12px] font-black text-amber-600">{['', 'سيئة', 'تحتاج تحسين', 'جيدة', 'ممتازة', 'خدمة ممتازة وفني محترف جدًا! ⭐'][ratingVal]}</p>
+            <div className="mt-4 flex flex-col gap-2.5">
+              {[['punctuality', 'الالتزام بالموعد'], ['cleanliness', 'النظافة وحماية الأثاث'], ['skill', 'المهارة والحرفية الفنية'], ['manners', 'اللباقة والتعامل الراقي'], ['clarity', 'وضوح الشرح والفاتورة']].map(([k, l]) => (
+                <div key={k} className="flex items-center gap-2"><span className="flex-1 text-[12px] font-bold text-slate-600">{l}</span><RatingStars value={rdet[k] || ratingVal} onChange={(v) => setRdet((d) => ({ ...d, [k]: v }))} size={17} /></div>
+              ))}
+            </div>
+            <p className="mt-4 text-[11px] font-bold text-slate-500">ما أكثر ما نال إعجابك؟</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {['فني خلوق ومحترم', 'نظافة ممتازة للمكان', 'إتقان وسرعة قياسية', 'سعر عادل وواضح', 'نصحني بإرشادات مهمة', 'أدوات فحص متطورة'].map((t) => {
+                const on = rtags.includes(t)
+                return <button key={t} type="button" onClick={() => setRtags((a) => (on ? a.filter((x) => x !== t) : [...a, t]))} className={`rounded-full px-3 py-1.5 text-[11px] font-bold border ${on ? 'bg-primary text-white border-primary' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>{t}</button>
+              })}
+            </div>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -272,6 +298,7 @@ export default function ClientOrderDetail() {
           <Card>
             <p className="text-xs font-bold text-slate-500 mb-2">تقييمك</p>
             <RatingStars value={order.rating} readOnly size={20} />
+            {(order.ratingTags || []).length > 0 && <div className="flex flex-wrap gap-1.5 mt-2">{order.ratingTags.map((t) => <span key={t} className="rounded-full bg-primary/10 text-primary text-[11px] font-bold px-2.5 py-1">{t}</span>)}</div>}
             {order.ratingComment && <p className="text-sm text-slate-500 mt-2">{order.ratingComment}</p>}
           </Card>
         )}

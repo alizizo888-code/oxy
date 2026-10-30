@@ -1,3 +1,4 @@
+import ServiceDocs from '../components/ServiceDocs'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronRight, MapPin, Wrench, Navigation, CheckCircle2, XCircle, Send, Sparkles, GitBranch, Wallet, AlertTriangle, Loader2, Phone, Clock, Ruler } from 'lucide-react'
@@ -365,6 +366,10 @@ export default function OrderDetailStaff() {
             </Card>
           )
         })()}
+
+        {!order.inhouse && ['arrived', 'in_progress', 'completed', 'closed'].includes(order.status) && (isMyTask || role === 'owner' || role === 'operations') && (
+          <ServiceDocs order={order} canEdit={['arrived', 'in_progress', 'completed'].includes(order.status)} />
+        )}
 
         {!order.inhouse && (order.status === 'completed' || order.status === 'closed') && (
           <Card>

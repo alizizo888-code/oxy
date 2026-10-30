@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Clock, LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, UserPlus, Smartphone, Home, ShoppingBag } from 'lucide-react'
+import { Clock, LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, UserPlus, Smartphone, Home, ShoppingBag, Palette } from 'lucide-react'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
@@ -104,6 +104,7 @@ function SideMenu({ items, role, bell, unread, open, setOpen }) {
           {manage && <div className="mr-3 pr-2 border-r border-white/10 grid gap-0.5">{MANAGE.map(([to, label, Icon]) => link([to, label, Icon]))}</div>}
         </>
       )}
+      <NavLink to="/staff/theme" className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold mt-1 ${isActive ? 'bg-primary/15 text-primary' : 'text-slate-300 hover:bg-white/5'}`}><Palette size={18} />قوالب المظهر</NavLink>
       {role === 'owner' && <NavLink to="/" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-400 hover:bg-white/5 mt-auto"><Home size={18} />تطبيق العميل</NavLink>}
     </nav>
   )

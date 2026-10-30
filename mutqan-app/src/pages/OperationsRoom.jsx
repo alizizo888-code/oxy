@@ -20,6 +20,8 @@ import AssignModal from '../components/ops/AssignModal'
 import OpsMap from '../components/ops/OpsMap'
 import IntakeBoard from '../components/ops/IntakeBoard'
 import DispatchBoard from '../components/ops/DispatchBoard'
+import TechTable from '../components/ops/TechTable'
+import OrdersTable from '../components/ops/OrdersTable'
 import { DONE, RUNNING, isToday, isUnassigned } from '../components/ops/helpers'
 import { serviceScopeLabel, specialtyLabel } from '../constants'
 
@@ -27,6 +29,7 @@ const TABS = [
   ['map', '🗺️ الخريطة الميدانية', () => 0],
   ['intake', '📥 استقبال الطلبات', (k, u) => u.length],
   ['board', '📋 لوحة التوجيه', () => 0],
+  ['table', '📑 جدول الطلبات', () => 0],
   ['techs', '🧰 الفنيون', () => 0],
   ['alerts', '🔔 محادثات وتنبيهات', (k, u, a, h) => a.length + h.length],
 ]
@@ -41,6 +44,8 @@ export default function OperationsRoom() {
   const [tab, setTab] = useState('map')
   const [assignOrder, setAssignOrder] = useState(null)
   const [busyId, setBusyId] = useState('')
+  const { data: payRows } = useLiveShared('tech_pay', { limit: 5 })
+  const sharePctVal = Number(payRows?.[0]?.sharePct) || 0
   const { data: handoffs } = useLiveShared('handoffs', { filters: { status: { in: ['open', 'claimed'] } }, order: '-createdAt', limit: 50 })
   const { settings: aiSettings } = useAiSettings()
   const { data: coverageRows } = useLiveShared('coverage', { limit: 1 })
@@ -314,6 +319,7 @@ export default function OperationsRoom() {
               🏗️ هندمة الأعمال: {inhouseOn ? 'مفعّلة' : 'متوقفة'}
             </button>
             </div>
+            <TechShareBox />
             <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">«لمشرف العمليات»: الطلب يدخل غرفة العمليات مباشرة دون واتساب. «للواتساب»: يكمل العميل على واتساب. الطلبات اليدوية: تسمح لمشرف العمليات بتحويل محادثات الواتساب إلى طلبات.</p>
           </section>
         )}
@@ -330,8 +336,10 @@ export default function OperationsRoom() {
         {tab === 'map' && <OpsMap orders={orders} profiles={profiles} crm={crmRows} onAssign={setAssignOrder} onAuto={autoOne} onOpenOrder={(o) => navigate(`/staff/order/${o.id}`)} />}
         {tab === 'intake' && <IntakeBoard orders={orders} mode={mode} busyId={busyId} onAssign={setAssignOrder} onAuto={autoOne} onOpen={(o) => navigate(`/staff/order/${o.id}`)} onLocate={() => setTab('map')} />}
         {tab === 'board' && <DispatchBoard orders={orders} onOpen={(o) => navigate(`/staff/order/${o.id}`)} onReassign={setAssignOrder} />}
+        {tab === 'table' && <OrdersTable orders={orders} onOpen={(o) => navigate(`/staff/order/${o.id}`)} onAssign={setAssignOrder} />}
         {tab === 'techs' && (
           <>
+            <TechTable profiles={profiles} orders={orders} sharePct={sharePctVal} />
         {/* Technician board */}
         <section className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-4">
@@ -446,4 +454,26 @@ export default function OperationsRoom() {
 
 function Centered({ children }) {
   return <div className="h-full flex items-center justify-center text-slate-500 text-sm bg-[#090c14]" dir="rtl">{children}</div>
+}
+
+// Owner: the technician's share of each completed service (percent). Empty = technicians do not see earnings figures.
+function TechShareBox() {
+  const { data } = useLiveShared('tech_pay', { limit: 5 })
+  const cur = (data || [])[0]
+  const [v, setV] = useState('')
+  const [saved, setSaved] = useState(false)
+  useEffect(() => { if (cur && v === '') setV(String(cur.sharePct ?? '')) }, [cur]) // eslint-disable-line
+  const save = async () => {
+    const n = Number(v); if (!(n >= 0 && n <= 100)) return
+    const gid = await team.groupId()
+    await db.upsertShared('tech_pay', { sharePct: n, updatedAt: new Date().toISOString() }, 'default', { groupId: gid, visibleTo: 'group', writableBy: 'admins' })
+    setSaved(true); setTimeout(() => setSaved(false), 1800)
+  }
+  return (
+    <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-200">
+      💰 نسبة الفني من الخدمة
+      <input value={v} onChange={(e) => setV(e.target.value)} inputMode="numeric" placeholder="مثال 60" className="w-16 bg-white/10 rounded-lg px-2 py-1 text-center text-white" dir="ltr" />%
+      <button onClick={save} className="rounded-lg bg-primary text-black font-black px-3 py-1">{saved ? 'تم ✓' : 'حفظ'}</button>
+    </div>
+  )
 }

@@ -11,6 +11,7 @@ import { useAssignment } from '../hooks/useAssignment'
 import { remainingCapacity, TECH_LEVELS } from '../assignment'
 import OrderCard from '../components/OrderCard'
 import TechMap from '../components/TechMap'
+import TechHome from '../components/TechHome'
 import { SERVICE_SCOPES, serviceScopeLabel, ACTIVE_STATUSES, SPECIALTIES } from '../constants'
 
 export default function TechRadar() {
@@ -27,7 +28,7 @@ export default function TechRadar() {
   const myApp = myApps?.[0] || null
 
   const { data: shops } = useLiveShared('shops', { limit: 300 })
-  const [tab, setTab] = useState(() => { try { return new URLSearchParams((location.hash.split('?')[1]) || '').get('tab') || 'mine' } catch { return 'mine' } })
+  const [tab, setTab] = useState(() => { try { return new URLSearchParams((location.hash.split('?')[1]) || '').get('tab') || 'home' } catch { return 'home' } })
   const [myName, setMyName] = useState('')
   const [dailyCapacity, setDailyCapacity] = useState('8')
   const [scope, setScope] = useState('wash_maintenance_install')
@@ -143,6 +144,7 @@ export default function TechRadar() {
         </div>
         <div className="max-w-4xl mx-auto w-full px-4 flex gap-2 pb-3 overflow-x-auto">
           {[
+            { k: 'home', label: '🏠 الرئيسية' },
             { k: 'mine', label: `مهامي (${myActive.length})` },
             { k: 'available', label: `متاحة للقبول (${available.length})` },
             { k: 'map', label: '🗺️ الخريطة' },
@@ -160,6 +162,7 @@ export default function TechRadar() {
       </header>
 
       <div className="max-w-4xl mx-auto w-full px-4 pt-5">
+        {tab === 'home' && <TechHome myId={myId} myProfile={myProfile} displayName={displayName} orders={orders} onSaveProfile={upsertProfile} onAccept={acceptOrder} onOpen={(o) => navigate(`/staff/order/${o.id}`)} busy={busy} />}
         {tab === 'mine' && (
           <div className="flex flex-col gap-2.5">
             {ordersLoading ? <p className="text-slate-500 text-sm text-center py-10">جارِ التحميل…</p>
