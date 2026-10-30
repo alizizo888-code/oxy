@@ -106,15 +106,15 @@ final class Oxygen_Article_Boost {
             . '.oxb-mq{display:flex;gap:10px;width:max-content;animation:oxbm 38s linear infinite;direction:ltr}.oxb-gal:hover .oxb-mq{animation-play-state:paused}'
             . '.oxb-mq img{width:170px;height:112px;object-fit:cover;border-radius:12px;flex:none;margin:0!important}'
             . '@keyframes oxbm{to{transform:translateX(-50%)}}'
-            . '.oxb-fab{position:fixed;z-index:99990;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;direction:rtl}'
+            . '.oxb-fab{position:fixed;z-index:99990;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;direction:rtl}'
             . '.oxb-fab a,.oxb-fab button{width:52px;height:52px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;color:#fff!important;box-shadow:0 6px 18px rgba(0,0,0,.28);cursor:pointer;text-decoration:none!important;transition:transform .15s}'
             . '.oxb-fab a:active,.oxb-fab button:active{transform:scale(.92)}'
             . '.oxb-main{background:var(--c);width:56px!important;height:56px!important}.oxb-wa{background:#25d366}.oxb-call{background:#0369a1}.oxb-app{background:#f59e0b}'
             . '.oxb-menu{display:none;flex-direction:column;gap:10px}.oxb-fab.open .oxb-menu{display:flex}'
-            . '.oxb-lbl{position:absolute;right:62px;background:#0f172a;color:#fff;font-size:12px;border-radius:8px;padding:3px 9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}'
+            . '.oxb-lbl{position:absolute;left:62px;background:#0f172a;color:#fff;font-size:12px;border-radius:8px;padding:3px 9px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}'
             . '.oxb-menu>div{position:relative}.oxb-menu>div:hover .oxb-lbl{opacity:1}'
-            . '.oxb-wa-fixed{position:fixed;z-index:99990;left:12px;bottom:18px;width:58px;height:58px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.3)}'
-            . '@media(max-width:520px){.oxb-t{font-size:16px}.oxb-fab{right:8px}}'
+            . '.oxb-home{position:fixed;z-index:99989;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;background:#0f172a;color:#fff!important;text-decoration:none!important;font-weight:800;font-size:15px;border-radius:99px;padding:12px 26px;box-shadow:0 8px 22px rgba(0,0,0,.35);direction:rtl}'
+            . '@media(max-width:520px){.oxb-t{font-size:16px}.oxb-fab{left:8px}}'
             . '</style>';
     }
 
@@ -184,13 +184,13 @@ final class Oxygen_Article_Boost {
             'call' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
             'app' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>',
         ];
-        $menu = '';
+        $menu = '<div><a class="oxb-app" href="' . $app . '" rel="nofollow" aria-label="تقديم طلب">' . $ic['app'] . '</a><span class="oxb-lbl">تقديم طلب</span></div>';
         if ($wa) { $menu .= '<div><a class="oxb-wa" href="' . esc_url($wa) . '" target="_blank" rel="noopener nofollow" aria-label="واتساب">' . $ic['wa'] . '</a><span class="oxb-lbl">واتساب</span></div>'; }
-        if ($c['phone']) { $menu .= '<div><a class="oxb-call" href="tel:' . esc_attr($c['phone']) . '" aria-label="اتصال">' . $ic['call'] . '</a><span class="oxb-lbl">اتصال مباشر</span></div>'; }
-        $menu .= '<div><a class="oxb-app" href="' . $app . '" rel="nofollow" aria-label="اطلب خدمة">' . $ic['app'] . '</a><span class="oxb-lbl">اطلب خدمة</span></div>';
+        if ($c['phone']) { $menu .= '<div><a class="oxb-call" href="tel:' . esc_attr($c['phone']) . '" aria-label="اتصال هاتفي">' . $ic['call'] . '</a><span class="oxb-lbl">اتصال هاتفي</span></div>'; }
+        $home = class_exists('Oxygen_Domain_Guard') ? esc_url(Oxygen_Domain_Guard::main_url()) : esc_url(home_url('/'));
         echo self::css();
-        echo '<div class="oxb-fab" id="oxb-fab"><div class="oxb-menu">' . $menu . '</div><button type="button" class="oxb-main" aria-label="تواصل معنا" onclick="document.getElementById(\'oxb-fab\').classList.toggle(\'open\')">' . $ic['chat'] . '</button></div>';
-        if ($wa) { echo '<a class="oxb-wa-fixed" href="' . esc_url($wa) . '" target="_blank" rel="noopener nofollow" aria-label="واتساب">' . $ic['wa'] . '</a>'; }
+        echo '<div class="oxb-fab open" id="oxb-fab"><div class="oxb-menu">' . $menu . '</div><button type="button" class="oxb-main" aria-label="تواصل معنا" onclick="document.getElementById(\'oxb-fab\').classList.toggle(\'open\')">' . $ic['chat'] . '</button></div>';
+        echo '<a class="oxb-home" href="' . $home . '">🏠 الرئيسية</a>';
         echo self::js();
     }
 }
