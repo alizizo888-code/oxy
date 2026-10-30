@@ -14,7 +14,7 @@ import { useHotlineConfig } from '../hooks/useHotline'
 const inp = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary'
 
 // إعدادات المنشأة (المالك فقط): الاسم والرقم الضريبي والعنوان — تظهر على الفاتورة الضريبية وفي رمز QR.
-export default function BusinessSettings() {
+export default function BusinessSettings({ focus }) {
   const nav = useNavigate()
   const { isOwner, loading } = useTeamRole()
   const { data } = useLiveShared('pricing', { limit: 100 })
@@ -46,6 +46,7 @@ export default function BusinessSettings() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   useEffect(() => { setF({ seller: info.seller || '', vat: info.vat || '', address: info.address || '' }) }, [info.seller, info.vat, info.address])
+  useEffect(() => { if (focus === 'contact' && !loading) setTimeout(() => document.getElementById('contact-numbers')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250) }, [focus, loading])
   if (loading) return <p className="p-6 text-slate-400 text-sm" dir="rtl">جارِ التحقق…</p>
   if (!isOwner) return <p className="p-6 text-white text-sm font-bold" dir="rtl">إعدادات المنشأة للمالك فقط.</p>
   const save = async () => {
@@ -71,7 +72,7 @@ export default function BusinessSettings() {
         <label className="grid gap-1 text-xs font-bold text-slate-300">العنوان (اختياري)<input className={inp} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></label>
         <button onClick={save} disabled={busy} className="rounded-xl bg-emerald-500 text-black font-black py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />}حفظ</button>
         {msg && <p className="text-xs font-bold text-amber-300">{msg}</p>}
-        <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
+        <section id="contact-numbers" className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2 scroll-mt-20">
           <p className="font-black text-sm">📞 أرقام التواصل (تفعّل أزرار الواتساب والاتصال في كل الموقع)</p>
           <label className="grid gap-1 text-xs font-bold text-slate-300">رقم الواتساب (بالصيغة الدولية، مثال 9665xxxxxxxx)<input className={inp} dir="ltr" inputMode="tel" value={c.wa} onChange={(e) => setC({ ...c, wa: e.target.value })} /></label>
           <label className="grid gap-1 text-xs font-bold text-slate-300">رقم الهاتف للاتصال<input className={inp} dir="ltr" inputMode="tel" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} /></label>

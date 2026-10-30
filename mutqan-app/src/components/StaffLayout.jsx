@@ -2,7 +2,7 @@ import IncomingCalls from './IncomingCalls'
 import OpsInstall from './OpsInstall'
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Clock, LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, UserPlus, Smartphone, Home, ShoppingBag, Palette } from 'lucide-react'
+import { Clock, LayoutDashboard, MessageCircle, Bell, Radar, Wallet, ListChecks, Briefcase, Layers, X, Map as MapIcon, Menu, ChevronDown, Settings2, Bot, Tags, Snowflake, ShieldCheck, Phone, UserPlus, Smartphone, Home, ShoppingBag, Palette } from 'lucide-react'
 import { useTeamRole } from '../hooks/useTeamRole'
 import { useLiveShared } from '../lib/useLive'
 import { auth } from '../lib/auth'
@@ -80,6 +80,7 @@ const MANAGE = [
   ['/staff/warranties', 'الضمانات', ShieldCheck],
   ['/staff/tech-requests', 'طلبات الفنيين', UserPlus],
   ['/staff/payment-methods', 'طرق الدفع', Wallet],
+  ['/staff/contact', 'أرقام الموقع: الهاتف والواتساب', Phone],
   ['/staff/business', 'إعدادات المنشأة والفاتورة', ShieldCheck],
   ['/staff/security', 'الأمان والدخول بالبصمة', ShieldCheck],
 ]

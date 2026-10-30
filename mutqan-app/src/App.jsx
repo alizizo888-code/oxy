@@ -43,6 +43,7 @@ import { ThemeBoot } from './lib/appTheme'
 import { AdEntry } from './components/AdLanding'
 import HomeFab from './components/HomeFab'
 import TitleBoot from './components/TitleBoot'
+import GlobalContact from './components/GlobalContact'
 const BusinessSettings = lazyRetry(() => import('./pages/BusinessSettings'))
 const SecuritySettings = lazyRetry(() => import('./pages/SecuritySettings'))
 const ThemeSettings = lazyRetry(() => import('./pages/ThemeSettings'))
@@ -57,6 +58,7 @@ export default function App() {
       <ThemeBoot />
       <HomeFab />
       <TitleBoot />
+      <GlobalContact />
       <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm" dir="rtl">جارِ التحميل…</div>}>
       <Routes>
         {/* واجهة الزائر = واجهة العميل: يستقبل الزوار مباشرة على الرئيسية */}
@@ -100,6 +102,7 @@ export default function App() {
         <Route path="/staff/used-ac" element={<UsedAcAdmin />} />
         <Route path="/staff/schedule" element={<ScheduleAdmin />} />
         <Route path="/staff/business" element={<BusinessSettings />} />
+        <Route path="/staff/contact" element={<BusinessSettings focus="contact" />} />
         <Route path="/staff/security" element={<SecuritySettings />} />
         <Route path="/staff/theme" element={<ThemeSettings staff />} />
         <Route path="/staff/pay-links" element={<PayLinks />} />
