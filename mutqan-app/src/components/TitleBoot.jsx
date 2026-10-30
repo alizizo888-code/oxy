@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { SPECIALTIES } from '../constants'
 
 // Browser-tab title that always carries the specialty the visitor is browsing: «page · specialty — brand».
@@ -18,6 +18,9 @@ export const rememberSpecialty = (id) => { if (id && SPECIALTIES.some((x) => x.i
 
 export default function TitleBoot() {
   const loc = useLocation()
+  const nav = useNavigate()
+  // The supervisor app (/app/ops) opens straight on the operations room.
+  useEffect(() => { if (/\/app\/ops\/?$/.test(location.pathname) && loc.pathname === '/') nav('/staff/operations', { replace: true }) }, [loc.pathname, nav])
   const [tick, setTick] = useState(0)
   useEffect(() => { const f = () => setTick((n) => n + 1); window.addEventListener('mq-spec', f); return () => window.removeEventListener('mq-spec', f) }, [])
   useEffect(() => {

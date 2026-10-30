@@ -1,0 +1,59 @@
+name: Build Android apps
+
+# Builds two installable Android apps (APK): the customer app and the operations-supervisor app.
+# Both load the live site inside a native shell (always in sync with the website). APKs are published on the
+# "apps-latest" release so the download links inside the sites never change.
+on:
+  workflow_dispatch:
+  push:
+    branches: [mutqan, oxygen]
+    paths: ['native/**', '.github/workflows/build-apps.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [app, ops]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Prepare Capacitor project
+        working-directory: native/${{ matrix.app }}
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add android
+          mkdir -p assets
+          cp ../../brand/oxygen/icon-512.png assets/icon-only.png
+          cp ../../brand/oxygen/icon-512.png assets/icon-foreground.png
+          printf '#0b1220' > /dev/null
+          npx capacitor-assets generate --android --iconBackgroundColor '#0b1220' --splashBackgroundColor '#0b1220' || true
+          npx cap sync android
+      - name: Permissions (microphone for the hotline, location for technicians, notifications)
+        working-directory: native/${{ matrix.app }}
+        run: |
+          M=android/app/src/main/AndroidManifest.xml
+          for p in RECORD_AUDIO MODIFY_AUDIO_SETTINGS ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION POST_NOTIFICATIONS CAMERA VIBRATE; do
+            grep -q "android.permission.$p" $M || sed -i "s#<application#<uses-permission android:name=\"android.permission.$p\" />\n    <application#" $M
+          done
+      - name: Build APK
+        working-directory: native/${{ matrix.app }}/android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Name the file
+        run: |
+          mkdir -p out
+          cp native/${{ matrix.app }}/android/app/build/outputs/apk/debug/app-debug.apk out/oxygen-${{ matrix.app }}.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: oxygen-${{ matrix.app }}, path: out/oxygen-${{ matrix.app }}.apk }
+      - name: Publish to the apps-latest release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh release view apps-latest >/dev/null 2>&1 || gh release create apps-latest --title "Oxygen apps (latest)" --notes "Android APKs: oxygen-app.apk (customers) and oxygen-ops.apk (operations supervisor)." --latest=false
+          gh release upload apps-latest out/oxygen-${{ matrix.app }}.apk --clobber

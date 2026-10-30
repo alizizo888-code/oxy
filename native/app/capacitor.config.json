@@ -1,0 +1,8 @@
+{
+  "appId": "com.oxygen11.app",
+  "appName": "أكسجين",
+  "webDir": "www",
+  "server": { "url": "https://oxygen11.com/app/", "cleartext": false, "allowNavigation": ["oxygen11.com", "*.oxygen11.com", "wa.me", "api.whatsapp.com"], "errorPath": "offline.html" },
+  "android": { "allowMixedContent": false, "backgroundColor": "#0b1220" },
+  "backgroundColor": "#0b1220"
+}

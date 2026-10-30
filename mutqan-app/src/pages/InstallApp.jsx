@@ -1,3 +1,4 @@
+import { APK_APP, isNativeShell } from '../lib/nativeApps'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Download, Share, SquarePlus, Smartphone, ShieldCheck, CheckCircle2, Apple, Bot } from 'lucide-react'
 import { useState } from 'react'
@@ -19,6 +20,13 @@ export default function InstallApp() {
         </div>
       </header>
       <div className="max-w-xl mx-auto w-full px-4 pt-5 flex flex-col gap-4">
+        {!isNativeShell() && (
+          <a href={APK_APP} className="rounded-2xl bg-slate-900 text-white p-4 flex items-center gap-3 shadow-md" data-keep-colors>
+            <span className="text-2xl">🤖</span>
+            <span className="flex-1"><b className="block text-sm">تطبيق أندرويد (APK)</b><span className="text-[11px] text-white/70">تحميل مباشر — يعمل كتطبيق مستقل بثبات أعلى</span></span>
+            <span className="rounded-xl bg-white text-slate-900 text-xs font-black px-3 py-2">تحميل</span>
+          </a>
+        )}
         <div className="rounded-3xl bg-gradient-to-br from-[#0b7a75] to-[#071a33] text-white p-6 text-center shadow-lg" data-keep-colors>
           <img src={`${window.__MUTQAN__?.app || "/app/"}icon-192.png`} alt="" className="w-20 h-20 rounded-2xl mx-auto shadow-xl" />
           <p className="font-display font-black text-xl mt-3">مُتقن</p>
