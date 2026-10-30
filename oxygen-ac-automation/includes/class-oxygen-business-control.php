@@ -21,23 +21,23 @@ final class Oxygen_Business_Control {
 
     public static function defaults() {
         return [
-            'company_name' => 'أكسجين للصيانة والتبريد',
-            'phone' => '',
-            'whatsapp' => '',
+            'company_name' => self::brand_name(),
+            'phone' => self::shared_contact('phone'),
+            'whatsapp' => self::shared_contact('whatsapp'),
             'email' => get_option('admin_email'),
-            'city' => 'مكة المكرمة',
-            'services' => "1|صيانة المكيفات\n1|غسيل وتنظيف المكيفات\n1|تركيب وفك ونقل المكيفات\n1|إصلاح الأعطال\n1|الصيانة المركزية والداكت\n1|الكهرباء والسباكة والنجارة",
+            'city' => 'مكة المكرمة وجدة',
+            'services' => "1|صيانة وتركيب وغسيل المكيفات\n1|التكييف المركزي والدكت\n1|الكهرباء والإنارة\n1|السباكة وكشف التسربات\n1|الأقفال والأقفال الذكية\n1|الأجهزة المنزلية\n1|الساتلايت والدش\n1|الدهان والديكور\n1|التبليط والترميم والعزل\n1|كاميرات المراقبة\n1|صيانة الثلاجات والتبريد\n1|التنظيف والتعقيم\n1|مكافحة الحشرات\n1|تنظيف وعزل خزانات المياه\n1|نقل الأثاث\n1|الطاقة الشمسية\n1|خدمات وعقود صيانة الشركات والمنشآت\n1|الصيانة العامة\n1|المقاولات العامة والإشراف الهندسي",
             'price_rules' => '',
             'offers' => '',
-            'banner_text' => '',
+            'banner_text' => self::brand_name() . ' — صيانة ومقاولات عامة في مكة المكرمة وجدة. اطلب خدمتك وتابعها من التطبيق.',
             'banner_image' => '',
             'banner_video' => '',
             'gallery_urls' => '',
-            'payment_methods' => "تحويل بنكي\nمدى\nالدفع عند إتمام الخدمة",
+            'payment_methods' => "تحويل بنكي\nمدى\nالدفع عند إتمام الخدمة\nرابط دفع إلكتروني",
             'comments_enabled' => 0,
             'registration_enabled' => 1,
             'ai_enabled' => 0,
-            'ai_instructions' => '',
+            'ai_instructions' => "أنت مساعد خدمة العملاء لـ" . self::brand_name() . ". تحدّث بالعربية بأدب واختصار وسؤال واحد في كل رد.\nالخدمات: صيانة وتكييف، كهرباء، سباكة، أقفال ذكية، أجهزة منزلية، ساتلايت، دهان وديكور، تبليط وترميم، كاميرات، تبريد، تنظيف، مكافحة حشرات، خزانات، نقل أثاث، طاقة شمسية، شركات، صيانة عامة، مقاولات.\nالتغطية: مكة المكرمة وجدة فقط.\nلا تذكر سعرًا أو خصمًا أو مدة ضمان أو وقت وصول من عندك؛ هذه تأتي من نظام الأسعار والضمان والتتبع فقط، وعند عدم توفرها حوّل العميل لموظف.\nاجمع: نوع الخدمة، وصف المشكلة، الحي، الوقت المناسب، ثم جهّز الطلب.\nعند الشكوى أو الاسترداد أو الخطر (كهرباء، غاز، تسريب) ابدأ بخطوة السلامة ثم حوّل لموظف.\nلا تطلب كلمات مرور أو بيانات بطاقات.",
             'gsc_property' => '',
             'gsc_verification' => '',
             'google_client_id' => '',
@@ -51,14 +51,34 @@ final class Oxygen_Business_Control {
         ];
     }
 
+    /** Group brand shown in the admin and public config; follows the site (OXYGEN vs MUTQAN). */
+    public static function brand_name() {
+        $b = class_exists('Oxygen_SEO_Engine') ? Oxygen_SEO_Engine::brand() : 'أكسجين';
+        return $b === 'متقن' ? 'متقن للصيانة والمقاولات العامة' : 'مجموعة أكسجين للصيانة والمقاولات العامة';
+    }
+
+    private static function shared_contact($k) {
+        if (!class_exists('Mutqan_Store')) { return ''; }
+        try { $d = Mutqan_Store::peek_doc('pricing', 'contact_numbers'); return is_array($d) ? (string) ($d[$k] ?? '') : ''; } catch (Throwable $e) { return ''; }
+    }
+
     public static function settings() {
-        return wp_parse_args((array) get_option(self::OPT, []), self::defaults());
+        $o = (array) get_option(self::OPT, []);
+        if (get_option('oxygen_bc_fill_v1') !== '1') {
+            // One-time fill: complete every empty field with the group defaults (company, services, payment, AI instructions, banner) — never overwrites typed values.
+            $d = self::defaults();
+            foreach (['company_name', 'city', 'services', 'payment_methods', 'banner_text', 'ai_instructions'] as $k) {
+                if (!isset($o[$k]) || trim((string) $o[$k]) === '' || ($k === 'company_name' && $o[$k] === 'أكسجين للصيانة والتبريد') || ($k === 'city' && $o[$k] === 'مكة المكرمة') || ($k === 'services' && substr_count((string) $o[$k], "\n") < 8)) { $o[$k] = $d[$k]; }
+            }
+            update_option(self::OPT, $o, false); update_option('oxygen_bc_fill_v1', '1', false);
+        }
+        return wp_parse_args($o, self::defaults());
     }
 
     public static function menu() {
         add_menu_page(
-            'إدارة مؤسسة أكسجين',
-            'إدارة أكسجين',
+            'إدارة المؤسسة',
+            'إدارة المؤسسة',
             'manage_options',
             self::MENU,
             [__CLASS__, 'page'],
@@ -95,7 +115,7 @@ final class Oxygen_Business_Control {
     public static function page() {
         if (!current_user_can('manage_options')) return;
         $s = self::settings();
-        echo '<div class="wrap" dir="rtl" style="max-width:1100px"><h1>مركز التحكم في مؤسسة أكسجين</h1>';
+        echo '<div class="wrap" dir="rtl" style="max-width:1100px"><h1>مركز التحكم — ' . esc_html(self::brand_name()) . '</h1>';
         echo '<p>إعدادات المؤسسة محفوظة في قاعدة بيانات WordPress. التغييرات العامة لا تتضمن مفاتيح Google أو بيانات الدخول.</p>';
         if (!empty($_GET['obc_message'])) echo '<div class="notice notice-info is-dismissible"><p>' . esc_html(sanitize_text_field(wp_unslash($_GET['obc_message'])) ) . '</p></div>';
         echo '<div class="notice notice-warning"><p><strong>مهم:</strong> هذه الصفحة تربط إعدادات عامة بعناصر واجهة قابلة للتعرف عليها، وتضيف شريط معلومات وبانر قابلين للتحكم. بعض أقسام التصميم الأصلي قد تحتاج ربطًا خاصًا حسب بنية HTML؛ راجع المعاينة بعد الحفظ.</p></div>';
