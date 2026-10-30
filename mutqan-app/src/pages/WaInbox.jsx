@@ -37,7 +37,7 @@ export default function WaInbox() {
   const sess = useWaSessions(tab === 'numbers' ? 3000 : 15000)
   const { data: threads } = useLiveShared('wa_threads', { order: '-lastAt', limit: 300 })
   const unread = useMemo(() => (threads || []).reduce((a, t) => a + (t.unread || 0), 0), [threads])
-  const allowed = isOwner || role === 'operations'
+  const allowed = isOwner || role === 'owner' || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
   if (!allowed) return <Centered>صندوق الواتساب للمالك ومشرف العمليات فقط</Centered>
 
