@@ -45,6 +45,8 @@ ov = os.path.join(ROOT, 'brand', BRAND)
 pub = os.path.join(ROOT, 'mutqan-app/public')
 for f in os.listdir(ov):
     if f == 'splash.html': continue
+    if f.startswith('site-icon'):
+        shutil.copyfile(os.path.join(ov, f), os.path.join(ROOT, 'oxygen-ac-automation/assets', f)); continue
     if f in SKIN:
         shutil.copyfile(os.path.join(ov, f), os.path.join(ROOT, SKIN[f])); continue
     shutil.copyfile(os.path.join(ov, f), os.path.join(pub, f))

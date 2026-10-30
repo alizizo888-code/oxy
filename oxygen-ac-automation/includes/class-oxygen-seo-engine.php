@@ -278,6 +278,7 @@ class Oxygen_SEO_Engine {
         add_action(self::CRON, [__CLASS__, 'tick']);
         add_filter('the_content', [__CLASS__, 'filter_content'], 5);
         add_action('wp_head', [__CLASS__, 'head'], 4);
+        add_filter('get_site_icon_url', [__CLASS__, 'site_icon_url'], 20, 2);   // Google / browser tab icon = the brand's own mark (sizes are multiples of 48 px, as Google requires)
         add_shortcode('oxygen_seo_archive', [__CLASS__, 'archive_shortcode']);
         add_action('admin_menu', [__CLASS__, 'menu']);
         add_action('admin_post_oxy_seo_save', [__CLASS__, 'h_save']);
@@ -445,6 +446,11 @@ class Oxygen_SEO_Engine {
             $upd = '<p class="oxy-seo-updated" style="background:#ecfdf5;border:1px solid #10b981;border-radius:10px;padding:8px 12px;font-weight:700">✅ تم التحديث بتاريخ ' . esc_html(wp_date('j F Y', $ts)) . '</p>';
         }
         return $top . $upd . $c . $bottom;
+    }
+    public static function site_icon_url($url, $size) {
+        $size = (int) $size; $pick = 512;
+        foreach ([48, 96, 192, 512] as $n) { if ($n >= $size) { $pick = $n; break; } }
+        return plugins_url('assets/site-icon-' . $pick . '.png', dirname(__FILE__));
     }
     public static function head() {
         if (!is_singular('post') || defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION')) { return; }
