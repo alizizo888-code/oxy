@@ -7,11 +7,19 @@ const subs = new Map()       // coll -> Set(refetch fns)
 const lastStamp = new Map()  // coll -> last seen stamp
 let timer = null
 let busy = false
+let fails = 0
+let lastTouch = Date.now()
 
 const visible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden'
 
+// Adaptive cadence: 2.5 s while the screen is in use, 8 s after 5 idle minutes, 30 s when hidden (installed app in the background still catches up),
+// exponential back-off (up to 30 s) while the network/server is failing.
+function nextDelay() {
+  const base = !visible() ? 30000 : Date.now() - lastTouch > 300000 ? 8000 : 2500
+  return fails ? Math.min(30000, Math.max(base, 2500 * 2 ** Math.min(fails, 4))) : base
+}
 async function tick() {
-  if (busy || !visible() || subs.size === 0) return
+  if (busy || subs.size === 0) return
   busy = true
   try {
     const stamps = await db.stamps([...subs.keys()])
@@ -22,15 +30,18 @@ async function tick() {
         if (!first) subs.get(coll)?.forEach((fn) => fn())
       }
     }
-  } catch { /* offline or logged out: try again next tick */ }
+    fails = 0
+  } catch { fails++ /* offline or logged out: back off, retry */ }
   finally { busy = false }
 }
 
 function ensureTimer() {
   if (timer || typeof window === 'undefined') return
-  // One tiny "stamps" request every 2.5 s while the screen is visible: web and installed app see the same change within seconds.
-  timer = setInterval(tick, 2500)
-  const resync = () => { if (visible()) { subs.forEach((s) => s.forEach((fn) => fn())); tick() } }
+  const loop = async () => { await tick(); timer = setTimeout(loop, nextDelay()) }
+  timer = setTimeout(loop, 2500)
+  const touch = () => { lastTouch = Date.now() }
+  ;['pointerdown', 'keydown', 'touchstart'].forEach((e) => window.addEventListener(e, touch, { passive: true }))
+  const resync = () => { touch(); fails = 0; if (visible()) { subs.forEach((s) => s.forEach((fn) => fn())) } tick() }
   document.addEventListener('visibilitychange', resync)
   window.addEventListener('focus', resync)
   window.addEventListener('pageshow', resync)
