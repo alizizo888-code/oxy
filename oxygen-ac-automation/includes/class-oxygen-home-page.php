@@ -37,7 +37,7 @@ class Oxygen_Home_Page {
     }
 
     public static function ensure() {
-        if (get_option(self::DONE) === '1') { return; }
+        if (get_option(self::DONE) === '2') { return; }
         if (!function_exists('wp_insert_post')) { return; }
         $brand = Oxygen_SEO_Engine::brand();
         $id = (int) get_option(self::OPT, 0);
@@ -49,8 +49,8 @@ class Oxygen_Home_Page {
         }
         update_option('show_on_front', 'page');
         update_option('page_on_front', $id);
-        update_option('mutqan_root_app2', '0'); // the WordPress page owns "/", the app is at /app/
-        update_option(self::DONE, '1', false);
+        update_option('mutqan_root_app2', '1'); // "/" is the app itself (identical look); crawlers get the same content as server-rendered HTML inside it
+        update_option(self::DONE, '2', false);
         flush_rewrite_rules(false);
         if (method_exists('Oxygen_SEO_Engine', 'indexnow')) { try { Oxygen_SEO_Engine::indexnow([home_url('/')]); } catch (Throwable $e) { /* optional */ } }
     }
@@ -63,6 +63,24 @@ class Oxygen_Home_Page {
             ['هل أستطيع معرفة السعر قبل التنفيذ؟', 'نعرض لك السعر قبل اعتماد الطلب، وتظهر بنود الفاتورة بعد التنفيذ.'],
             ['هل يمكن طلب الخدمة بدون تطبيق؟', 'نعم، تواصل معنا عبر واتساب أو الهاتف وسنسجّل طلبك.'],
         ];
+    }
+
+    /** Crawlable HTML placed inside the app's #root: React replaces it on mount, so visitors see exactly the app; bots read the content. */
+    public static function seo_block() {
+        $brand = Oxygen_SEO_Engine::brand();
+        $app = home_url('/app/');
+        $o = '<main dir="rtl" style="font-family:system-ui,Tahoma,sans-serif;padding:20px;max-width:900px;margin:0 auto;color:#0f172a"><h1>' . esc_html($brand) . ' للصيانة والمقاولات العامة في مكة المكرمة وجدة</h1>';
+        $o .= '<p>اطلب خدمتك وتابع طلبك خطوة بخطوة من التطبيق: ' . esc_html(implode('، ', array_map(function ($x) { return $x[0]; }, array_slice(self::services(), 0, 8)))) . ' وغيرها.</p>';
+        $o .= '<h2>خدماتنا</h2><ul>';
+        foreach (self::services() as $sv) { $o .= '<li><a href="' . esc_url($app) . '"><strong>' . esc_html($sv[0]) . '</strong></a> — ' . esc_html($sv[1]) . '</li>'; }
+        $o .= '</ul><h2>مناطق الخدمة</h2><p>مكة المكرمة وجدة.</p>';
+        $posts = get_posts(['numberposts' => 12, 'post_status' => 'publish']);
+        if ($posts) { $o .= '<h2>أحدث المقالات</h2><ul>'; foreach ($posts as $p) { $o .= '<li><a href="' . esc_url(get_permalink($p)) . '">' . esc_html(get_the_title($p)) . '</a></li>'; } $o .= '</ul>'; }
+        $o .= '<h2>أسئلة شائعة</h2>';
+        foreach (self::faq() as $f) { $o .= '<h3>' . esc_html($f[0]) . '</h3><p>' . esc_html($f[1]) . '</p>'; }
+        $o .= '</main>';
+        $faq = ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_map(function ($f) { return ['@type' => 'Question', 'name' => $f[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]]]; }, self::faq())];
+        return ['html' => $o, 'ld' => '<script type="application/ld+json">' . wp_json_encode($faq, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) . '</script>'];
     }
 
     public static function render() {

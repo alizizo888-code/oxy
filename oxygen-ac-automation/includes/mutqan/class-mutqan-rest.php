@@ -410,6 +410,9 @@ final class Mutqan_Rest {
         if ($is_root) { $inject .= '<link rel="canonical" href="' . esc_url(home_url('/')) . '">'; }
         $app_path = (string) wp_parse_url(home_url('/app/'), PHP_URL_PATH);
         $html = str_replace(['href="./manifest.webmanifest"', 'href="./icon.svg"'], ['href="' . esc_attr($app_path) . 'manifest.webmanifest"', 'href="' . esc_attr($app_path) . 'apple-touch-icon.png"'], $html);
+        if ($is_root && class_exists('Oxygen_Home_Page')) {
+            try { $seo = Oxygen_Home_Page::seo_block(); $html = str_replace('<div id="root"></div>', '<div id="root">' . $seo['html'] . '</div>', $html); $inject .= $seo['ld']; } catch (Throwable $e) { /* optional */ }
+        }
         $html = preg_replace('/<head>/i', '<head>' . $inject, $html, 1);
         echo $html;
         exit;
