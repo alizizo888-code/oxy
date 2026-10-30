@@ -4,7 +4,7 @@ import { ChevronRight, Zap, SlidersHorizontal, LocateFixed, Radio, RefreshCw, Us
 import { db } from '../lib/db'
 import { push } from '../lib/push'
 import { useAiSettings } from '../hooks/useAiSettings'
-import { isTechAvailable } from '../assignment'
+import { isTechAvailable, sortByPriority } from '../assignment'
 import { escalationLabel, handlerLabel, ACTIVE_STATUSES_FOR_ALERTS } from '../workflow'
 import { useLiveShared } from '../lib/useLive'
 import { team } from '../lib/team'
@@ -63,7 +63,7 @@ export default function OperationsRoom() {
   const processingRef = useRef(new Set())
 
   const mode = settings?.mode || 'manual'
-  const strategy = settings?.strategy || 'nearest'
+  const strategy = settings?.strategy || 'smart'
   const unassigned = useMemo(() => orders.filter((o) => o.status === 'new' && !o.technicianId && !o.inhouse), [orders])
 
   useEffect(() => { team.groupId().then(setGid) }, [])
@@ -142,7 +142,7 @@ export default function OperationsRoom() {
   useEffect(() => {
     if (mode !== 'auto' || !gid || ordersLoading || autoRunningRef.current) return
     if (unassigned.length === 0) return
-    const pending = unassigned.filter((o) => !processingRef.current.has(o.id))
+    const pending = sortByPriority(unassigned).filter((o) => !processingRef.current.has(o.id))
     if (pending.length === 0) return
     autoRunningRef.current = true
     setRunning(true)
@@ -170,7 +170,7 @@ export default function OperationsRoom() {
     let assigned = 0
     let forced = 0
     try {
-      for (const o of unassigned) {
+      for (const o of sortByPriority(unassigned)) {
         if (processingRef.current.has(o.id)) continue
         processingRef.current.add(o.id)
         const tech = await autoAssignOrder(o, gid)
@@ -289,7 +289,7 @@ export default function OperationsRoom() {
             </div>
           )}
           {mode === 'auto' && strategy === 'smart' && (
-            <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">ترتيب الفنيين حسب: المسافة، التخصص، التوفر، ضغط العمل، نوع الخدمة، الأولوية، والتأهيل والتقييم — مع الالتزام بالسعة اليومية وقبول الفني.</p>
+            <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">الطلبات العاجلة تُوزَّع أولًا. ثم يُختار الفني حسب: الأقرب (موقعه المباشر)، المتصل الآن أونلاين، المتفرغ حاليًا، التخصص، عدد ما أنجزه، التقييم، وضغط العمل — مع الالتزام بالسعة اليومية. غير المتصلين يُختارون فقط إذا لم يتوفر أونلاين.</p>
           )}
 
           <button

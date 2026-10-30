@@ -23,7 +23,7 @@ export function useTechProfiles() {
 
   const updateSettings = useCallback(async (patch) => {
     const gid = await team.groupId()
-    const next = { mode: settings?.mode || 'manual', strategy: settings?.strategy || 'nearest', ...patch }
+    const next = { mode: settings?.mode || 'manual', strategy: settings?.strategy || 'smart', ...patch }
     await db.upsertShared('assignment_settings', next, 'default', {
       groupId: gid,
       visibleTo: 'group',

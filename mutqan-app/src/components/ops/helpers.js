@@ -1,5 +1,5 @@
 import { maps } from '../../lib/maps'
-import { remainingCapacity, isTechAvailable } from '../../assignment'
+import { remainingCapacity, isTechAvailable, scoreTechnicians } from '../../assignment'
 
 export const DONE = ['completed', 'closed']
 export const RUNNING = ['accepted', 'en_route', 'nearby', 'arrived', 'in_progress']
@@ -12,11 +12,11 @@ export const kmText = (d) => (Number.isFinite(d) ? (d < 1 ? `${Math.round(d * 10
 export function distTo(t, o) {
   const p = techPos(t)
   if (!p || o?.lat == null) return Infinity
-  try { return maps.distance(p.lat, p.lng, o.lat, o.lng) } catch { return Infinity }
+  try { return maps.distance(p.lat, p.lng, o.lat, o.lng) / 1000 } catch { return Infinity }
 }
-// Technicians ranked for one order: available first, then nearest.
+// Technicians ranked for one order with the same smart score the auto distributor uses (distance, online, free now, specialty, track record).
 export function rankTechs(order, profiles, orders) {
-  return (profiles || []).map((t) => ({ t, dist: distTo(t, order), rem: remainingCapacity(t, orders), ok: isTechAvailable(t, orders), pos: techPos(t) }))
-    .sort((a, b) => (b.ok - a.ok) || (a.dist - b.dist) || (b.rem - a.rem))
+  const sc = scoreTechnicians(order, profiles || [], orders || [], { distanceFn: maps.distance })
+  return sc.map((r) => ({ t: r.tech, dist: distTo(r.tech, order), rem: r.rem, ok: r.available, pos: techPos(r.tech), score: r.score, reasons: r.reasons }))
 }
 export const sourceLabel = (o) => (o.source === 'whatsapp_manual' ? 'واتساب (يدوي)' : o.routing === 'operations' ? 'الموقع' : o.source === 'whatsapp' ? 'واتساب' : 'التطبيق')

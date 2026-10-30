@@ -21,12 +21,13 @@ export default function AssignModal({ order, profiles, orders, onAssign, onClose
         </div>
         {ranked.length === 0 && <p className="text-slate-500 text-xs text-center py-6">لا يوجد فنيون مسجّلون</p>}
         <div className="grid gap-2">
-          {ranked.map(({ t, dist, rem, ok, pos }, i) => (
+          {ranked.map(({ t, dist, rem, ok, pos, score, reasons }, i) => (
             <div key={t.userId} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${ok ? 'bg-white/5 border-white/10' : 'bg-white/[0.02] border-white/5 opacity-70'}`}>
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${!ok ? 'bg-slate-600' : pos?.live ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-700'}`} />
               <div className="flex-1 min-w-0">
                 <p className="text-white font-bold text-sm truncate">{i === 0 && ok && Number.isFinite(dist) ? '⭐ ' : ''}{t.displayName || 'فني'}</p>
                 <p className="text-[11px] text-slate-400">{kmText(dist)}{pos?.live ? ' · مباشر' : ''} · متبقي اليوم {rem}/{t.dailyCapacity || 0}{t.active === false ? ' · مغلق' : ''}</p>
+                {ok && <p className="text-[10px] text-emerald-300/80">تطابق {score}% — {(reasons || []).filter((r) => /أونلاين|متفرغ|مشغول|تخصص|أنجز|غير متصل|ظهر/.test(r)).join(' · ')}</p>}
               </div>
               {t.phone && <a href={`tel:${t.phone}`} className="w-8 h-8 rounded-lg bg-emerald-600/80 flex items-center justify-center"><Phone size={14} /></a>}
               <button onClick={() => go(t)} disabled={!!busy} className="rounded-lg bg-primary text-black font-black text-xs px-3 py-2 disabled:opacity-50">{busy === t.userId ? <Loader2 size={13} className="animate-spin" /> : 'إسناد'}</button>

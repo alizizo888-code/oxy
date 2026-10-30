@@ -43,7 +43,7 @@ export function useAssignment({ profiles, settings, orders }) {
 
   const autoAssignOrder = useCallback(async (order, gid) => {
     const tech = pickTechnician(order, profiles, orders, {
-      strategy: settings?.strategy || 'nearest',
+      strategy: settings?.strategy || 'smart',
       distanceFn: maps.distance,
     })
     if (tech) await linkTech(order, tech)

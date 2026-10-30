@@ -26,7 +26,23 @@ export function isTechAvailable(tech, orders) {
   return remainingCapacity(tech, orders) > 0
 }
 
+const RUN = ['accepted', 'en_route', 'nearby', 'arrived', 'in_progress']
+const minsSince = (iso) => (iso ? (Date.now() - new Date(iso).getTime()) / 60000 : Infinity)
+// online = app seen in the last 10 min, recent = last hour.
+export function presence(tech) {
+  const m = minsSince(tech.lastSeenAt)
+  return m <= 10 ? 'online' : m <= 60 ? 'recent' : 'offline'
+}
+// "Free now" = not in the middle of a job.
+export const runningJobs = (tech, orders) => orders.filter((o) => o.technicianId === tech.userId && RUN.includes(o.status)).length
+export const doneJobs = (tech, orders, days = 30) => orders.filter((o) => o.technicianId === tech.userId && ['completed', 'closed'].includes(o.status) && minsSince(o.completedAt || o.updatedAt) <= days * 1440).length
+// Urgent first, then oldest first — the order in which the auto distributor works through the queue.
+export const sortByPriority = (list) => [...list].sort((a, b) => ((b.priority === 'urgent') - (a.priority === 'urgent')) || (new Date(a.createdAt || 0) - new Date(b.createdAt || 0)))
+
 function techDistance(tech, orderLat, orderLng, distanceFn) {
+  if (tech.lat != null && tech.lng != null && minsSince(tech.lastSeenAt) <= 10 && distanceFn) {
+    try { return distanceFn(tech.lat, tech.lng, orderLat, orderLng) } catch { return Infinity }
+  }
   if (tech.homeLat != null && tech.homeLng != null && distanceFn) {
     try {
       return distanceFn(tech.homeLat, tech.homeLng, orderLat, orderLng)
@@ -81,11 +97,23 @@ export function scoreTechnicians(order, techs, orders, { distanceFn } = {}) {
       const qualScore = level.w * 0.6 + (rating ? rating / 5 : 0.7) * 0.4
       reasons.push(level.label + (rating ? ` · ⭐${rating.toFixed(1)}` : ''))
 
-      // Urgent orders weigh distance more; normal ones balance workload.
+      const pres = presence(t)
+      const presScore = pres === 'online' ? 1 : pres === 'recent' ? 0.5 : 0
+      reasons.push(pres === 'online' ? 'أونلاين' : pres === 'recent' ? 'ظهر مؤخرًا' : 'غير متصل')
+      const running = runningJobs(t, orders)
+      const freeScore = running === 0 ? 1 : running === 1 ? 0.4 : 0
+      reasons.push(running === 0 ? 'متفرغ الآن' : `مشغول (${running})`)
+      const done = doneJobs(t, orders)
+      const maxDone = Math.max(1, ...techs.map((x) => doneJobs(x, orders)))
+      const prodScore = done / maxDone
+      if (done) reasons.push(`أنجز ${done}`)
+
+      // Urgent orders weigh closeness + presence + being free more; normal ones balance workload and track record.
       const w = urgent
-        ? { dist: 0.4, spec: 0.25, work: 0.1, scope: 0.1, qual: 0.15 }
-        : { dist: 0.25, spec: 0.25, work: 0.2, scope: 0.1, qual: 0.2 }
-      let score = distScore * w.dist + specScore * w.spec + workScore * w.work + scopeScore * w.scope + qualScore * w.qual
+        ? { dist: 0.3, pres: 0.2, free: 0.16, spec: 0.12, work: 0.04, scope: 0.04, qual: 0.07, prod: 0.07 }
+        : { dist: 0.22, pres: 0.16, free: 0.12, spec: 0.14, work: 0.1, scope: 0.04, qual: 0.1, prod: 0.12 }
+      let score = distScore * w.dist + presScore * w.pres + freeScore * w.free + specScore * w.spec + workScore * w.work + scopeScore * w.scope + qualScore * w.qual + prodScore * w.prod
+      if (pres === 'offline') score *= 0.7
       if (!available) score = 0
       return { tech: t, available, score: Math.round(score * 100), km, rem, reasons }
     })
@@ -97,7 +125,9 @@ export function pickTechnician(order, techs, orders, { strategy = 'nearest', dis
   const available = techs.filter((t) => isTechAvailable(t, orders))
   if (available.length === 0) return null
   if (strategy === 'smart') {
-    const top = scoreTechnicians(order, available, orders, { distanceFn }).find((r) => r.available && r.score > 0)
+    const ranked = scoreTechnicians(order, available, orders, { distanceFn }).filter((r) => r.available && r.score > 0)
+    // Connected technicians first; offline ones only when nobody is online.
+    const top = ranked.find((r) => presence(r.tech) !== 'offline') || ranked[0]
     return top?.tech || null
   }
   if (strategy === 'capacity') {
