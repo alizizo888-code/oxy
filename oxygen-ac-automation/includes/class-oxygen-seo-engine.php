@@ -108,6 +108,9 @@ class Oxygen_SEO_Engine {
         $alts = [
             ['t' => '{n} في {c}: الأسعار والضمان وطريقة الطلب', 'k' => 'سعر {n} في {c}', 'slug' => 's1'],
             ['t' => 'كيف تحجز {n} في {c} بسرعة؟ دليل الخطوات', 'k' => 'حجز {n} {c} اليوم', 'slug' => 's2'],
+            ['t' => 'أفضل شركة {n} في {c}: كيف تختار الأنسب؟', 'k' => 'أفضل شركة {n} في {c}', 'slug' => 's3'],
+            ['t' => '{n} في {c} للمنازل والشركات: ما الفرق وماذا تتوقع؟', 'k' => '{n} {c} للمنازل والشركات', 'slug' => 's4'],
+            ['t' => 'أسئلة شائعة عن {n} في {c} قبل أن تطلب الخدمة', 'k' => 'أسئلة عن {n} في {c}', 'slug' => 's5'],
         ];
         foreach ($alts as $ai => $alt) {
             foreach ($svc as $sid => $sv) {
@@ -127,6 +130,17 @@ class Oxygen_SEO_Engine {
             foreach ($svc as $sid => $sv) {
                 $plan[] = ['key' => 'oxy-' . $sid . '-d' . md5($d), 'track' => 'commercial', 'kind' => 'district', 'sid' => $sid, 'city' => 'حي ' . $d . ' بمكة المكرمة', 'district' => $d, 'alt' => 3 + ($di % 3),
                     'title' => $sv['n'] . ' في حي ' . $d . ' بمكة المكرمة | ' . self::brand(), 'kw' => $sv['n'] . ' حي ' . $d . ' مكة',
+                    'dom' => $sv['spec'] ?? 'general', 'idx' => $idx++];
+            }
+        }
+        // Jeddah neighbourhoods (the business covers Makkah and Jeddah).
+        $jd = array_values(self::data('districts-jeddah'));
+        $k = (self::salt() * 4) % max(1, count($jd));
+        if ($k) { $jd = array_merge(array_slice($jd, $k), array_slice($jd, 0, $k)); }
+        foreach ($jd as $di => $d) {
+            foreach ($svc as $sid => $sv) {
+                $plan[] = ['key' => 'oxy-' . $sid . '-j' . md5($d), 'track' => 'commercial', 'kind' => 'district', 'sid' => $sid, 'city' => 'حي ' . $d . ' بجدة', 'district' => $d, 'alt' => 3 + ($di % 3),
+                    'title' => $sv['n'] . ' في حي ' . $d . ' بجدة | ' . self::brand(), 'kw' => $sv['n'] . ' حي ' . $d . ' جدة',
                     'dom' => $sv['spec'] ?? 'general', 'idx' => $idx++];
             }
         }
@@ -352,6 +366,8 @@ class Oxygen_SEO_Engine {
             update_post_meta($id, '_oxy_seo_desc', $b['desc']);
             update_post_meta($id, '_oxy_seo_faq', wp_json_encode($b['faq'], JSON_UNESCAPED_UNICODE));
             update_post_meta($id, '_oxy_seo_img', $ctx['img']);
+            // Real WordPress post data: tags from the keyword system + compatibility with Yoast / Rank Math so editors see the same focus keyword.
+            self::tag_post($id, $item, $b);
             $cat = self::term($item['track'] === 'commercial' ? 'خدمات ' . self::brand() . '' : 'أدلة وإرشادات');
             if ($cat) { wp_set_post_categories($id, [$cat]); }
             self::log($kind === 'seo' ? 'new_seo' : ($kind === 'district' ? 'new_dist' : 'new'), $id, $item['title'], ['track' => $item['track'], 'st' => get_post_status($id), 'rev' => 0, 'kind' => $kind]);
@@ -393,12 +409,21 @@ class Oxygen_SEO_Engine {
         $pick = $pool[array_rand($pool)];
         return self::do_refresh($pick[0], $by_key[$pick[1]], $map, 'refresh_rand');
     }
+    /** Keyword system: tags + focus keyword/description for Yoast and Rank Math (so the posts behave like hand-written WordPress posts). */
+    private static function tag_post($id, $item, $b) {
+        $svcs = self::data('services');
+        $tags = [$item['kw'], self::brand(), $item['track'] === 'commercial' ? ($item['city'] ?? '') : 'دليل إرشادي', isset($svcs[$item['sid'] ?? '']) ? $svcs[$item['sid']]['n'] : ''];
+        wp_set_post_tags($id, array_values(array_unique(array_filter($tags))), false);
+        update_post_meta($id, '_yoast_wpseo_focuskw', $item['kw']); update_post_meta($id, '_yoast_wpseo_metadesc', $b['desc']);
+        update_post_meta($id, 'rank_math_focus_keyword', $item['kw']); update_post_meta($id, 'rank_math_description', $b['desc']);
+    }
     private static function do_refresh($id, $item, $map, $action) {
         $rev = (int) get_post_meta($id, '_oxy_seo_rev', true) + 1;
         $ctx = self::ctx($item, $map);
         $b = self::build($item, $rev, $ctx);
         wp_update_post(['ID' => $id, 'post_title' => $item['title'], 'post_content' => $b['html'], 'post_excerpt' => $b['desc']]);
         update_post_meta($id, '_oxy_seo_rev', $rev);
+        self::tag_post($id, $item, $b);
         update_post_meta($id, '_oxy_seo_angle', self::angle_label($item['idx'], $rev));
         update_post_meta($id, '_oxy_seo_updated', current_time('mysql'));
         update_post_meta($id, '_oxy_seo_desc', $b['desc']);
