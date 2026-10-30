@@ -42,6 +42,7 @@ import PushToaster from './components/PushToaster'
 import { ThemeBoot } from './lib/appTheme'
 import { AdEntry } from './components/AdLanding'
 import HomeFab from './components/HomeFab'
+import TitleBoot from './components/TitleBoot'
 const BusinessSettings = lazyRetry(() => import('./pages/BusinessSettings'))
 const SecuritySettings = lazyRetry(() => import('./pages/SecuritySettings'))
 const ThemeSettings = lazyRetry(() => import('./pages/ThemeSettings'))
@@ -55,6 +56,7 @@ export default function App() {
       <PushToaster />
       <ThemeBoot />
       <HomeFab />
+      <TitleBoot />
       <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm" dir="rtl">جارِ التحميل…</div>}>
       <Routes>
         {/* واجهة الزائر = واجهة العميل: يستقبل الزوار مباشرة على الرئيسية */}

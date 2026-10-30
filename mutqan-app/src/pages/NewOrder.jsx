@@ -1,3 +1,4 @@
+import { rememberSpecialty } from '../components/TitleBoot'
 import AppPromoBanner from '../components/AppPromoBanner'
 import { useWelcome, welcomeOff, WELCOME_LABEL } from '../lib/welcome'
 import { getDeviceId } from '../lib/device'
@@ -68,6 +69,7 @@ export default function NewOrder() {
   const [noDiscount, setNoDiscount] = useState(false)
   const [locDenied, setLocDenied] = useState(false)
   useEffect(() => { setAcSel(null) }, [specialtyId])
+  useEffect(() => { rememberSpecialty(specialtyId) }, [specialtyId])
 
   const { data: offers } = useLiveShared('offers', { limit: 50 })
   const { data: products } = useLiveShared('products', { limit: 50 })
