@@ -8,6 +8,7 @@ import { validVat } from '../lib/zatca'
 import { SPECIALTIES } from '../constants'
 import { useAdLanding } from '../lib/adLanding'
 import { useTeamRole } from '../hooks/useTeamRole'
+import { useContact } from '../hooks/useContact'
 
 const inp = 'w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none focus:border-primary'
 
@@ -19,6 +20,16 @@ export default function BusinessSettings() {
   const info = useMemo(() => (data || []).find((r) => (r.serviceId || r.id) === 'tax_info') || {}, [data])
   const [f, setF] = useState({ seller: '', vat: '', address: '' })
   const ad = useAdLanding()
+  const cur = useContact()
+  const [c, setC] = useState({ wa: '', phone: '' })
+  const [cm, setCm] = useState('')
+  useEffect(() => { setC({ wa: cur.wa, phone: cur.phone }) }, [cur.wa, cur.phone])
+  const saveContact = async () => {
+    setCm('')
+    const wa = c.wa.replace(/\D/g, ''), phone = c.phone.replace(/[^\d+]/g, '')
+    if (wa && wa.length < 9) return setCm('رقم الواتساب غير صحيح')
+    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'contact_numbers', whatsapp: wa, phone, updatedAt: new Date().toISOString() }, 'contact_numbers', { groupId: gid, writableBy: 'admins' }); setCm('تم الحفظ ✓ — يُطبَّق في الرئيسية والتوزيع والتوجيهات والمقالات') } catch { setCm('تعذر الحفظ') }
+  }
   const [copied, setCopied] = useState('')
   const setAd = async (on) => { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'ad_landing', enabled: !!on, updatedAt: new Date().toISOString() }, 'ad_landing', { groupId: gid, writableBy: 'admins' }) }
   const base = typeof location !== 'undefined' ? location.origin + location.pathname : ''
@@ -51,6 +62,14 @@ export default function BusinessSettings() {
         <label className="grid gap-1 text-xs font-bold text-slate-300">العنوان (اختياري)<input className={inp} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></label>
         <button onClick={save} disabled={busy} className="rounded-xl bg-emerald-500 text-black font-black py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />}حفظ</button>
         {msg && <p className="text-xs font-bold text-amber-300">{msg}</p>}
+        <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
+          <p className="font-black text-sm">📞 أرقام التواصل (تفعّل أزرار الواتساب والاتصال في كل الموقع)</p>
+          <label className="grid gap-1 text-xs font-bold text-slate-300">رقم الواتساب (بالصيغة الدولية، مثال 9665xxxxxxxx)<input className={inp} dir="ltr" inputMode="tel" value={c.wa} onChange={(e) => setC({ ...c, wa: e.target.value })} /></label>
+          <label className="grid gap-1 text-xs font-bold text-slate-300">رقم الهاتف للاتصال<input className={inp} dir="ltr" inputMode="tel" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} /></label>
+          <button onClick={saveContact} className="rounded-xl bg-emerald-500 text-black font-black py-2.5 text-sm">حفظ الأرقام</button>
+          {cm && <p className="text-xs font-bold text-amber-300">{cm}</p>}
+          <p className="text-[11px] text-slate-500">الأزرار تظهر فقط عند وجود الرقم، وزر الطلب والرئيسية يظهران دائمًا.</p>
+        </section>
         <section className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4 grid gap-2">
           <p className="font-black text-sm">📣 روابط الإعلانات الممولة (تجربة)</p>
           <p className="text-[11px] text-slate-400 leading-relaxed">كل تخصص له رابط خاص للإعلان. عند الفتح يدخل العميل الرئيسية أولًا ثم ينتقل تلقائيًا لصفحة التخصص، وفي صفحة التخصص زر «الرئيسية» ثابت بالأسفل.</p>

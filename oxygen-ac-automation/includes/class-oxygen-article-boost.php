@@ -28,6 +28,9 @@ final class Oxygen_Article_Boost {
         if (class_exists('Oxygen_SEO_Engine')) { $s = Oxygen_SEO_Engine::settings(); $wa = preg_replace('/\D/', '', (string) ($s['wa'] ?? '')); }
         $b = get_option('oxygen_business_control', []);
         if (is_array($b)) { if (!$wa) { $wa = preg_replace('/\D/', '', (string) ($b['whatsapp'] ?? '')); } $phone = preg_replace('/[^\d+]/', '', (string) ($b['phone'] ?? '')); }
+        if (class_exists('Mutqan_Store')) {
+            try { $d = Mutqan_Store::peek_doc('pricing', 'contact_numbers'); if (is_array($d)) { $dw = preg_replace('/\D/', '', (string) ($d['whatsapp'] ?? '')); $dp = preg_replace('/[^\d+]/', '', (string) ($d['phone'] ?? '')); if ($dw) { $wa = $dw; } if ($dp) { $phone = $dp; } } } catch (Throwable $e) { /* optional */ }
+        }
         if (!$wa && class_exists('Mutqan_Store') && class_exists('Mutqan_WA')) {
             try {
                 $rows = Mutqan_Store::select('wa_numbers', [], ['limit' => 20, 'order' => 'sort'], Mutqan_WA::sys());

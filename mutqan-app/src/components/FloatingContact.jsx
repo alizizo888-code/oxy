@@ -5,7 +5,7 @@ import { share } from '../lib/share'
 import { team } from '../lib/team'
 import { useSession } from '../hooks/useSession'
 import { useWaNumbers, pickNumber, deptMeta } from '../hooks/useWaNumbers'
-import { BUSINESS_PHONE } from '../constants'
+import { useContact } from '../hooks/useContact'
 
 // Three floating actions on the customer/visitor side:
 // MUTQAN AI chat · human contact on WhatsApp · direct phone call.
@@ -14,6 +14,7 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
   const navigate = useNavigate()
   const { session } = useSession()
   const { numbers } = useWaNumbers()
+  const contact = useContact()
   const gidRef = useRef(null)
   const [toast, setToast] = useState('')
   useEffect(() => { team.groupId().then((g) => { gidRef.current = g }).catch(() => {}) }, [])
@@ -22,7 +23,7 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
   const flash = (m) => { setToast(m); setTimeout(() => setToast(''), 2600) }
 
   function whatsapp() {
-    const n = pickNumber(numbers, 'orders') || pickNumber(numbers, 'support') || enabled[0]
+    const n = contact.wa ? { phone: contact.wa, department: 'orders' } : (pickNumber(numbers, 'orders') || pickNumber(numbers, 'support') || enabled[0])
     if (!n) return navigate('/contact')
     const who = session?.name ? ` معك ${session.name}.` : ''
     share.whatsappOrder({
@@ -35,10 +36,11 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
   }
 
   function call() {
+    if (contact.phone) { window.location.href = `tel:${contact.phone.startsWith('+') ? contact.phone : '+' + contact.phone}`; return }
     const callers = enabled.filter((n) => n.acceptsCalls)
     const pool = callers.length ? callers : []
     const n = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null
-    const phone = n?.phone || BUSINESS_PHONE || (enabled.find((x) => ['support', 'orders'].includes(x.department)) || enabled[0])?.phone
+    const phone = contact.phone || n?.phone || (enabled.find((x) => ['support', 'orders'].includes(x.department)) || enabled[0])?.phone
     if (!phone) return flash('رقم الاتصال لم يُضف بعد — تواصل مع MUTQAN AI أو اطلب الخدمة مباشرة')
     window.location.href = `tel:+${String(phone).replace(/\D/g, '')}`
   }
@@ -53,12 +55,12 @@ export default function FloatingContact({ bottomClass = 'bottom-[calc(5.75rem+en
           <Sparkles size={20} className="relative" />
           <span className="absolute -top-1 -right-1 text-[8px] font-black bg-white text-blue-700 rounded-full px-1 shadow">AI</span>
         </button>
-        <button onClick={whatsapp} aria-label="تواصل مع موظف على واتساب" className={`${btn} bg-gradient-to-br from-emerald-400 to-green-600 shadow-emerald-400/50`}>
+        {(contact.wa || enabled.length > 0) && <button onClick={whatsapp} aria-label="تواصل مع موظف على واتساب" className={`${btn} bg-gradient-to-br from-emerald-400 to-green-600 shadow-emerald-400/50`}>
           <MessageCircle size={21} />
-        </button>
-        <button onClick={call} aria-label="اتصال مباشر" className={`${btn} bg-gradient-to-br from-rose-400 to-pink-600 shadow-rose-400/50`}>
+        </button>}
+        {(contact.phone || enabled.length > 0) && <button onClick={call} aria-label="اتصال مباشر" className={`${btn} bg-gradient-to-br from-rose-400 to-pink-600 shadow-rose-400/50`}>
           <Phone size={19} />
-        </button>
+        </button>}
       </div>
       {toast && (
         <div className="fixed bottom-32 md:bottom-10 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 text-white text-xs font-bold rounded-full px-4 py-2 shadow-lg max-w-[90vw] text-center" dir="rtl">

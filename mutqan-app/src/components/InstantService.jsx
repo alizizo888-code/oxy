@@ -5,7 +5,7 @@ import { share } from '../lib/share'
 import { team } from '../lib/team'
 import { useSession } from '../hooks/useSession'
 import { useWaNumbers, pickNumber, deptMeta } from '../hooks/useWaNumbers'
-import { BUSINESS_PHONE } from '../constants'
+import { useContact } from '../hooks/useContact'
 
 // "طلب خدمة فورية": a prominent button on every customer / order page. It opens a pop-up with two direct routes —
 // WhatsApp (number picked from the owner's WhatsApp center) or a phone call — so an urgent customer never has to hunt.
@@ -16,9 +16,10 @@ export default function InstantService({ bottomClass = 'bottom-[calc(5.75rem+env
   const gidRef = useRef(null)
   useEffect(() => { team.groupId().then((g) => { gidRef.current = g }).catch(() => {}) }, [])
   const enabled = numbers.filter((n) => n.enabled && n.phone)
-  const waNum = pickNumber(numbers, 'orders') || pickNumber(numbers, 'support') || enabled[0]
+  const contactNo = useContact()
+  const waNum = contactNo.wa ? { phone: contactNo.wa, department: 'orders' } : (pickNumber(numbers, 'orders') || pickNumber(numbers, 'support') || enabled[0])
   const callers = enabled.filter((n) => n.acceptsCalls)
-  const callPhone = callers[0]?.phone || BUSINESS_PHONE || waNum?.phone
+  const callPhone = contactNo.phone || callers[0]?.phone || waNum?.phone
 
   const whatsapp = () => {
     if (!waNum) return

@@ -5,7 +5,8 @@ import { Bell, MapPin, Search, SlidersHorizontal, ChevronRight, ChevronLeft, Shi
 import { useLiveShared } from '../../lib/useLive'
 import { maps } from '../../lib/maps'
 import { share } from '../../lib/share'
-import { ACTIVE_STATUSES, STATUS_META, specialtyLabel, BUSINESS_PHONE, BUSINESS_WHATSAPP } from '../../constants'
+import { ACTIVE_STATUSES, STATUS_META, specialtyLabel } from '../../constants'
+import { useContact } from '../../hooks/useContact'
 import ServiceBanner from '../../components/ServiceBanner'
 import AiLogo from '../../components/AiLogo'
 import ServiceTile from '../../components/ServiceTile'
@@ -36,6 +37,7 @@ const AI_CHIPS = ['كم سعر غسل 3 مكيفات؟', 'أريد فني سبا
 
 export default function Home() {
   const navigate = useNavigate()
+  const contact = useContact()
   const [q, setQ] = useState('')
   const [loc, setLoc] = useState({ label: 'حدد موقعك', loading: false })
   const [locDenied, setLocDenied] = useState(false)
@@ -75,13 +77,13 @@ export default function Home() {
   }
 
   function callDirect() {
-    if (BUSINESS_PHONE) window.location.href = `tel:${BUSINESS_PHONE}`
+    if (contact.phone) window.location.href = `tel:${contact.phone}`
     else showToast('رقم الاتصال المباشر لم يُفعّل بعد — اطلب فنيك الآن وسيصلك')
   }
 
   function contactWhatsapp() {
     // All WhatsApp numbers are managed from the WhatsApp center — route to the public contact page
-    if (BUSINESS_WHATSAPP) share.whatsapp(BUSINESS_WHATSAPP, 'السلام عليكم، أرغب بخدمة صيانة من MUTQAN.')
+    if (contact.wa) share.whatsapp(contact.wa, 'السلام عليكم، أرغب بخدمة صيانة من MUTQAN.')
     else navigate('/contact')
   }
 
