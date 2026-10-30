@@ -37,7 +37,7 @@ class Oxygen_Home_Page {
     }
 
     public static function ensure() {
-        if (get_option(self::DONE) === '1' || Oxygen_SEO_Engine::brand() !== 'أكسجين') { return; } // main domain (OXYGEN) only
+        if (get_option(self::DONE) === '1') { return; }
         if (!function_exists('wp_insert_post')) { return; }
         $brand = Oxygen_SEO_Engine::brand();
         $id = (int) get_option(self::OPT, 0);
@@ -67,7 +67,6 @@ class Oxygen_Home_Page {
 
     public static function render() {
         if (!is_front_page() || is_admin() || is_feed() || (defined('REST_REQUEST') && REST_REQUEST)) { return; }
-        if (Oxygen_SEO_Engine::brand() !== 'أكسجين') { return; }
         $id = (int) get_option(self::OPT, 0);
         if (!$id || (int) get_option('page_on_front') !== $id) { return; }
         $post = get_post($id); if (!$post || $post->post_status !== 'publish') { return; }
@@ -102,9 +101,14 @@ class Oxygen_Home_Page {
         ob_start(); wp_footer(); $foot = ob_get_clean();
 
         $e = 'esc_html';
-        echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . $e($title) . '</title>';
-        echo '<meta name="description" content="' . esc_attr($desc) . '"><link rel="canonical" href="' . esc_url($url) . '"><meta name="robots" content="index,follow,max-image-preview:large">';
-        echo '<meta property="og:type" content="website"><meta property="og:locale" content="ar_SA"><meta property="og:title" content="' . esc_attr($title) . '"><meta property="og:description" content="' . esc_attr($desc) . '"><meta property="og:url" content="' . esc_url($url) . '"><meta name="theme-color" content="#0ea5e9">';
+        // An installed SEO plugin (Yoast / Rank Math / AIOSEO) prints title, description, canonical, robots and OG itself — never duplicate them.
+        $seo_plugin = defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || defined('AIOSEO_VERSION');
+        echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+        if (!$seo_plugin) {
+            echo '<title>' . $e($title) . '</title><meta name="description" content="' . esc_attr($desc) . '"><link rel="canonical" href="' . esc_url($url) . '"><meta name="robots" content="index,follow,max-image-preview:large">';
+            echo '<meta property="og:type" content="website"><meta property="og:locale" content="ar_SA"><meta property="og:title" content="' . esc_attr($title) . '"><meta property="og:description" content="' . esc_attr($desc) . '"><meta property="og:url" content="' . esc_url($url) . '">';
+        } elseif (!current_theme_supports('title-tag')) { echo '<title>' . $e($title) . '</title>'; }
+        echo '<meta name="theme-color" content="#0ea5e9">';
         echo '<style>:root{--c:#0ea5e9;--d:#0b1220}*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;color:#0f172a;background:#f8fafc;line-height:1.8}a{color:inherit}.w{max-width:1040px;margin:0 auto;padding:0 16px}.hero{background:linear-gradient(135deg,#0b1220,#0c4a6e);color:#fff;padding:56px 0 48px;text-align:center}.hero h1{font-size:clamp(24px,5vw,38px);margin:0 0 12px;line-height:1.4}.hero p{margin:0 auto 24px;max-width:640px;opacity:.9}.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.b{display:inline-block;padding:13px 26px;border-radius:999px;font-weight:800;text-decoration:none;background:var(--c);color:#04121f}.b.wa{background:#25d366}.b.t{background:#fff}h2{font-size:22px;margin:40px 0 14px}.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}.k{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px 16px}.k h3{margin:0 0 4px;font-size:16px}.k p{margin:0;font-size:13px;color:#475569}.l{list-style:none;padding:0;margin:0;display:grid;gap:8px}.l a{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:11px 14px;text-decoration:none;font-weight:700;font-size:14px}details{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;margin-bottom:8px}summary{font-weight:800;cursor:pointer}footer{margin-top:48px;background:#0b1220;color:#cbd5e1;text-align:center;padding:24px 16px;font-size:13px}</style>';
         echo $head . implode('', $ld) . '</head><body>';
         echo '<header class="hero"><div class="w"><h1>' . $e($title) . '</h1><p>' . $e(wp_strip_all_tags($post->post_content)) . '</p><div class="btns"><a class="b" href="' . esc_url($app) . '">اطلب خدمة الآن</a>';

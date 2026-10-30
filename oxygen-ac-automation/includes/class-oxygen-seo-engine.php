@@ -410,10 +410,35 @@ class Oxygen_SEO_Engine {
         return self::do_refresh($pick[0], $by_key[$pick[1]], $map, 'refresh_rand');
     }
     /** Keyword system: tags + focus keyword/description for Yoast and Rank Math (so the posts behave like hand-written WordPress posts). */
+    /** One category per service (+ «أدلة إرشادية» for official guides) so the site is organised and crawlable by topic. */
+    private static function categorize($id, $name, $track) {
+        $names = array_values(array_filter([$name, $track === 'official' ? 'أدلة إرشادية' : '']));
+        if (!$names) { return; }
+        $ids = [];
+        foreach ($names as $n) {
+            $t = term_exists($n, 'category');
+            if (!$t) { $t = wp_insert_term($n, 'category'); }
+            if (!is_wp_error($t) && !empty($t['term_id'])) { $ids[] = (int) $t['term_id']; }
+        }
+        if ($ids) { wp_set_post_categories($id, $ids, false); }
+    }
+    /** Backfill: classify engine posts that still sit in the default category (30 per run). */
+    public static function classify_batch() {
+        $svcs = self::data('services');
+        $q = get_posts(['numberposts' => 30, 'post_status' => 'any', 'meta_key' => '_oxy_seo_key', 'category__in' => [(int) get_option('default_category')], 'fields' => 'ids']);
+        foreach ($q as $id) {
+            $key = (string) get_post_meta($id, '_oxy_seo_key', true);
+            $name = ''; $track = (strpos($key, 'oxy-guide-') === 0) ? 'official' : 'commercial';
+            foreach ((array) $svcs as $sid => $sv) { if ($sid !== '' && strpos($key, 'oxy-' . $sid . '-') === 0) { $name = $sv['n']; break; } }
+            if (!$name) { $name = 'الصيانة العامة'; }
+            self::categorize($id, $name, $track);
+        }
+    }
     private static function tag_post($id, $item, $b) {
         $svcs = self::data('services');
         $tags = [$item['kw'], self::brand(), $item['track'] === 'commercial' ? ($item['city'] ?? '') : 'دليل إرشادي', isset($svcs[$item['sid'] ?? '']) ? $svcs[$item['sid']]['n'] : ''];
         wp_set_post_tags($id, array_values(array_unique(array_filter($tags))), false);
+        self::categorize($id, isset($svcs[$item['sid'] ?? '']) ? $svcs[$item['sid']]['n'] : '', $item['track'] ?? '');
         update_post_meta($id, '_yoast_wpseo_focuskw', $item['kw']); update_post_meta($id, '_yoast_wpseo_metadesc', $b['desc']);
         update_post_meta($id, 'rank_math_focus_keyword', $item['kw']); update_post_meta($id, 'rank_math_description', $b['desc']);
     }
@@ -436,6 +461,7 @@ class Oxygen_SEO_Engine {
     /** Runs hourly (and on traffic): five streams, each paced evenly over the day, up to 3 catch-up actions per stream per run. */
     public static function tick() {
         if (!self::active()) { return; }
+        try { self::classify_batch(); } catch (Throwable $e) { /* optional */ }
         self::ensure_hub();
         $s = self::settings();
         $hour = (int) wp_date('G');
