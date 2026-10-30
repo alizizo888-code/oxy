@@ -42,7 +42,14 @@ jobs:
           mkdir -p assets
           cp ../../brand/oxygen/icon-512.png assets/icon-only.png
           cp ../../brand/oxygen/icon-512.png assets/icon-foreground.png
-          printf '#0b1220' > /dev/null
+          python3 - <<'PY'
+          import zlib, struct
+          w = h = 1024
+          row = b'\x00' + bytes([0x0b, 0x12, 0x20]) * w
+          raw = zlib.compress(row * h, 9)
+          def chunk(t, d): c = struct.pack('>I', len(d)) + t + d; return c + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+          open('assets/icon-background.png', 'wb').write(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', raw) + chunk(b'IEND', b''))
+          PY
           npx capacitor-assets generate --android --iconBackgroundColor '#0b1220' --splashBackgroundColor '#0b1220' || true
           npx cap sync android
       - name: Permissions (microphone for the hotline, location for technicians, notifications)
