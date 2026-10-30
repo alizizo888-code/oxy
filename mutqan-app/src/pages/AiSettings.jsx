@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -52,7 +53,7 @@ export { ACTION_LABELS }
 
 export default function AiSettings() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const { settings, update } = useAiSettings()
   const [params] = useSearchParams()
   const [tab, setTab] = useState(() => (SECTIONS.some((s) => s.id === params.get('tab')) ? params.get('tab') : 'status'))
@@ -60,7 +61,7 @@ export default function AiSettings() {
 
   const allowed = isOwner || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>هذه الصفحة للمالك ومشرف العمليات فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
 
   const save = async (patch) => {
     setError('')

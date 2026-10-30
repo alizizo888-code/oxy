@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Send, Plus, QrCode, KeyRound, RefreshCw, LogOut, Bot, MessageCircle, Settings2, Loader2, Search, ArrowRight, Copy, Trash2, CheckCheck, UserRound } from 'lucide-react'
@@ -32,14 +33,14 @@ const dayLabel = (iso) => { try { return new Date(iso).toLocaleDateString('ar-SA
 
 export default function WaInbox() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const [tab, setTab] = useState('inbox')
   const sess = useWaSessions(tab === 'numbers' ? 3000 : 15000)
   const { data: threads } = useLiveShared('wa_threads', { order: '-lastAt', limit: 300 })
   const unread = useMemo(() => (threads || []).reduce((a, t) => a + (t.unread || 0), 0), [threads])
   const allowed = isOwner || role === 'owner' || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>صندوق الواتساب للمالك ومشرف العمليات فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
 
   return (
     <div className="h-full flex flex-col bg-[#090c14]" dir="rtl">

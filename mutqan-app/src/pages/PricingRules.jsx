@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Save, Loader2, Tag, Check } from 'lucide-react'
@@ -9,7 +10,7 @@ import { computeQuote, PARTS_RULES, buildLadder, offerFor, NEGOTIATION_STAGES } 
 
 export default function PricingRules() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const { rules, saveRule } = usePricing()
   const { internal, saveInternal } = usePricingInternal()
   const { settings } = useAiSettings()
@@ -28,7 +29,7 @@ export default function PricingRules() {
 
   const allowed = isOwner || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>هذه الصفحة للمالك ومشرف العمليات فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
   if (!form) return <Centered>جارِ التحميل…</Centered>
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'number' ? e.target.value : e.target.value }))

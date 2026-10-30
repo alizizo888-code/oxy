@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Plus, Save, Loader2, Trash2, X, MessageCircle, ExternalLink, Info, Users } from 'lucide-react'
@@ -10,7 +11,7 @@ const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin
 
 export default function WhatsappCenter() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const { numbers, loading: loadingNums } = useWaNumbers()
   const { data: leads } = useLiveShared('wa_leads', { order: '-at', limit: 100 })
   const [editing, setEditing] = useState(null)
@@ -23,7 +24,7 @@ export default function WhatsappCenter() {
 
   const allowed = isOwner || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>هذه الصفحة للمالك ومشرف العمليات فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
 
   async function toggle(n) {
     try { await saveWaNumber({ ...n, enabled: !n.enabled }) } catch { alert('تعذر الحفظ') }

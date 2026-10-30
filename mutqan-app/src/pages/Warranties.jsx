@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ShieldCheck, Plus, Search, Loader2, Save, X, Paperclip, FileText, Check, Ban, Eye } from 'lucide-react'
@@ -14,11 +15,11 @@ const digits = (s) => String(s || '').replace(/\D/g, '').slice(-9)
 
 export default function Warranties() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const [tab, setTab] = useState('claims')
   const allowed = isOwner || ['operations', 'supervisor'].includes(role)
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>هذه الصفحة للمالك والمشرفين فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
   const canEdit = isOwner || role === 'operations'
 
   return (

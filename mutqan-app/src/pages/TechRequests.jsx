@@ -1,3 +1,4 @@
+import AccessDenied from '../components/AccessDenied'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Check, X, Loader2, MapPin, Phone, HardHat } from 'lucide-react'
@@ -19,7 +20,7 @@ const TABS = [
 
 export default function TechRequests() {
   const navigate = useNavigate()
-  const { role, isOwner, loading } = useTeamRole()
+  const { role, isOwner, loading, refresh } = useTeamRole()
   const [tab, setTab] = useState('pending')
   const { data: apps, loading: appsLoading } = useLiveShared('tech_applications', { filters: { status: tab }, order: '-createdAt', limit: 200 })
   const [busyId, setBusyId] = useState(null)
@@ -27,7 +28,7 @@ export default function TechRequests() {
 
   const allowed = isOwner || role === 'operations'
   if (loading) return <Centered>جارِ التحقق…</Centered>
-  if (!allowed) return <Centered>هذه الصفحة للمالك ومشرف العمليات فقط</Centered>
+  if (!allowed) return <AccessDenied refresh={refresh} />
 
   const reviewer = auth.getCurrentUser()?.displayName || (isOwner ? 'المالك' : 'مشرف العمليات')
 

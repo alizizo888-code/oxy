@@ -44,7 +44,13 @@ final class Mutqan_Auth {
             global $wpdb;
             $s = Mutqan_Store::table('sessions'); $u = Mutqan_Store::table('users');
             $row = $wpdb->get_row($wpdb->prepare("SELECT u.* FROM $s s JOIN $u u ON u.id = s.user_id WHERE s.token_hash=%s AND s.expires_at > %s AND u.status='active'", hash('sha256', $token), Mutqan_Store::now()), ARRAY_A);
-            if ($row) { self::$tok = hash('sha256', $token); return self::$memo = self::principal_from_user($row); }
+            if ($row) {
+                self::$tok = hash('sha256', $token);
+                // Sliding session: any authenticated request that finds < 60 days left pushes it back to 90 (one cheap UPDATE at most once a day per token).
+                $keep = gmdate('Y-m-d H:i:s', time() + self::SESSION_DAYS * 86400);
+                $wpdb->query($wpdb->prepare("UPDATE $s SET expires_at=%s WHERE token_hash=%s AND expires_at < %s", $keep, self::$tok, gmdate('Y-m-d H:i:s', time() + (self::SESSION_DAYS - 1) * 86400)));
+                return self::$memo = self::principal_from_user($row);
+            }
         }
         $anon = $request ? (string) $request->get_header('x-mutqan-anon') : '';
         if ($anon !== '' && preg_match('/^[A-Za-z0-9-]{8,64}$/', $anon)) {
@@ -132,6 +138,19 @@ final class Mutqan_Auth {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . Mutqan_Store::table('users') . ' WHERE handle=%s', $handle), ARRAY_A);
     }
+    /** Digits only, no 00 prefix, compared on the last 9 digits so 05xxxxxxxx / 9665xxxxxxxx / +9665xxxxxxxx are the same number. */
+    public static function phone_key($p) {
+        $d = preg_replace('/\D/', '', self::fold_digits((string) $p));
+        if (strpos($d, '00') === 0) { $d = substr($d, 2); }
+        return strlen($d) >= 9 ? substr($d, -9) : $d;
+    }
+    private static function find_staff_by_phone($phone) {
+        global $wpdb;
+        $k = self::phone_key($phone);
+        if (strlen($k) < 8) { return []; }
+        $rows = (array) $wpdb->get_results("SELECT * FROM " . Mutqan_Store::table('users') . " WHERE phone<>'' AND role IS NOT NULL AND role<>'' AND status='active'", ARRAY_A);
+        return array_values(array_filter($rows, function ($r) use ($k) { return self::phone_key($r['phone']) === $k; }));
+    }
     private static function find_by_id($id) {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . Mutqan_Store::table('users') . ' WHERE id=%s', (string) $id), ARRAY_A);
@@ -180,6 +199,7 @@ final class Mutqan_Auth {
         $handle = self::normalize_handle($in['phone'] ?? '');
         if (!preg_match('/^\d{8,15}$/', $handle)) { throw new Mutqan_Error('bad_phone', 'اكتب رقم جوال صحيح.', 422); }
         if ($name === '') { throw new Mutqan_Error('bad_name', 'اكتب اسمك.', 422); }
+        if (self::find_staff_by_phone($handle)) { throw new Mutqan_Error('staff_phone', 'هذا الرقم مسجّل لحساب في فريق العمل — سجّل الدخول بدل إنشاء حساب عميل.', 409); }
         self::valid_password($in['password'] ?? '', 6);
         $u = self::create_user($handle, $name, $handle, $in['password'], null);
         return self::session_result($u);
@@ -190,8 +210,13 @@ final class Mutqan_Auth {
         $pw = (string) ($in['password'] ?? '');
         if ($handle === '' || $pw === '') { throw new Mutqan_Error('bad_credentials', 'بيانات الدخول غير صحيحة.', 401); }
         if (!Mutqan_Limiter::peek('login_fail', 8, $handle)) { throw new Mutqan_Error('rate_limited', 'محاولات كثيرة. حاول بعد قليل.', 429); }
-        $u = self::find_by_handle($handle);
-        $ok = $u && password_verify($pw, $u['password_hash']);
+        // Candidates: the account whose handle is this value, plus any STAFF account that saved this number as its phone
+        // (so the owner/supervisor can sign in with their mobile number even if a customer account with that number exists). Staff match wins.
+        $u = null; $ok = false;
+        $cands = [];
+        foreach (self::find_staff_by_phone($handle) as $sx) { $cands[] = $sx; }
+        $hx = self::find_by_handle($handle); if ($hx) { $cands[] = $hx; }
+        foreach ($cands as $cx) { if (password_verify($pw, $cx['password_hash'])) { $u = $cx; $ok = true; break; } }
         if (!$ok) {
             try { Mutqan_Limiter::hit('login_fail', 8, 900, $handle); } catch (Mutqan_Error $e) { /* counted */ }
             throw new Mutqan_Error('bad_credentials', 'بيانات الدخول غير صحيحة.', 401);
@@ -222,7 +247,7 @@ final class Mutqan_Auth {
         self::require_user($p);
         $upd = [];
         if (isset($in['displayName'])) { $upd['display_name'] = mb_substr(trim((string) $in['displayName']), 0, 120); }
-        if (isset($in['phone'])) { $upd['phone'] = mb_substr(preg_replace('/[^\d+]/', '', self::fold_digits($in['phone'])), 0, 32); }
+        if (isset($in['phone'])) { $ph = preg_replace('/\D/', '', self::fold_digits($in['phone'])); if (strpos($ph, '00') === 0) { $ph = substr($ph, 2); } $upd['phone'] = mb_substr($ph, 0, 32); }
         if ($upd) { $GLOBALS['wpdb']->update(Mutqan_Store::table('users'), $upd, ['id' => $p['id']]); }
         return self::me($p);
     }
@@ -291,6 +316,14 @@ final class Mutqan_Auth {
                 return ['member' => $u ? self::member_row($u) : null];
             }
             case 'login': return self::login($in, true);
+            case 'setMyPhone': {
+                self::require_user($p);
+                if (!Mutqan_Policy::is_staff($p)) { throw new Mutqan_Error('forbidden', 'لأعضاء الفريق فقط.', 403); }
+                $ph = self::normalize_handle($in['phone'] ?? '');
+                if ($ph !== '' && !preg_match('/^\d{8,15}$/', $ph)) { throw new Mutqan_Error('bad_phone', 'اكتب رقم جوال صحيح.', 422); }
+                $GLOBALS['wpdb']->update(Mutqan_Store::table('users'), ['phone' => $ph], ['id' => $p['id']]);
+                return ['ok' => true, 'phone' => $ph];
+            }
             case 'pkLoginOptions': return Mutqan_Passkey::login_options();
             case 'pkLoginVerify': return Mutqan_Passkey::login_verify($in);
             case 'pkRegOptions': return Mutqan_Passkey::reg_options($p);

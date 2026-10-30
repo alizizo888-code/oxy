@@ -14,6 +14,9 @@ export default function SecuritySettings() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [persisted, setPersisted] = useState(null)
+  const [ph, setPh] = useState(() => auth.getCurrentUser()?.phone || '')
+  const [phMsg, setPhMsg] = useState('')
+  const savePhone = async () => { setPhMsg(''); try { await auth.updateProfile({ phone: ph }); setPhMsg('تم الحفظ ✓ — تقدر الآن تدخل برقم جوالك أو باسم المستخدم') } catch { setPhMsg('تعذر الحفظ') } }
   const load = useCallback(() => { passkey.list().then(setKeys).catch(() => setKeys([])) }, [])
   useEffect(() => { passkey.supported().then(setSup); try { navigator.storage?.persisted?.().then(setPersisted) } catch { /* ignore */ } }, [])
   useEffect(() => { if (isOwner) load() }, [isOwner, load])
@@ -34,6 +37,13 @@ export default function SecuritySettings() {
         <div className="flex-1"><h1 className="font-display font-black text-base">الأمان والدخول</h1><p className="text-[11px] text-white/60">البصمة / الوجه وتثبيت تسجيل الدخول</p></div>
       </header>
       <div className="p-4 max-w-xl mx-auto grid gap-3">
+        <section className={card}>
+          <p className="font-black text-sm">📱 رقم جوال الدخول</p>
+          <p className="text-[11px] text-slate-400 leading-relaxed">احفظ رقمك هنا ليتعرف عليك النظام كمالك عند الدخول به (بأي صيغة: 05… أو 966…). لا يمكن إنشاء حساب عميل بنفس الرقم.</p>
+          <input dir="ltr" inputMode="tel" value={ph} onChange={(e) => setPh(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-primary" placeholder="05xxxxxxxx" />
+          <button onClick={savePhone} className="rounded-xl bg-emerald-500 text-black font-black py-2.5 text-sm">حفظ الرقم</button>
+          {phMsg && <p className="text-xs font-bold text-amber-300">{phMsg}</p>}
+        </section>
         <section className={card}>
           <p className="font-black flex items-center gap-2"><Fingerprint size={18} className="text-primary" /> الدخول بالبصمة أو الوجه</p>
           <p className="text-xs text-slate-400">بعد التفعيل تدخل ببصمتك فقط من شاشة الدخول، دون اسم مستخدم أو كلمة مرور. تُفعَّل لكل جهاز على حدة.</p>
