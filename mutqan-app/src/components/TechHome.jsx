@@ -1,3 +1,4 @@
+import { deviceInfo } from '../lib/deviceHealth'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Phone, Navigation, Power, MapPin, Star, CheckCircle2, Clock, RefreshCw, Wallet } from 'lucide-react'
 import { maps } from '../lib/maps'
@@ -32,7 +33,7 @@ export default function TechHome({ myId, myProfile, displayName, orders, onSaveP
       try { if (L.lat != null) moved = maps.distance(L.lat, L.lng, p.lat, p.lng) } catch { /* ignore */ }
       if (profRef.current && myId && (now - L.t > 60000 || moved > 150)) {
         lastW.current = { t: now, lat: p.lat, lng: p.lng }
-        onSaveProfile({ ...profRef.current, userId: myId, lat: p.lat, lng: p.lng, lastSeenAt: new Date().toISOString() }).catch(() => {})
+        deviceInfo().then((d) => onSaveProfile({ ...profRef.current, userId: myId, lat: p.lat, lng: p.lng, lastSeenAt: new Date().toISOString(), ...d })).catch(() => {})
       }
     })
     return () => w.stop()

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Camera, Plus, X, Loader2 } from 'lucide-react'
 import { db } from '../lib/db'
 import { storage } from '../lib/storage'
+import InvoiceModal from './InvoiceModal'
 
 // Service documentation (reference: design-reference/03): before/after photos + invoice lines. Technician edits; the customer only reads.
 export default function ServiceDocs({ order, canEdit, dark = true }) {
@@ -9,6 +10,7 @@ export default function ServiceDocs({ order, canEdit, dark = true }) {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [err, setErr] = useState('')
+  const [inv, setInv] = useState(false)
   const before = order.photosBefore || [], after = order.photosAfter || [], items = order.invoiceItems || []
   const total = items.reduce((s, i) => s + (Number(i.price) || 0), 0)
   const patch = async (p) => { setErr(''); try { await db.updateShared('orders', order.id, p) } catch { setErr('تعذر الحفظ') } }
@@ -53,6 +55,8 @@ export default function ServiceDocs({ order, canEdit, dark = true }) {
         {items.length > 0 && <div className="flex items-center"><span className={`text-xs font-bold ${tone.s}`}>إجمالي البنود</span><span className={`mr-auto font-display font-black ${tone.t}`}>{total} ر.س</span>
           {canEdit && Number(order.price) !== total && <button onClick={() => patch({ price: total })} className="mr-2 rounded-lg bg-emerald-500 text-black text-[11px] font-black px-2.5 py-1">اعتمد كسعر نهائي</button>}</div>}
       </div>
+      {items.length > 0 && <button onClick={() => setInv(true)} className="rounded-xl border border-primary/50 text-primary font-black text-xs py-2.5">🧾 عرض الفاتورة الضريبية</button>}
+      {inv && <InvoiceModal order={order} canEdit={canEdit} onClose={() => setInv(false)} />}
       {err && <p className="text-[11px] text-rose-400">{err}</p>}
     </div>
   )

@@ -117,6 +117,7 @@ function TechPanel({ t, orders, onOpen }) {
     <div className="grid gap-1.5 pr-1">
       <p className="font-black text-white text-sm">🧰 {t.displayName || 'فني'}</p>
       <Row k="الحالة" v={t.active === false ? 'مغلق' : isTechAvailable(t, orders) ? 'متاح' : 'مشغول / اكتملت السعة'} />
+      {t.battery != null && <Row k="البطارية" v={`${t.battery}%${t.charging ? ' (تشحن)' : ''}${t.net ? ` · ${t.net}` : ''}`} />}
       <Row k="الموقع" v={p?.live ? 'مباشر الآن' : `آخر ظهور ${seenAgo(t.lastSeenAt || t.updatedAt)}`} />
       <Row k="اليوم" v={`${mine.length} مهمة جارية · ${doneToday} مكتملة`} />
       {mine.map((o) => <button key={o.id} onClick={() => onOpen(o)} className="text-right bg-white/5 rounded-lg px-2 py-1.5 text-[11px] text-slate-200">{specialtyLabel(o.specialtyId)} · {o.clientName || ''} — {o.status}</button>)}

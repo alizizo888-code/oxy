@@ -10,8 +10,9 @@ export function useWaSessions(intervalMs = 5000) {
   const alive = useRef(true)
   const load = useCallback(async () => {
     try {
+      const t0 = performance.now()
       const r = await waApi('sessions')
-      if (alive.current) setState({ sessions: r.sessions || [], loading: false, error: '' })
+      if (alive.current) setState({ sessions: r.sessions || [], loading: false, error: '', ms: Math.round(performance.now() - t0) })
     } catch (e) {
       if (alive.current) setState((s) => ({ ...s, loading: false, error: e?.message || 'تعذر الاتصال بالوسيط' }))
     }

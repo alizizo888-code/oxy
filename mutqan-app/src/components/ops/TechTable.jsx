@@ -48,7 +48,7 @@ export default function TechTable({ profiles, orders, sharePct, onOpenTech }) {
                 <td className="px-2.5 py-2">{r.doneTotal}</td>
                 <td className={`px-2.5 py-2 ${r.cancelled ? 'text-rose-300 font-black' : ''}`}>{r.cancelled}</td>
                 <td className="px-2.5 py-2 whitespace-nowrap">{r.monthSales ? `${Math.round(sharePct ? r.monthSales * sharePct / 100 : r.monthSales)} ر.س` : '—'}</td>
-                <td className="px-2.5 py-2 whitespace-nowrap text-slate-400">{r.p?.live ? <span className="text-emerald-300">● مباشر</span> : seenAgo(r.t.lastSeenAt || r.t.updatedAt)}</td>
+                <td className="px-2.5 py-2 whitespace-nowrap text-slate-400">{r.p?.live ? <span className="text-emerald-300">● مباشر</span> : seenAgo(r.t.lastSeenAt || r.t.updatedAt)}{r.t.battery != null && <span className={`mr-1.5 ${r.t.battery <= 20 && !r.t.charging ? 'text-rose-400' : 'text-slate-400'}`}>🔋{r.t.battery}%{r.t.charging ? '⚡' : ''}</span>}{r.t.net && <span className="mr-1 text-slate-500">{r.t.net}</span>}</td>
                 <td className="px-2.5 py-2">{r.t.phone && <a href={`tel:${r.t.phone}`} className="inline-flex w-7 h-7 rounded-lg bg-emerald-600/80 items-center justify-center"><Phone size={12} /></a>}</td>
               </tr>
             ))}

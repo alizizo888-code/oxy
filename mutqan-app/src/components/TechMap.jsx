@@ -1,3 +1,4 @@
+import { deviceInfo } from '../lib/deviceHealth'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigation, Phone } from 'lucide-react'
 import FieldMapCanvas from './FieldMapCanvas'
@@ -24,7 +25,7 @@ export default function TechMap({ myId, myProfile, profiles, orders, shops, upse
       // publish my position (at most every 30 s) so operations and colleagues see "last seen" and distance
       if (myId && profRef.current && now - lastWrite.current > 30000) {
         lastWrite.current = now
-        upsertProfile({ ...profRef.current, userId: myId, lat: p.lat, lng: p.lng, lastSeenAt: new Date().toISOString() }).catch(() => {})
+        deviceInfo().then((d) => upsertProfile({ ...profRef.current, userId: myId, lat: p.lat, lng: p.lng, lastSeenAt: new Date().toISOString(), ...d })).catch(() => {})
       }
     })
     maps.getCurrentLocation().then((p) => setMe({ lat: p.lat, lng: p.lng })).catch(() => setErr('فعّل خدمة الموقع ليظهر موقعك على الخريطة'))

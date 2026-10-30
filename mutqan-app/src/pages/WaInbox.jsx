@@ -8,6 +8,8 @@ import { waApi, useWaSessions, DEFAULT_BOT, saveBot } from '../hooks/useWa'
 import { auth } from '../lib/auth'
 import { StickyNote, Zap, CheckCircle2, Tag, Clock, Siren, Wrench, ClipboardPlus, Phone, MapPin } from 'lucide-react'
 import ManualOrderModal from '../components/ManualOrderModal'
+import InvoiceModal from '../components/InvoiceModal'
+import { post } from '../lib/_api'
 import { STATUS_META } from '../constants'
 
 const STATUS = {
@@ -49,7 +51,7 @@ export default function WaInbox() {
             <h1 className="font-display text-lg font-black text-white">صندوق الواتساب الموحّد</h1>
           </div>
         </div>
-        <Kpis threads={threads || []} sessions={sess.sessions} />
+        <Kpis threads={threads || []} sessions={sess.sessions} ms={sess.ms} />
         <div className="max-w-6xl mx-auto w-full px-4 flex gap-1.5 pb-2">
           {[['inbox', 'المحادثات', MessageCircle, unread], ['numbers', 'الأرقام', QrCode, 0], ['bot', 'البوت', Bot, 0]].map(([id, label, Icon, n]) => (
             <button key={id} onClick={() => setTab(id)} className={`relative flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black border ${tab === id ? 'bg-primary/20 border-primary text-primary' : 'bg-white/5 border-white/10 text-slate-300'}`}>
@@ -68,7 +70,7 @@ export default function WaInbox() {
   )
 }
 
-function Kpis({ threads, sessions }) {
+function Kpis({ threads, sessions, ms }) {
   const k = useMemo(() => {
     const open = threads.filter((t) => t.status !== 'done')
     const waiting = open.filter((t) => t.lastDir === 'in')
@@ -81,6 +83,7 @@ function Kpis({ threads, sessions }) {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 pb-2 flex gap-2 overflow-x-auto">
       <Box n={`${k.on}/${k.all}`} l="أرقام متصلة" cls={k.on === k.all && k.all ? 'text-emerald-300' : 'text-amber-300'} />
+      <Box n={ms ? `${ms}ms` : '—'} l="زمن استجابة الوسيط" cls={ms > 1500 ? 'text-amber-300' : 'text-white'} />
       <Box n={k.open} l="محادثات مفتوحة" />
       <Box n={k.waiting} l="بانتظار ردّنا" cls={k.waiting ? 'text-amber-300' : 'text-white'} />
       <Box n={k.sos} l="طوارئ SOS" cls={k.sos ? 'text-rose-400' : 'text-white'} />
@@ -253,14 +256,18 @@ function Conversation({ th, me, acctLabel, online, onBack, navigate }) {
         <p className="text-[10px] text-slate-600 mt-1.5">{noteMode ? 'وضع الملاحظة الداخلية: لن يراها العميل.' : 'الرد من هنا يوقف البوت في هذه المحادثة 12 ساعة. الإرسال يتم بفاصل عشوائي قصير لحماية الرقم.'}</p>
       </div>
     </div>
-    <CrmPanel th={th} orders={orders || []} navigate={navigate} sos={isSos(th)} onCreate={() => setOrderModal(true)} />
+    <CrmPanel th={th} orders={orders || []} navigate={navigate} sos={isSos(th)} online={online} onCreate={() => setOrderModal(true)} />
     {orderModal && <ManualOrderModal by="operations" initial={{ name: th.name || '', phone: th.phone.slice(-9).replace(/^/, '0'), description: lastIn.slice(0, 300), priority: isSos(th) ? 'urgent' : 'normal', waThreadId: th.id }} onClose={() => setOrderModal(false)} onCreated={afterOrder} />}
     </div>
   )
 }
 
 // Customer / CRM side panel (wide screens): who is this, their orders, and one-tap "turn this chat into an order".
-function CrmPanel({ th, orders, navigate, sos, onCreate }) {
+function CrmPanel({ th, orders, navigate, sos, online, onCreate }) {
+  const [amt, setAmt] = useState('')
+  const [pm, setPm] = useState('')
+  const [busyP, setBusyP] = useState(false)
+  const [invOrder, setInvOrder] = useState(null)
   const tail = th.phone.slice(-9)
   const list = orders.filter((o) => String(o.clientPhone || '').replace(/\D/g, '').endsWith(tail))
   const done = list.filter((o) => ['completed', 'closed'].includes(o.status)).length
@@ -277,6 +284,23 @@ function CrmPanel({ th, orders, navigate, sos, onCreate }) {
       </div>
       <button onClick={onCreate} className="rounded-xl bg-emerald-500 text-black font-black text-sm py-3 flex items-center justify-center gap-2 active:scale-95"><ClipboardPlus size={16} /> تحويل المحادثة إلى طلب</button>
       <p className="text-[10px] text-slate-500 -mt-1">يُنشأ الطلب بآخر رسالة للعميل، يدخل قائمة التوزيع (آلي/يدوي)، وتصله رسالة تأكيد تلقائية.</p>
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3 grid gap-2">
+        <p className="text-xs font-black text-white">💳 رابط دفع للعميل</p>
+        <input value={amt} onChange={(e) => setAmt(e.target.value)} inputMode="decimal" placeholder={active?.agreedPrice || active?.price ? `المبلغ (الطلب: ${active.agreedPrice || active.price})` : 'المبلغ (ر.س)'} className={inputCls} />
+        <button disabled={busyP || !online || !Number(amt || active?.agreedPrice || active?.price)} onClick={async () => {
+          setBusyP(true); setPm('')
+          try {
+            const amount = Number(amt || active?.agreedPrice || active?.price)
+            const r = await post('/shop', { op: 'pay_create', amount, desc: active?.description || 'خدمة صيانة', client: th.name || '', orderId: active?.id || '' })
+            await waApi('send', { accountId: th.accountId, to: th.phone, text: `رابط الدفع (${amount} ر.س):\n${r.url}\nيمكنك الدفع بالتحويل أو المحفظة أو البطاقة.` })
+            setPm('أُرسل الرابط للعميل ✓'); setAmt('')
+          } catch (e) { setPm(e?.message || 'تعذر الإرسال') } finally { setBusyP(false) }
+        }} className="rounded-lg bg-sky-500 text-black font-black text-xs py-2 disabled:opacity-40">إنشاء الرابط وإرساله في المحادثة</button>
+        {pm && <p className="text-[11px] text-amber-300 font-bold">{pm}</p>}
+        {!online && <p className="text-[10px] text-slate-500">الرقم غير متصل — لا يمكن الإرسال.</p>}
+      </div>
+      {(() => { const inv = list.find((o) => o.invoiceItems?.length) || active; return inv ? <button onClick={() => setInvOrder(inv)} className="rounded-xl bg-white/10 border border-white/10 text-white font-black text-xs py-2.5">🧾 فاتورة ضريبية للطلب #{String(inv.id).slice(-4)}</button> : null })()}
+      {invOrder && <InvoiceModal order={invOrder} canEdit wa={{ accountId: th.accountId, phone: th.phone }} onClose={() => setInvOrder(null)} />}
       {list.length > 0 && <p className="text-xs font-black text-white mt-1 flex items-center gap-1.5"><Wrench size={13} className="text-primary" /> سجل الطلبات</p>}
       {list.slice(0, 6).map((o) => (
         <button key={o.id} onClick={() => navigate(`/staff/order/${o.id}`)} className="text-right rounded-xl bg-white/5 border border-white/10 p-2.5 text-[11px]">
@@ -350,7 +374,7 @@ function Numbers({ sess, isOwner }) {
               <button onClick={() => setBot(s.id, !botOn(s.id))} className={`w-12 h-7 rounded-full relative transition-colors ${botOn(s.id) ? 'bg-primary' : 'bg-white/15'}`} aria-pressed={botOn(s.id)}><span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${botOn(s.id) ? 'right-1' : 'right-6'}`} /></button>
             </div>
             <div className="flex items-center gap-2 mt-3 text-[11px] text-slate-500">
-              <span>أُرسل اليوم: {s.sentToday}/{s.dailyCap}</span>
+              <span>أُرسل اليوم: {s.sentToday}/{s.dailyCap}</span>{sess.ms ? <span>· الوسيط {sess.ms}ms</span> : null}
               <span className="mr-auto" />
               <button onClick={() => act('restart', s.id)} className="flex items-center gap-1 font-bold text-slate-300 bg-white/5 rounded-lg px-2.5 py-1.5"><RefreshCw size={12} /> إعادة اتصال</button>
               <button onClick={() => act('logout', s.id)} className="flex items-center gap-1 font-bold text-rose-300 bg-rose-500/10 rounded-lg px-2.5 py-1.5"><LogOut size={12} /> فصل</button>
