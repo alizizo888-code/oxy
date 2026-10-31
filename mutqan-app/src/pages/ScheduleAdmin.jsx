@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Save, Loader2, Plus, Trash2 } from 'lucide-react'
@@ -43,7 +44,7 @@ export default function ScheduleAdmin() {
   const submit = async () => {
     setBusy(true); setMsg('')
     try { await save(normalizeSchedule(f || cfg)); setMsg('تم الحفظ ✅ — البوت وصفحات الطلب تستخدم القواعد الجديدة فوراً') }
-    catch { setMsg('تعذر الحفظ، حاول مرة أخرى') }
+    catch (e) { setMsg(errText(e, 'تعذر الحفظ، حاول مرة أخرى')) }
     setBusy(false)
   }
   const peak = cur.peak || []

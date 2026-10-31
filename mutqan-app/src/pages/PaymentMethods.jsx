@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import AccessDenied from '../components/AccessDenied'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -24,7 +25,7 @@ export default function PaymentMethods() {
   const testMode = (provider?.connections || []).some((c) => c.status === 'active' && c.mode === 'test')
 
   async function toggle(m) {
-    try { await saveMethod({ ...m, enabled: !m.enabled }) } catch { alert('تعذر الحفظ — تأكد من صلاحياتك') }
+    try { await saveMethod({ ...m, enabled: !m.enabled }) } catch (e) { alert(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) }
   }
 
   return (
@@ -79,7 +80,7 @@ export default function PaymentMethods() {
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => setEditing(m)} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2 text-xs font-bold text-slate-200">تعديل</button>
                     {!m.builtin && (
-                      <button onClick={async () => { if (confirm(`حذف «${m.name}»؟`)) { try { await removeMethod(m) } catch { alert('تعذر الحذف') } } }} className="w-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center hover:bg-rose-500/20">
+                      <button onClick={async () => { if (confirm(`حذف «${m.name}»؟`)) { try { await removeMethod(m) } catch (e) { alert(errText(e, 'تعذر الحذف')) } } }} className="w-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center hover:bg-rose-500/20">
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -113,7 +114,7 @@ function Editor({ method, onClose }) {
     try {
       await saveMethod({ ...f, name: f.name.trim(), fee: Math.max(0, Number(f.fee) || 0), sort: Number(f.sort) || 99 })
       onClose()
-    } catch { setErr('تعذر الحفظ — تأكد من صلاحياتك') } finally { setSaving(false) }
+    } catch (e) { setErr(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) } finally { setSaving(false) }
   }
 
   return (

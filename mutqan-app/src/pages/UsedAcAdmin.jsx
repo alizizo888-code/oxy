@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Plus, Trash2, Loader2, ImagePlus, Save, X, Phone, MessageCircle } from 'lucide-react'
@@ -35,7 +36,7 @@ export default function UsedAcAdmin() {
     const list = Array.from(files || []); if (!list.length) return
     setBusy(true); setErr('')
     try { const urls = []; for (const file of list) { const { url } = await storage.upload(file); urls.push(url) }; setF((s) => ({ ...s, photos: [...(s.photos || []), ...urls] })) }
-    catch { setErr('تعذر رفع الصورة') }
+    catch (e) { setErr(errText(e, 'تعذر رفع الصورة')) }
     setBusy(false)
   }
   const save = async () => {
@@ -49,10 +50,10 @@ export default function UsedAcAdmin() {
       else { const r = await db.insertShared('used_ac', { ...data, createdAt: new Date().toISOString() }, undefined, { groupId: g, writableBy: 'admins' }); id = r?.id }
       if (id) await db.upsertShared('used_ac_private', { floor: Number(f.floor) || 0 }, id, { groupId: g, writableBy: 'admins' })
       setF(null)
-    } catch { setErr('تعذر الحفظ') }
+    } catch (e) { setErr(errText(e, 'تعذر الحفظ')) }
     setBusy(false)
   }
-  const del = async (u) => { if (!window.confirm('حذف هذا الجهاز نهائياً؟')) return; try { await db.deleteShared('used_ac', u.id); await db.deleteShared('used_ac_private', u.id).catch(() => {}) } catch { setErr('تعذر الحذف') } }
+  const del = async (u) => { if (!window.confirm('حذف هذا الجهاز نهائياً؟')) return; try { await db.deleteShared('used_ac', u.id); await db.deleteShared('used_ac_private', u.id).catch(() => {}) } catch (e) { setErr(errText(e, 'تعذر الحذف')) } }
   const setStatus = (u, status) => db.updateShared('used_ac', u.id, { status }).catch(() => setErr('تعذر التحديث'))
 
   return (

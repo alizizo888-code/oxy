@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Save, Plus, Trash2, Loader2, Check, ImagePlus } from 'lucide-react'
@@ -32,7 +33,7 @@ export default function AcAdmin() {
 
   const save = async () => {
     setBusy(true); setErr('')
-    try { await saveCfg(f); setSaved(true) } catch (e) { setErr('تعذر الحفظ') }
+    try { await saveCfg(f); setSaved(true) } catch (e) { setErr(errText(e, 'تعذر الحفظ')) }
     setBusy(false)
   }
   const gid = () => team.groupId()
@@ -58,7 +59,7 @@ export default function AcAdmin() {
         const { url } = await storage.upload(file)
         await db.insertShared('ac_media', { url, title: '', category: 'wash', specialty: mSpec, sort: media.length + 1 }, undefined, { groupId: g, writableBy: 'admins' })
       }
-    } catch { setErr('تعذر رفع الصورة') }
+    } catch (e) { setErr(errText(e, 'تعذر رفع الصورة')) }
     setBusy(false)
   }
   const addUrls = async () => {
@@ -69,12 +70,12 @@ export default function AcAdmin() {
       const g = await gid()
       for (const url of urls) await db.insertShared('ac_media', { url, title: '', category: 'wash', specialty: mSpec, sort: media.length + 1 }, undefined, { groupId: g, writableBy: 'admins' })
       setUrlsText('')
-    } catch { setErr('تعذر حفظ الروابط') }
+    } catch (e) { setErr(errText(e, 'تعذر حفظ الروابط')) }
     setBusy(false)
   }
   const upOfferImg = async (id, file) => {
     if (!file) return
-    try { const { url } = await storage.upload(file); await updOffer(id, { image: url }) } catch { setErr('تعذر رفع الصورة') }
+    try { const { url } = await storage.upload(file); await updOffer(id, { image: url }) } catch (e) { setErr(errText(e, 'تعذر رفع الصورة')) }
   }
 
   return (

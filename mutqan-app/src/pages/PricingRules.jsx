@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import AccessDenied from '../components/AccessDenied'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -49,7 +50,7 @@ export default function PricingRules() {
       await saveInternal(sel, { commissionPct })
       setSaved(true)
     } catch (e) {
-      setError(e?.code === 'PERMISSION_DENIED' ? 'لا تملك صلاحية تعديل الأسعار' : 'تعذر الحفظ، حاول مرة أخرى')
+      setError(errText(e, 'تعذر الحفظ'))
     } finally {
       setSaving(false)
     }

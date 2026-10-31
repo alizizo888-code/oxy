@@ -1,5 +1,8 @@
 import { post, setSession, currentUser } from './_api'
 
+// The server's group id is a constant ('main'); never let this lookup block a save.
+let gidCache = null
+
 const op = (name, body) => post('/team', { op: name, ...(body || {}) })
 const unwrap = (k) => (r) => (r && k in r ? r[k] : r)
 
@@ -9,7 +12,7 @@ async function enter(r) {
 }
 
 export const team = {
-  groupId: () => op('groupId').then((r) => r.value),
+  groupId: () => (gidCache ? Promise.resolve(gidCache) : op('groupId').then((r) => (gidCache = r.value || 'main')).catch(() => 'main')),
   config: () => op('config'),
   canManage: () => op('canManage').then((r) => !!r.value).catch(() => false),
   currentMember: () => op('currentMember').then((r) => r.member),

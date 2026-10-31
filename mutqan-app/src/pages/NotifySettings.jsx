@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, BellRing, Loader2 } from 'lucide-react'
@@ -26,7 +27,7 @@ export default function NotifySettings() {
 
   async function save(patch) {
     setSaving(true); setErr('')
-    try { await update(patch) } catch { setErr('تعذر الحفظ — هذه الإعدادات للمالك ومشرف العمليات فقط') } finally { setSaving(false) }
+    try { await update(patch) } catch (e) { setErr(errText(e, 'تعذر الحفظ — هذه الإعدادات للمالك ومشرف العمليات فقط')) } finally { setSaving(false) }
   }
   const setEvent = (id, patch) => save({ events: { ...S.events, [id]: { ...S.events[id], ...patch } } })
 

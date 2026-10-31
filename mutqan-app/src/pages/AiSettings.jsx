@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import AccessDenied from '../components/AccessDenied'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -69,7 +70,7 @@ export default function AiSettings() {
       setError('هذا الإعداد من سياسات المالك — يعدّله المالك فقط')
       return
     }
-    try { await update(patch) } catch { setError('تعذر حفظ الإعداد — تأكد من صلاحياتك') }
+    try { await update(patch) } catch (e) { setError(errText(e, 'تعذر حفظ الإعداد')) }
   }
   const S = settings
 
@@ -402,7 +403,7 @@ function ServerFollowUp({ enabled, onChange }) {
       for (const t of mine || []) await triggers.remove(t.id)
       await onChange(false)
       await refresh()
-    } catch { setErr('تعذر الإيقاف') } finally { setBusy(false) }
+    } catch (e) { setErr(errText(e, 'تعذر الإيقاف')) } finally { setBusy(false) }
   }
   return (
     <Card title="إشعارات المتابعة من الخادم">
@@ -428,7 +429,7 @@ function ServiceAreaSettings({ S, save }) {
     try {
       const { lat, lng } = await maps.getCurrentLocation()
       await save({ serviceArea: { ...sa, lat, lng, enabled: true } })
-    } catch { alert('تعذر الوصول للموقع') } finally { setLocating(false) }
+    } catch (e) { alert(errText(e, 'تعذر الوصول للموقع')) } finally { setLocating(false) }
   }
   return (
     <div className="flex flex-col gap-4">

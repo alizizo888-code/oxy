@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Loader2 } from 'lucide-react'
@@ -28,7 +29,7 @@ export default function BusinessSettings({ focus }) {
   useEffect(() => { setTn({ url: hot.turn?.url || '', user: hot.turn?.user || '', pass: hot.turn?.pass || '' }) }, [hot.turn?.url, hot.turn?.user, hot.turn?.pass])
   const saveHot = async (patch) => {
     setHm('')
-    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'hotline', enabled: hot.enabled, turnUrl: tn.url.trim(), turnUser: tn.user.trim(), turnPass: tn.pass.trim(), ...patch, updatedAt: new Date().toISOString() }, 'hotline', { groupId: gid, writableBy: 'admins' }); setHm('تم الحفظ ✓') } catch { setHm('تعذر الحفظ') }
+    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'hotline', enabled: hot.enabled, turnUrl: tn.url.trim(), turnUser: tn.user.trim(), turnPass: tn.pass.trim(), ...patch, updatedAt: new Date().toISOString() }, 'hotline', { groupId: gid, writableBy: 'admins' }); setHm('تم الحفظ ✓') } catch (e) { setHm(errText(e, 'تعذر الحفظ')) }
   }
   const [c, setC] = useState({ wa: '', phone: '' })
   const [cm, setCm] = useState('')
@@ -37,10 +38,11 @@ export default function BusinessSettings({ focus }) {
     setCm('')
     const wa = c.wa.replace(/\D/g, ''), phone = c.phone.replace(/[^\d+]/g, '')
     if (wa && wa.length < 9) return setCm('رقم الواتساب غير صحيح')
-    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'contact_numbers', whatsapp: wa, phone, updatedAt: new Date().toISOString() }, 'contact_numbers', { groupId: gid, writableBy: 'admins' }); setCm('تم الحفظ ✓ — يُطبَّق في الرئيسية والتوزيع والتوجيهات والمقالات') } catch { setCm('تعذر الحفظ') }
+    try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'contact_numbers', whatsapp: wa, phone, updatedAt: new Date().toISOString() }, 'contact_numbers', { groupId: gid, writableBy: 'admins' }); setCm('تم الحفظ ✓ — يُطبَّق في الرئيسية والتوزيع والتوجيهات والمقالات') } catch (e) { setCm(errText(e, 'تعذر الحفظ')) }
   }
   const [copied, setCopied] = useState('')
-  const setAd = async (on) => { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'ad_landing', enabled: !!on, updatedAt: new Date().toISOString() }, 'ad_landing', { groupId: gid, writableBy: 'admins' }) }
+  const [am, setAm] = useState('')
+  const setAd = async (on) => { setAm(''); try { const gid = await team.groupId(); await db.upsertShared('pricing', { serviceId: 'ad_landing', enabled: !!on, updatedAt: new Date().toISOString() }, 'ad_landing', { groupId: gid, writableBy: 'admins' }) } catch (e) { setAm(errText(e, 'تعذر الحفظ')) } }
   const base = typeof location !== 'undefined' ? location.origin + location.pathname : ''
   const copy = (u) => { try { navigator.clipboard.writeText(u) } catch { /* ignore */ } setCopied(u); setTimeout(() => setCopied(''), 1800) }
   const [busy, setBusy] = useState(false)
@@ -58,7 +60,7 @@ export default function BusinessSettings({ focus }) {
       const gid = await team.groupId()
       await db.upsertShared('pricing', { serviceId: 'tax_info', seller: f.seller.trim(), vat: f.vat.replace(/\s/g, ''), address: f.address.trim(), updatedAt: new Date().toISOString() }, 'tax_info', { groupId: gid, writableBy: 'admins' })
       setMsg('تم الحفظ ✓')
-    } catch { setMsg('تعذر الحفظ') } finally { setBusy(false) }
+    } catch (e) { setMsg(errText(e, 'تعذر الحفظ')) } finally { setBusy(false) }
   }
   return (
     <div className="h-full overflow-y-auto pb-24 text-white" dir="rtl">
@@ -94,6 +96,7 @@ export default function BusinessSettings({ focus }) {
           <p className="font-black text-sm">📣 روابط الإعلانات الممولة (تجربة)</p>
           <p className="text-[11px] text-slate-400 leading-relaxed">كل تخصص له رابط خاص للإعلان. عند الفتح يدخل العميل الرئيسية أولًا ثم ينتقل تلقائيًا لصفحة التخصص، وفي صفحة التخصص زر «الرئيسية» ثابت بالأسفل.</p>
           <label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={ad.enabled} onChange={(e) => setAd(e.target.checked)} /> تفعيل الدخول عبر الرئيسية أولًا {ad.enabled ? '' : '(متوقف: الرابط يفتح التخصص مباشرة)'}</label>
+          {am && <p className="text-xs font-bold text-amber-300">{am}</p>}
           <div className="grid gap-1.5 max-h-72 overflow-y-auto">
             {SPECIALTIES.map((sp) => { const u = `${base}#/s/${sp.id}`; return (
               <button key={sp.id} onClick={() => copy(u)} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-right text-xs">

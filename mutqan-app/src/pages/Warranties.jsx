@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import AccessDenied from '../components/AccessDenied'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -121,7 +122,7 @@ function ClaimSheet({ claim, list, canEdit, onClose }) {
         try { await push.send(claim.clientId, { title: status === 'approved' ? 'تم قبول طلب الضمان ✅' : 'تحديث على طلب الضمان', body: note.trim() || CLAIM_STATUS[status].label, url: '#/warranty' }) } catch {}
       }
       if (status !== 'reviewing') onClose()
-    } catch { alert('تعذر الحفظ — تأكد من صلاحياتك') } finally { setBusy('') }
+    } catch (e) { alert(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) } finally { setBusy('') }
   }
 
   return (
@@ -232,7 +233,7 @@ function RecordEditor({ rec, onClose }) {
         const { url } = await storage.upload(file, file.name || 'file')
         setF((x) => ({ ...x, files: [...x.files, { url, name: file.name, type: file.type }] }))
       }
-    } catch { setErr('تعذر رفع الملف') } finally { setUploading(false) }
+    } catch (e) { setErr(errText(e, 'تعذر رفع الملف')) } finally { setUploading(false) }
   }
 
   async function save() {
@@ -242,7 +243,7 @@ function RecordEditor({ rec, onClose }) {
     try {
       await saveWarranty({ ...f, customerName: f.customerName.trim(), phone: f.phone.trim(), days: Math.max(0, Number(f.days) || 0), startDate: new Date(f.startDate).toISOString() })
       onClose()
-    } catch { setErr('تعذر الحفظ — تأكد من صلاحياتك') } finally { setBusy(false) }
+    } catch (e) { setErr(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) } finally { setBusy(false) }
   }
 
   return (
@@ -295,7 +296,7 @@ function Policy({ canEdit }) {
 
   async function save() {
     setBusy(true); setMsg('')
-    try { await saveWarrantyPolicy({ ...v, defaultDays: Math.max(0, Number(v.defaultDays) || 0) }); setF(null); setMsg('تم الحفظ ✓') } catch { setMsg('تعذر الحفظ — تأكد من صلاحياتك') } finally { setBusy(false) }
+    try { await saveWarrantyPolicy({ ...v, defaultDays: Math.max(0, Number(v.defaultDays) || 0) }); setF(null); setMsg('تم الحفظ ✓') } catch (e) { setMsg(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) } finally { setBusy(false) }
   }
   const upd = (patch) => setF({ ...v, ...patch })
 

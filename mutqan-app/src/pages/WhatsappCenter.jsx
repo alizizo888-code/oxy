@@ -1,3 +1,4 @@
+import { errText } from '../lib/_api'
 import AccessDenied from '../components/AccessDenied'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -27,7 +28,7 @@ export default function WhatsappCenter() {
   if (!allowed) return <AccessDenied refresh={refresh} />
 
   async function toggle(n) {
-    try { await saveWaNumber({ ...n, enabled: !n.enabled }) } catch { alert('تعذر الحفظ') }
+    try { await saveWaNumber({ ...n, enabled: !n.enabled }) } catch (e) { alert(errText(e, 'تعذر الحفظ')) }
   }
 
   return (
@@ -79,7 +80,7 @@ export default function WhatsappCenter() {
                   <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1"><Users size={10} /> {countByNumber[n.id] || 0} تواصل مسجل (آخر 100)</p>
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => setEditing(n)} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl py-2 text-xs font-bold text-slate-200">تعديل</button>
-                    <button onClick={async () => { if (confirm(`حذف «${n.label || n.phone}»؟`)) { try { await removeWaNumber(n) } catch { alert('تعذر الحذف') } } }} className="w-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center hover:bg-rose-500/20"><Trash2 size={14} /></button>
+                    <button onClick={async () => { if (confirm(`حذف «${n.label || n.phone}»؟`)) { try { await removeWaNumber(n) } catch (e) { alert(errText(e, 'تعذر الحذف')) } } }} className="w-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center hover:bg-rose-500/20"><Trash2 size={14} /></button>
                   </div>
                 </div>
               )
@@ -118,7 +119,7 @@ function Editor({ n, onClose }) {
     const phone = String(f.phone || '').replace(/\D/g, '').replace(/^00/, '')
     if (phone.length < 9) return setErr('اكتب الرقم بصيغة دولية مع رمز الدولة، مثال 9665XXXXXXXX')
     setBusy(true); setErr('')
-    try { await saveWaNumber({ ...f, phone, label: f.label.trim(), sort: Number(f.sort) || 99 }); onClose() } catch { setErr('تعذر الحفظ — تأكد من صلاحياتك') } finally { setBusy(false) }
+    try { await saveWaNumber({ ...f, phone, label: f.label.trim(), sort: Number(f.sort) || 99 }); onClose() } catch (e) { setErr(errText(e, 'تعذر الحفظ — تأكد من صلاحياتك')) } finally { setBusy(false) }
   }
 
   return (

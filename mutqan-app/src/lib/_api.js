@@ -81,6 +81,13 @@ export class ApiError extends Error {
   constructor(message, code, status) { super(message); this.code = code; this.status = status }
 }
 
+// Human-readable reason for a failed save: the server's own message when there is one.
+export function errText(e, fallback = 'تعذر الحفظ') {
+  if (e && e.code === 'NETWORK') return 'لا يوجد اتصال بالخادم — تحقق من الإنترنت وأعد المحاولة.'
+  if (e && e.message && e instanceof ApiError) return `${fallback}: ${e.message}${e.code && !/^HTTP_/.test(e.code) ? ` (${e.code})` : e.status ? ` (${e.status})` : ''}`
+  return fallback
+}
+
 export function headers(extra) {
   const h = { 'X-Mutqan-Anon': getAnonId(), ...extra }
   const t = getToken()
@@ -120,7 +127,11 @@ async function send(path, init, timeoutMs = 25000) {
   if (!res.ok || !json || json.error) {
     const e = json && json.error
     // Never drop the session on a single 401 (cache hiccup, cold server): confirm it with /auth me first.
-    if (res.status === 401 && getToken() && (!e || e.code === 'unauthorized') && !path.startsWith('/auth')) { await verifySession() }
+    if ((res.status === 401 || res.status === 403) && getToken() && (!e || e.code === 'unauthorized' || e.code === 'forbidden') && !path.startsWith('/auth')) {
+      await verifySession()
+      // The server no longer knows this session (expired / wiped): say so instead of a vague "forbidden".
+      if (!getToken()) throw new ApiError('انتهت جلستك على الخادم — سجّل الدخول من جديد بحساب المالك ثم أعد المحاولة.', 'SESSION_EXPIRED', 401)
+    }
     throw new ApiError((e && e.message) || 'حدث خطأ غير متوقع.', (e && e.code) || 'HTTP_' + res.status, res.status)
   }
   return json.data
