@@ -29,6 +29,8 @@ concurrency:
 
 jobs:
   publish:
+    # Scheduled/automatic runs belong to the repository wired to the live site; mirrors only run on manual dispatch.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.repository == 'alizizo888-code/alizeidan123' }}
     name: Publish ${{ matrix.branch }} articles
     runs-on: ubuntu-latest
     timeout-minutes: 25

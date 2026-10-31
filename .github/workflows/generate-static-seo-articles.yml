@@ -30,6 +30,8 @@ concurrency:
 
 jobs:
   publish:
+    # Scheduled/automatic runs belong to the repository wired to the live site; mirrors only run on manual dispatch.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.repository == 'alizizo888-code/alizeidan123' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -109,12 +111,20 @@ jobs:
             exit 1
           fi
 
-          sitemap="$(mktemp)"
-          status="$(curl -sS -L --max-time 25 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
-            echo "::error::The sitemap was not verified on the public website (HTTP $status)."
-            rm -f "$sitemap"
-            exit 1
+          # WordPress + Yoast serves /sitemap_index.xml (a sitemap index), the old static file is a urlset: accept either.
+          # The article is already committed and live, so a slow sitemap is a warning, never a failed run.
+          found=0
+          for attempt in 1 2 3; do
+            for u in https://oxygen11.com/sitemap_index.xml https://oxygen11.com/sitemap.xml https://oxygen11.com/wp-sitemap.xml; do
+              sitemap="$(mktemp)"
+              status="$(curl -sS -L --max-time 25 -o "$sitemap" -w '%{http_code}' "$u" || true)"
+              if [[ "$status" =~ ^2[0-9][0-9]$ ]] && grep -qE '<urlset|<sitemapindex' "$sitemap"; then
+                echo "Sitemap is reachable: $u"; found=1; rm -f "$sitemap"; break 2
+              fi
+              rm -f "$sitemap"
+            done
+            sleep 10
+          done
+          if [[ "$found" -ne 1 ]]; then
+            echo "::warning::No sitemap answered yet (sitemap_index.xml / sitemap.xml / wp-sitemap.xml); the article itself is live."
           fi
-          echo "Sitemap is reachable."
-          rm -f "$sitemap"

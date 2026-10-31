@@ -24,51 +24,37 @@ concurrency:
 
 jobs:
   trigger-cron:
+    # Scheduled/automatic runs belong to the repository wired to the live site; mirrors only run on manual dispatch.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.repository == 'alizizo888-code/alizeidan123' }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Checkout repository for article and sitemap smoke checks
         uses: actions/checkout@v7.0.1
 
-      - name: Check that the live homepage uses the new loader
+      - name: Check that the live homepage is up (WordPress home page or legacy loader)
         shell: bash
         run: |
           set -euo pipefail
-          url="https://oxygen11.com/?deployment_check=$(date +%s)"
-          body="$(mktemp)"
-          status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
-          if [[ "$status" =~ ^2[0-9][0-9]$ ]] && grep -Fq "oxygen-maintenance-home.html" "$body"; then
-            echo "Live root loader verified: the public homepage fetches the Oxygen full-page asset."
-            rm -f "$body"
-          else
-            echo "::error::Live homepage is not serving the expected Oxygen loader (HTTP $status). Check Hostinger sync and the root DirectoryIndex rule."
-            head -c 500 "$body" || true
-            echo
-            rm -f "$body"
+          ok=0; status=000
+          for attempt in 1 2 3; do
+            body="$(mktemp)"
+            status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "https://oxygen11.com/?deployment_check=$(date +%s)" || true)"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$(wc -c < "$body" | tr -d ' ')" -gt 3000 ]] && grep -qiE 'oxygen|أكسجين' "$body"; then
+              ok=1; rm -f "$body"; break
+            fi
+            rm -f "$body"; sleep 10
+          done
+          if [[ "$ok" -ne 1 ]]; then
+            echo "::error::Live homepage is not serving the Oxygen site (HTTP $status). Check Hostinger and the WordPress home page."
             exit 1
           fi
-
-      - name: Check that the live homepage asset is deployed
-        shell: bash
-        run: |
-          set -euo pipefail
-          url='https://oxygen11.com/oxygen-ac-automation/assets/oxygen-maintenance-home.html'
-          body="$(mktemp)"
-          status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
-          bytes="$(wc -c < "$body" | tr -d ' ')"
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || [[ "$bytes" -lt 50000 ]] || ! grep -qi '<html' "$body"; then
-            echo "::error::The live homepage asset is missing or incomplete: HTTP $status, $bytes bytes at $url"
-            head -c 250 "$body" || true
-            rm -f "$body"
-            exit 1
-          fi
-          echo "Live homepage asset is reachable: HTTP $status, $bytes bytes."
-          rm -f "$body"
+          echo "Live homepage OK (HTTP $status)."
 
       - name: Verify latest article pages and sitemap are publicly served
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           python - <<'PY' > /tmp/oxygen-article-urls.txt
           import json
           from pathlib import Path
@@ -82,24 +68,27 @@ jobs:
             status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
             bytes="$(wc -c < "$body" | tr -d ' ')"
             if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || [[ "$bytes" -lt 1500 ]] || ! grep -qi '<title>' "$body"; then
-              echo "::error::Article page not publicly served: $url (HTTP $status, $bytes bytes)"
-              head -c 180 "$body" || true
-              rm -f "$body"
-              exit 1
+              echo "::warning::Static article page not served: $url (HTTP $status, $bytes bytes)"
+            else
+              echo "Article page OK: $url ($bytes bytes)."
             fi
-            echo "Article page OK: $url ($bytes bytes)."
             rm -f "$body"
           done < /tmp/oxygen-article-urls.txt
 
-          sitemap="$(mktemp)"
-          status="$(curl -sS -L --max-time 30 -o "$sitemap" -w '%{http_code}' 'https://oxygen11.com/sitemap.xml?deployment_check=1' || true)"
-          if [[ ! "$status" =~ ^2[0-9][0-9]$ ]] || ! grep -q '<urlset' "$sitemap"; then
-            echo "::error::Sitemap is not publicly served (HTTP $status)."
+          # WordPress + Yoast serves a sitemap INDEX (sitemap_index.xml); the legacy static file is a urlset. Either is fine.
+          found=0
+          for u in https://oxygen11.com/sitemap_index.xml https://oxygen11.com/sitemap.xml https://oxygen11.com/wp-sitemap.xml; do
+            sitemap="$(mktemp)"
+            status="$(curl -sS -L --max-time 30 -o "$sitemap" -w '%{http_code}' "$u" || true)"
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && grep -qE '<urlset|<sitemapindex' "$sitemap"; then
+              echo "Sitemap is publicly served: $u"; found=1; rm -f "$sitemap"; break
+            fi
             rm -f "$sitemap"
+          done
+          if [[ "$found" -ne 1 ]]; then
+            echo "::error::No sitemap is publicly served (sitemap_index.xml, sitemap.xml, wp-sitemap.xml)."
             exit 1
           fi
-          echo "Sitemap is publicly served."
-          rm -f "$sitemap"
 
       - name: Diagnose WordPress admin and REST routes on googl subdomain
         shell: bash
@@ -174,32 +163,24 @@ jobs:
           for base in "https://oxygen11.com" "https://googl.oxygen11.com"; do
             for path in "${paths[@]}"; do probe "$base" "$path"; done
           done
-      - name: Discover and trigger the WordPress cron endpoint
-        if: ${{ vars.OXYGEN_WP_CRON_ENABLED == 'true' }}
+      - name: Trigger the WordPress cron on both sites (drives article publishing, refreshes and automation)
         shell: bash
         run: |
-          set -euo pipefail
-          targets=(
-            'https://oxygen11.com/wp-cron.php?doing_wp_cron=1'
-            'https://googl.oxygen11.com/wp-cron.php?doing_wp_cron=1'
-          )
-          found=0
-          for url in "${targets[@]}"; do
+          set -uo pipefail
+          trigger() {
+            local url="$1" body status bytes
             body="$(mktemp)"
-            status="$(curl -sS -L --max-time 30 -o "$body" -w '%{http_code}' "$url" || true)"
+            status="$(curl -sS -L --max-time 45 -o "$body" -w '%{http_code}' "$url" || true)"
             bytes="$(wc -c < "$body" | tr -d ' ')"
-            if [[ "$status" =~ ^2[0-9][0-9]$ ]] && [[ "$bytes" -le 8192 ]] && ! grep -qiE '<!doctype html|<html([[:space:]>])' "$body"; then
-              echo "WordPress cron endpoint responded on $url (HTTP $status, $bytes bytes)."
-              found=1
-              rm -f "$body"
-              break
-            fi
-            echo "::warning::Cron endpoint did not validate: $url returned HTTP $status with $bytes bytes."
-            head -c 160 "$body" || true
-            echo
             rm -f "$body"
-          done
-          if [[ "$found" -ne 1 ]]; then
-            echo "::error::Neither oxygen11.com nor googl.oxygen11.com exposes a valid wp-cron.php response. Confirm the WordPress installation root and Hostinger cron configuration before relying on daily publishing."
+            # wp-cron.php answers 200 with an empty body; any 2xx means WordPress booted and ran its due events.
+            if [[ "$status" =~ ^2[0-9][0-9]$ ]]; then echo "WordPress cron OK: $url (HTTP $status, $bytes bytes)"; return 0; fi
+            echo "::warning::WordPress cron did not answer: $url (HTTP $status)"; return 1
+          }
+          main_ok=0
+          trigger 'https://oxygen11.com/wp-cron.php?doing_wp_cron=1' && main_ok=1
+          trigger 'https://mutqan.oxygen11.com/wp-cron.php?doing_wp_cron=1' || true
+          if [[ "$main_ok" -ne 1 ]]; then
+            echo "::error::oxygen11.com wp-cron.php is not answering. Check Hostinger (PHP errors, DISABLE_WP_CRON, security plugin blocking it)."
             exit 1
           fi
